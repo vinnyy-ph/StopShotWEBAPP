@@ -13,19 +13,16 @@ import {
   Tooltip,
   Zoom,
   Chip as MuiChip,
-  Divider,
 } from '@mui/material';
 import ChatIcon from '@mui/icons-material/Chat';
 import CloseIcon from '@mui/icons-material/Close';
 import SendIcon from '@mui/icons-material/Send';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import SportsBarIcon from '@mui/icons-material/SportsBar';
-import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
-import StarIcon from '@mui/icons-material/Star';
 import MinimizeIcon from '@mui/icons-material/Minimize';
 import OpenInFullIcon from '@mui/icons-material/OpenInFull';
-import NightlifeIcon from '@mui/icons-material/Nightlife';
 import SportsBasketballIcon from '@mui/icons-material/SportsBasketball';
+import PlaceIcon from '@mui/icons-material/Place';
 import Draggable, { DraggableData, DraggableEvent } from 'react-draggable';
 import { ResizableBox, ResizeCallbackData } from 'react-resizable';
 import 'react-resizable/css/styles.css';
@@ -35,39 +32,48 @@ import '../styles/components/chatbot.css';
 const faqs = [
   {
     keywords: ['hour', 'time', 'open', 'close', 'business'],
-    answer: 'We are open Monday to Sunday from 4PM to 2AM. Come enjoy the night with us! 🕺'
+    answer: 'We are open Monday to Sunday from 4PM to 2AM. Come enjoy the night with us! 🕺',
+    hasMap: false
   },
   {
-    keywords: ['location', 'address', 'where', 'find', 'place'],
-    answer: 'We are located at 358 M. Vicente St, Brgy. Malamig, Mandaluyong City. Easy to find with great parking! 📍'
+    keywords: ['location', 'address', 'where', 'find', 'place', 'map'],
+    answer: 'We are located at 358 M. Vicente St, Brgy. Malamig, Mandaluyong City. Easy to find with great parking! 📍 Check out the map below:',
+    hasMap: true
   },
   {
     keywords: ['reservation', 'book', 'table', 'reserve'],
-    answer: 'You can make a reservation through our website\'s Reservation page or by calling us at (02) 8123-4567. We recommend booking ahead on game nights! 📅'
+    answer: 'You can make a reservation through our website\'s Reservation page or by calling us at (02) 8123-4567. We recommend booking ahead on game nights! 📅',
+    hasMap: false
   },
   {
     keywords: ['menu', 'food', 'drink', 'offer', 'serve'],
-    answer: 'Our menu features craft beers, signature cocktails, and amazing bar food like our famous wings and loaded nachos! Check our Menu page for the full experience. 🍻🍔'
+    answer: 'Our menu features craft beers, signature cocktails, and amazing bar food like our famous wings and loaded nachos! Check our Menu page for the full experience. 🍻🍔',
+    hasMap: false
   },
   {
     keywords: ['event', 'show', 'entertainment', 'live', 'music', 'game', 'watch'],
-    answer: 'We show all major sports events on our big screens! We also host live music events and karaoke nights regularly. Follow our social media for event schedules! 🏀🎸'
+    answer: 'We show all major sports events on our big screens! We also host live music events and karaoke nights regularly. Follow our social media for event schedules! 🏀🎸',
+    hasMap: false
   },
   {
     keywords: ['parking', 'park', 'car', 'vehicle'],
-    answer: 'Yes! We have free parking space available for our customers. No need to worry about where to leave your car. 🚗'
+    answer: 'Yes! We have free parking space available for our customers. No need to worry about where to leave your car. 🚗',
+    hasMap: false
   },
   {
     keywords: ['billiards', 'pool', 'table', 'game'],
-    answer: 'We have 8 professional billiards tables available. First come, first served, but you can reserve them for tournaments or private events! 🎱'
+    answer: 'We have 8 professional billiards tables available. First come, first served, but you can reserve them for tournaments or private events! 🎱',
+    hasMap: false
   },
   {
     keywords: ['karaoke', 'sing', 'song', 'ktv'],
-    answer: 'Our 5 private karaoke rooms are perfect for parties! Each room fits 4-12 people and has its own service button for drinks. Book in advance on weekends! 🎤'
+    answer: 'Our 5 private karaoke rooms are perfect for parties! Each room fits 4-12 people and has its own service button for drinks. Book in advance on weekends! 🎤',
+    hasMap: false
   },
   {
     keywords: ['help', 'assist', 'support', 'information'],
-    answer: 'I can answer questions about our hours, location, menu, reservations, and facilities. What would you like to know? Just ask away! 💬'
+    answer: 'I can answer questions about our hours, location, menu, reservations, and facilities. What would you like to know? Just ask away! 💬',
+    hasMap: false
   }
 ];
 
@@ -82,16 +88,8 @@ const suggestions = [
   "How many pool tables do you have?"
 ];
 
-// Testimonials for the marquee
-const testimonials = [
-  { name: "Mike J.", text: "Best wings and beer selection in town! The NBA finals night was epic!", rating: 5 },
-  { name: "Sarah T.", text: "Love the atmosphere! Great place to hang out with friends.", rating: 5 },
-  { name: "David R.", text: "The karaoke rooms are fantastic for birthday parties!", rating: 5 },
-  { name: "Kimberly L.", text: "Amazing staff and service. Always my go-to spot on weekends.", rating: 5 },
-  { name: "Jason M.", text: "Great screens for watching sports and the drinks are perfect.", rating: 4 },
-  { name: "Emily P.", text: "The pool tables are always in perfect condition. Great vibe!", rating: 5 },
-  { name: "Robert W.", text: "This is where I bring all my out-of-town friends. Never disappoints!", rating: 5 }
-];
+// Google Maps embed URL for Stop Shot Sports Bar
+const GOOGLE_MAPS_EMBED_URL = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3861.421774913128!2d121.04219071038666!3d14.575026185849502!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397c9459c58bcb7%3A0x563ad18fc323e83d!2sStop%20Shot%20Sports%20Bar%20%26%20KTV!5e0!3m2!1sen!2sph!4v1741402972614!5m2!1sen!2sph";
 
 // Bot responds to user query
 const getBotResponse = (userMessage: string) => {
@@ -99,34 +97,55 @@ const getBotResponse = (userMessage: string) => {
 
   // Check for greetings
   if (/hi|hello|hey|greetings/i.test(lowercaseMessage)) {
-    return "Hey there! Welcome to StopShot! How can I help you tonight? 😊🍻";
+    return {
+      text: "Hey there! Welcome to StopShot! How can I help you tonight? 😊🍻",
+      hasMap: false
+    };
   }
 
   // Check for thanks
   if (/thank|thanks|appreciate/i.test(lowercaseMessage)) {
-    return "You're welcome! That's what I'm here for! Anything else you want to know about StopShot? 🎱";
+    return {
+      text: "You're welcome! That's what I'm here for! Anything else you want to know about StopShot? 🎱",
+      hasMap: false
+    };
   }
 
   // Check for goodbye
   if (/bye|goodbye|see you|later/i.test(lowercaseMessage)) {
-    return "Hope to see you at StopShot soon! Have a great day! 👋";
+    return {
+      text: "Hope to see you at StopShot soon! Have a great day! 👋",
+      hasMap: false
+    };
   }
 
   // Check against keywords
   for (const faq of faqs) {
     if (faq.keywords.some(keyword => lowercaseMessage.includes(keyword))) {
-      return faq.answer;
+      return {
+        text: faq.answer,
+        hasMap: faq.hasMap
+      };
     }
   }
 
   // Default response
-  return "I'm not sure about that, but our friendly staff can help you with any specific questions! Call us at (02) 8123-4567 or drop by and ask in person. We love to chat! 🍻";
+  return {
+    text: "I'm not sure about that, but our friendly staff can help you with any specific questions! Call us at (02) 8123-4567 or drop by and ask in person. We love to chat! 🍻",
+    hasMap: false
+  };
 };
+
+interface MessageResponse {
+  text: string;
+  hasMap: boolean;
+}
 
 interface Message {
   text: string;
   isBot: boolean;
   isTyping?: boolean;
+  hasMap?: boolean;
 }
 
 type Position = { x: number; y: number };
@@ -144,7 +163,6 @@ const Chatbot: React.FC = () => {
   const [position, setPosition] = useState<Position>({ x: 0, y: 0 });
   const [hasDragged, setHasDragged] = useState(false);
   const [pulseAnimation, setPulseAnimation] = useState(false);
-  const [showTestimonials, setShowTestimonials] = useState(true);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const nodeRef = useRef<HTMLDivElement>(null);
@@ -227,9 +245,6 @@ const Chatbot: React.FC = () => {
     setMessages(updatedMessages);
     setInputText("");
 
-    // Hide testimonials once conversation starts
-    setShowTestimonials(false);
-
     // Show typing indicator
     setIsTyping(true);
     setMessages(current => [...current, { text: "", isBot: true, isTyping: true }]);
@@ -241,7 +256,11 @@ const Chatbot: React.FC = () => {
       setIsTyping(false);
       // Replace typing indicator with the actual response
       setMessages(current =>
-        current.filter(msg => !msg.isTyping).concat([{ text: botResponse, isBot: true }])
+        current.filter(msg => !msg.isTyping).concat([{ 
+          text: botResponse.text, 
+          isBot: true,
+          hasMap: botResponse.hasMap 
+        }])
       );
     }, responseTime);
   };
@@ -357,6 +376,7 @@ const Chatbot: React.FC = () => {
                 onResizeStop={handleResizeStop}
                 minConstraints={[300, 400]}
                 maxConstraints={[600, window.innerHeight - 40]}
+                resizeHandles={['sw', 'se', 'nw', 'ne', 'w', 'e', 'n', 's']}
                 className="chatbot-resizable"
               >
                 <Paper
@@ -435,40 +455,6 @@ const Chatbot: React.FC = () => {
                       flexDirection: 'column',
                     }}
                   >
-                    {/* Testimonials Marquee */}
-                    {showTestimonials && (
-                      <Box className="testimonials-container">
-                        <Box className="testimonials-header">
-                          <NightlifeIcon className="testimonial-icon" />
-                          <Typography variant="subtitle2">
-                            What people are saying
-                          </Typography>
-                        </Box>
-                        <Box className="testimonials-marquee-container">
-                          <Box className="testimonials-marquee">
-                            {[...testimonials, ...testimonials].map((testimonial, index) => (
-                              <Box key={index} className="testimonial-item">
-                                <Typography variant="body2" className="testimonial-text">
-                                  <FormatQuoteIcon className="quote-icon" fontSize="small" />
-                                  {testimonial.text}
-                                </Typography>
-                                <Box className="testimonial-footer">
-                                  <Typography variant="caption" className="testimonial-name">
-                                    {testimonial.name}
-                                  </Typography>
-                                  <Box className="testimonial-rating">
-                                    {[...Array(testimonial.rating)].map((_, i) => (
-                                      <StarIcon key={i} fontSize="small" />
-                                    ))}
-                                  </Box>
-                                </Box>
-                              </Box>
-                            ))}
-                          </Box>
-                        </Box>
-                      </Box>
-                    )}
-                    
                     {/* Chat Messages List */}
                     <List className="messages-list">
                       {messages.map((message, index) => (
@@ -499,9 +485,38 @@ const Chatbot: React.FC = () => {
                                 ))}
                               </Box>
                             ) : (
-                              <Typography variant="body1" className="message-text">
-                                {message.text}
-                              </Typography>
+                              <>
+                                <Typography variant="body1" className="message-text">
+                                  {message.text}
+                                </Typography>
+                                
+                                {/* Google Maps Embed */}
+                                {message.hasMap && (
+                                  <Box className="map-container" mt={2}>
+                                    <Box className="map-header">
+                                      <PlaceIcon className="map-icon" />
+                                      <Typography variant="caption">
+                                        StopShot Sports Bar & KTV
+                                      </Typography>
+                                    </Box>
+                                    <iframe
+                                      src={GOOGLE_MAPS_EMBED_URL}
+                                      width="100%"
+                                      height="180"
+                                      style={{ 
+                                        border: 0,
+                                        borderRadius: '8px',
+                                        marginTop: '8px',
+                                        boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                                      }}
+                                      allowFullScreen
+                                      loading="lazy"
+                                      referrerPolicy="no-referrer-when-downgrade"
+                                      title="Stop Shot Sports Bar & KTV Location"
+                                    ></iframe>
+                                  </Box>
+                                )}
+                              </>
                             )}
                           </Box>
                         </ListItem>
@@ -513,7 +528,6 @@ const Chatbot: React.FC = () => {
                   {/* Quick Suggestions */}
                   {messages.length <= 3 && (
                     <Box className="suggestions-container">
-                      <Divider className="suggestions-divider" />
                       {suggestions.map((suggestion, index) => (
                         <MuiChip
                           key={index}

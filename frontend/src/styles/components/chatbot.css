@@ -115,6 +115,30 @@
   border-bottom-left-radius: 18px;
 }
 
+/* Map Container Styling */
+.map-container {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(211, 130, 54, 0.3);
+  animation: fadeIn 0.5s ease-out;
+}
+
+.map-header {
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  background-color: rgba(211, 130, 54, 0.2);
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.map-icon {
+  color: #d38236 !important;
+  font-size: 18px !important;
+  margin-right: 6px !important;
+}
+
 /* Typing Indicator */
 .typing-indicator {
   display: flex;
@@ -237,98 +261,6 @@
   color: #5a5a5a !important;
 }
 
-/* Testimonials Marquee */
-.testimonials-container {
-  margin-bottom: 16px;
-  background-color: rgba(42, 42, 42, 0.7);
-  border-radius: 8px;
-  border: 1px solid rgba(211, 130, 54, 0.2);
-  overflow: hidden;
-  max-height: 120px;
-  animation: fadeIn 0.5s ease-out;
-}
-
-.testimonials-header {
-  display: flex;
-  align-items: center;
-  padding: 8px 12px;
-  background-color: rgba(211, 130, 54, 0.1);
-  border-bottom: 1px solid rgba(211, 130, 54, 0.2);
-}
-
-.testimonial-icon {
-  color: #d38236 !important;
-  margin-right: 8px !important;
-  font-size: 18px !important;
-}
-
-.testimonials-marquee-container {
-  overflow: hidden;
-  height: 80px;
-  position: relative;
-}
-
-.testimonials-marquee {
-  display: flex;
-  animation: scroll 30s linear infinite;
-  padding: 8px 0;
-}
-
-@keyframes scroll {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-
-.testimonial-item {
-  min-width: 260px;
-  margin: 0 12px;
-  background-color: rgba(255, 255, 255, 0.05);
-  padding: 10px;
-  border-radius: 6px;
-  border-left: 2px solid #d38236;
-}
-
-.testimonial-text {
-  font-style: italic;
-  color: #e0e0e0;
-  font-size: 13px !important;
-  margin-bottom: 4px !important;
-  position: relative;
-  padding-left: 12px;
-}
-
-.quote-icon {
-  position: absolute;
-  left: -8px;
-  top: -6px;
-  color: #d38236;
-  opacity: 0.5;
-  font-size: 16px !important;
-}
-
-.testimonial-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 4px;
-}
-
-.testimonial-name {
-  font-weight: bold;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.testimonial-rating {
-  display: flex;
-  align-items: center;
-}
-
-.testimonial-rating svg {
-  color: #d38236;
-  font-size: 12px !important;
-  margin-left: 1px;
-}
-
 /* Chat Button & Notification Badge */
 .chat-button-container {
   position: absolute;
@@ -384,20 +316,93 @@
   100% { box-shadow: 0 0 0 0 rgba(211, 130, 54, 0); }
 }
 
-/* React Resizable Overrides */
+/* React Resizable Overrides - All Direction Handles */
 .react-resizable-handle {
+  position: absolute;
   background-color: #d38236 !important;
-  opacity: 0.0;
+  opacity: 0;
   border-radius: 2px;
-  transition: opacity 0.2s;
+  transition: opacity 0.2s, background-color 0.2s;
+  z-index: 10;
 }
 
+/* Make handles visible on hover */
 .chatbot-resizable:hover .react-resizable-handle {
   opacity: 0.3;
 }
 
 .chatbot-resizable:hover .react-resizable-handle:hover {
-  opacity: 0.7;
+  opacity: 0.8;
+  background-color: #ff9f45 !important;
+}
+
+/* Size and position all handles */
+.react-resizable-handle-sw {
+  bottom: 0;
+  left: 0;
+  cursor: sw-resize;
+  width: 12px !important;
+  height: 12px !important;
+}
+
+.react-resizable-handle-se {
+  bottom: 0;
+  right: 0;
+  cursor: se-resize;
+  width: 12px !important;
+  height: 12px !important;
+}
+
+.react-resizable-handle-nw {
+  top: 0;
+  left: 0;
+  cursor: nw-resize;
+  width: 12px !important;
+  height: 12px !important;
+}
+
+.react-resizable-handle-ne {
+  top: 0;
+  right: 0;
+  cursor: ne-resize;
+  width: 12px !important;
+  height: 12px !important;
+}
+
+.react-resizable-handle-w,
+.react-resizable-handle-e {
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px !important;
+  height: 50px !important;
+}
+
+.react-resizable-handle-w {
+  left: 0;
+  cursor: w-resize;
+}
+
+.react-resizable-handle-e {
+  right: 0;
+  cursor: e-resize;
+}
+
+.react-resizable-handle-n,
+.react-resizable-handle-s {
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50px !important;
+  height: 8px !important;
+}
+
+.react-resizable-handle-n {
+  top: 0;
+  cursor: n-resize;
+}
+
+.react-resizable-handle-s {
+  bottom: 0;
+  cursor: s-resize;
 }
 
 /* Scrollbar styling */
@@ -426,9 +431,5 @@
   
   .chatbot-minimized-header {
     width: 100% !important;
-  }
-  
-  .testimonial-item {
-    min-width: 220px;
   }
 }
