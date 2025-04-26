@@ -6,6 +6,8 @@ import Footer from './components/Footer';
 import Home from './pages/Home';
 import ReservationsPage from './pages/Reservations';
 import MenuPage from './pages/Menu';
+import Chatbot from './components/Chatbot.tsx';
+import './index.css';
 
 // Dummy components for other pages
 const Menu = () => <div><MenuPage/></div>;
@@ -27,6 +29,7 @@ const App: React.FC = () => {
         <Route path="/feedback" element={<Feedback />} />
       </Routes>
       <Footer />
+      <Chatbot />
     </>
   );
 };
