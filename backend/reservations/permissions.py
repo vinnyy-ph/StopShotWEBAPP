@@ -6,10 +6,11 @@ class IsOwnerOrAdmin(permissions.BasePermission):
     Assumes the user model has an 'is_admin_level' property or similar check.
     """
     def has_object_permission(self, request, view, obj):
+  
         if not request.user or not request.user.is_authenticated:
             return False
 
-        is_admin = getattr(request.user, 'is_admin_level', False)
-        if is_admin:
+        if request.user.is_staff:
             return True
+ 
         return obj.user == request.user 

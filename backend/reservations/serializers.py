@@ -11,7 +11,7 @@ class RoomSerializer(serializers.ModelSerializer):
 class BasicUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'name'] 
+        fields = ['id', 'username', 'email']
 
 class CreateReservationSerializer(serializers.ModelSerializer):
  
@@ -19,7 +19,7 @@ class CreateReservationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reservation
         fields = [
-            # 'user', # Removed - set in view
+
             'guest_name',
             'guest_phone',
             'reservation_date',

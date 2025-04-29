@@ -30,19 +30,24 @@ class ReservationViewSet(viewsets.ModelViewSet):
         """ Filter reservations based on user role. """
         user = self.request.user
 
-        if hasattr(user, 'is_admin_level') and user.is_admin_level:
+        if user.is_authenticated and user.is_staff:
             return Reservation.objects.all() 
-        return Reservation.objects.filter(user=user) 
+        elif user.is_authenticated:
+            return Reservation.objects.filter(user=user) 
+        else:
+             return Reservation.objects.none() 
 
     def get_serializer_class(self):
         """ Return appropriate serializer based on action and user role. """
         user = self.request.user
-        is_admin = hasattr(user, 'is_admin_level') and user.is_admin_level
+    
+        is_admin = user.is_authenticated and user.is_staff
 
         if self.action == 'create':
             return CreateReservationSerializer
         elif self.action in ['update', 'partial_update'] and is_admin:
             return AdminReservationUpdateSerializer
+    
         return ViewReservationSerializer
 
     def get_permissions(self):
