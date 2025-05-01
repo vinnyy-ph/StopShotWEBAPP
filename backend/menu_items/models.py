@@ -2,10 +2,10 @@ from django.db import models
 
 class Menu(models.Model):
     menu_id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, blank=True)
     description = models.TextField(blank=True)
-    price = models.DecimalField(max_digits=8, decimal_places=2)
-    category = models.CharField(max_length=100)
+    price = models.DecimalField(max_digits=8, decimal_places=2, blank=True)
+    category = models.CharField(max_length=100, blank=True)
     is_available = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
