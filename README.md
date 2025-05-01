@@ -23,3 +23,15 @@
 1. 'python manage.py createsuperuser'
 2. Fill up all the fields and make sure to remember your Credentials
 2. Note: use the email as your username for logging into the Django Admin Interface
+
+
+# BACKEND SETUP FOR MENU ITEMS
+1. RUN MIGRATIONS IN DJANGO
+2. OPEN ANY API TESTING PLATFORM YOU PREFER.
+3. CREATE A AN HTTP POST REQUEST
+4. SET THE API ENDPOINT TO 'http://127.0.0.1:8000/api/menus/bulk-create/'
+5. SET THE BODY STRUCTURE TO JSON
+6. PASTE THE JSON DATA FOR MENU ITEMS
+7. SEND THE REQUEST
+
+
