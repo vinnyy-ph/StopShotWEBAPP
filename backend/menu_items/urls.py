@@ -2,21 +2,22 @@
 
 from django.urls import path
 from .views import (
-    MenuListCreateView, MenuRetrieveUpdateDestroyView,
-    PromotionListCreateView, PromotionRetrieveUpdateDestroyView,
-    MenuPromotionLinkListCreateView, MenuPromotionLinkRetrieveUpdateDestroyView,
+    MenuListCreateAPIView, MenuRetrieveUpdateDeleteAPIView, MenuBulkCreateView,
+    PromotionListCreateAPIView, PromotionRetrieveUpdateDeleteAPIView,
+    PromotionMenuLinkCreateAPIView, PromotionMenuLinkListAPIView,
 )
 
 urlpatterns = [
     # Menu URLs
-    path('menus/', MenuListCreateView.as_view(), name='menu-list-create'),
-    path('menus/<int:pk>/', MenuRetrieveUpdateDestroyView.as_view(), name='menu-detail'),
+    path('menus/', MenuListCreateAPIView.as_view(), name='menu-list-create'),
+    path('menus/<int:pk>/', MenuRetrieveUpdateDeleteAPIView.as_view(), name='menu-detail'),
+    path('menus/bulk-create/', MenuBulkCreateView.as_view(), name='menu-bulk-create'),
 
     # Promotion URLs
-    path('promotions/', PromotionListCreateView.as_view(), name='promotion-list-create'),
-    path('promotions/<int:pk>/', PromotionRetrieveUpdateDestroyView.as_view(), name='promotion-detail'),
+    path('promotions/', PromotionListCreateAPIView.as_view(), name='promotion-list-create'),
+    path('promotions/<int:pk>/', PromotionRetrieveUpdateDeleteAPIView.as_view(), name='promotion-detail'),
 
     # MenuPromotionLink (junction table) URLs
-    path('promotion-links/', MenuPromotionLinkListCreateView.as_view(), name='promotion-link-list-create'),
-    path('promotion-links/<int:pk>/', MenuPromotionLinkRetrieveUpdateDestroyView.as_view(), name='promotion-link-detail'),
+    path('promotion-links/', PromotionMenuLinkCreateAPIView.as_view(), name='promotion-link-list-create'),
+    path('promotion-links/<int:pk>/', PromotionMenuLinkListAPIView.as_view(), name='promotion-link-detail'),
 ]

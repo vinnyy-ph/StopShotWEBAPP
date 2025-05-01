@@ -18,6 +18,14 @@ class MenuRetrieveUpdateDeleteAPIView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = MenuSerializer
     lookup_field = 'pk'  # pk = menu_id
 
+class MenuBulkCreateView(APIView):
+    def post(self, request):
+        serializer = MenuSerializer(data=request.data, many=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 # -------- PROMOTION --------
 

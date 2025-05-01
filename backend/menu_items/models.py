@@ -3,7 +3,7 @@ from django.db import models
 class Menu(models.Model):
     menu_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
-    description = models.TextField()
+    description = models.TextField(blank=True)
     price = models.DecimalField(max_digits=8, decimal_places=2)
     category = models.CharField(max_length=100)
     is_available = models.BooleanField(default=True)
@@ -41,9 +41,6 @@ class MenuPromotionsJunction(models.Model):
     mpj_id = models.AutoField(primary_key=True)
     promotion_id = models.ForeignKey(MenuPromotion, on_delete=models.CASCADE)
     menu_id = models.ForeignKey(Menu, on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = ('promotion', 'menu')
 
     def __str__(self):
         return f"{self.menu.name} - {self.promotion.promo_code}"
