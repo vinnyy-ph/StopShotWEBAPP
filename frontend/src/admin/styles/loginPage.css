@@ -216,3 +216,18 @@
       font-size: 1.8rem !important;
     }
   }
+
+  .forgot-password-link {
+    text-align: center;
+    margin-top: 0.5rem !important;
+    color: rgba(211, 130, 54, 0.8) !important;
+    text-decoration: none !important;
+    font-size: 0.9rem !important;
+    transition: color 0.3s ease !important;
+  }
+  
+  .forgot-password-link:hover {
+    color: #d38236 !important;
+    text-decoration: underline !important;
+  }
+  

@@ -8,15 +8,15 @@ import {
   Button,
   IconButton,
   Paper,
-  Chip,
+  // Chip,
   FormControl,
-  InputLabel,
+  // InputLabel,
   Select,
   MenuItem,
   InputAdornment,
-  Divider
+  // Divider
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
+// import CloseIcon from '@mui/icons-material/Close';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import GroupIcon from '@mui/icons-material/Group';
@@ -61,9 +61,9 @@ const ReservationsPage: React.FC = () => {
   // Calculate blank spaces at the beginning of the month to align days properly
   const blankDays = Array.from({ length: firstDayOfMonth }, (_, i) => i);
 
-  const handleClose = () => {
-    // Future logic to close modal/page
-  };
+  // const handleClose = () => {
+  //   // Future logic to close modal/page
+  // };
 
   const handlePrevMonth = () => {
     setCurrentMonth(prev => (prev === 0 ? 11 : prev - 1));

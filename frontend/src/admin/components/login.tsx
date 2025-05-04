@@ -9,7 +9,8 @@ import {
   InputAdornment, 
   IconButton,
   Snackbar,
-  Alert
+  Alert,
+  Link
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
@@ -25,6 +26,7 @@ const AdminLogin: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
   const [lockTimer, setLockTimer] = useState(0);
@@ -82,6 +84,16 @@ const AdminLogin: React.FC = () => {
 
   const handleCloseAlert = () => {
     setError('');
+    setMessage('');
+  };
+  
+  const handleForgotPassword = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (username) {
+      setMessage(`Password reset instructions sent to email associated with username: ${username}`);
+    } else {
+      setMessage('Please enter your username first');
+    }
   };
   
   return (
@@ -191,6 +203,15 @@ const AdminLogin: React.FC = () => {
                 </Button>
               )}
               
+              <Link
+                component="button"
+                variant="body2"
+                onClick={handleForgotPassword}
+                className="forgot-password-link"
+              >
+                Forgot Password?
+              </Link>
+              
               <Typography variant="caption" className="login-hint">
                 Default credentials: admin / admin
               </Typography>
@@ -202,6 +223,12 @@ const AdminLogin: React.FC = () => {
       <Snackbar open={!!error} autoHideDuration={6000} onClose={handleCloseAlert}>
         <Alert severity="error" onClose={handleCloseAlert}>
           {error}
+        </Alert>
+      </Snackbar>
+      
+      <Snackbar open={!!message} autoHideDuration={6000} onClose={handleCloseAlert}>
+        <Alert severity="info" onClose={handleCloseAlert}>
+          {message}
         </Alert>
       </Snackbar>
       
