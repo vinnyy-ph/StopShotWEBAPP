@@ -302,7 +302,7 @@ const Chatbot: React.FC = () => {
           bounds="parent"
           position={hasDragged ? position : undefined}
           defaultPosition={{ x: 0, y: 0 }}
-          onStop={handleDragStop}
+          onStop={handleDragStop} 
           cancel=".react-resizable-handle"
         >
           <Box

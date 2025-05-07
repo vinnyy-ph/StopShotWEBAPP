@@ -7,4 +7,4 @@ router.register(r'reservations', ReservationViewSet, basename='reservation')
 
 urlpatterns = [
     path('', include(router.urls)),
-] 
+]

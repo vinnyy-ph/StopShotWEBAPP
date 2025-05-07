@@ -42,10 +42,12 @@ INSTALLED_APPS = [
     'user_management',
     'reservations',
     'django_filters',
-    'menu_items'
+    'menu_items',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -83,7 +85,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'stopshop_db',
         'USER': 'root',
-        'PASSWORD': '123',
+        'PASSWORD': '',
         'HOST': 'localhost',
         'PORT': '3306',  # Modify the port depenede sa xamp setup
         'OPTIONS': {
@@ -152,3 +154,6 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'stopshopsportsbar@gmail.com'
 EMAIL_HOST_PASSWORD = 'zgaddslnoksqchua'
+
+# CORS settings
+CORS_ALLOW_ALL_ORIGINS = True  # For development only, restrict in production

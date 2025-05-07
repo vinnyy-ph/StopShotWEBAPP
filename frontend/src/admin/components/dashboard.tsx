@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { 
   Box, 
   Drawer, 
@@ -37,9 +38,12 @@ import {
   Rating,
   CircularProgress,
   Switch,
-  FormControlLabel
+  FormControlLabel,
+  Alert,
+  Snackbar
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../../context/AuthContext'; // You may need to create this if it doesn't exist
 
 // Icons
 import MenuIcon from '@mui/icons-material/Menu';
@@ -65,7 +69,7 @@ import SportsBarIcon from '@mui/icons-material/SportsBar';
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WorkIcon from '@mui/icons-material/Work';
-// import CancelIcon from '@mui/icons-material/Cancel';
+import CancelIcon from '@mui/icons-material/Cancel';
 
 // Charts
 import {
@@ -96,6 +100,27 @@ ChartJS.register(
 
 // Import CSS
 import '../styles/dashboard.css';
+
+// Define API base URL
+const API_BASE_URL = 'http://127.0.0.1:8000/api';
+
+// Interface for reservation data structure
+interface Reservation {
+  id: number;
+  guest_name: string;
+  reservation_date: string;
+  reservation_time: string;
+  number_of_guests: number;
+  room?: {
+    room_name: string;
+  };
+  status: string;
+  status_display?: string;
+  guest_phone: string;
+  special_requests?: string;
+  created_at?: string;
+  updated_at?: string;
+}
 
 // Mock data (unchanged)
 const mockReservationsData = [
@@ -175,6 +200,15 @@ const mockEmployeesData = [
 const drawerWidth = 260;
 
 const AdminDashboard: React.FC = () => {
+  const { authToken } = useAuth(); // Get the authentication token
+  const axiosInstance = axios.create({
+    baseURL: API_BASE_URL,
+    headers: {
+      'Authorization': `Token ${authToken}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  
   const [mobileOpen, setMobileOpen] = useState(false);
   const [selectedSection, setSelectedSection] = useState('dashboard');
   const [loading, setLoading] = useState<boolean>(true);
@@ -188,7 +222,14 @@ const AdminDashboard: React.FC = () => {
   const [responseText, setResponseText] = useState('');
 
   // CRUD State Management
-  const [reservations, setReservations] = useState([...mockReservationsData]);
+  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [reservationLoading, setReservationLoading] = useState<boolean>(true);
+  const [reservationError, setReservationError] = useState<string | null>(null);
+  const [snackbar, setSnackbar] = useState<{open: boolean, message: string, severity: 'success' | 'error' | 'info'}>({
+    open: false,
+    message: '',
+    severity: 'info'
+  });
   const [feedback, setFeedback] = useState([...mockFeedbackData]);
   const [employees, setEmployees] = useState([...mockEmployeesData]);
 
@@ -204,12 +245,13 @@ const AdminDashboard: React.FC = () => {
 
   // Form states for new items
   const [newReservation, setNewReservation] = useState({
-    name: '',
-    date: '',
-    time: '',
-    guests: 1,
-    tableType: 'Regular',
-    status: 'pending'
+    guest_name: '',
+    guest_phone: '',
+    reservation_date: '',
+    reservation_time: '',
+    number_of_guests: 1,
+    special_requests: '',
+    status: 'PENDING'
   });
   
   const [newEmployee, setNewEmployee] = useState({
@@ -271,37 +313,57 @@ const AdminDashboard: React.FC = () => {
   };
 
   // CRUD Operations for Reservations
-  const handleAddReservation = () => {
-    const reservation = {
-      id: reservations.length + 1,
-      ...newReservation
-    };
-    setReservations([...reservations, reservation]);
-    setAddReservationDialog(false);
-    setNewReservation({
-      name: '',
-      date: '',
-      time: '',
-      guests: 1,
-      tableType: 'Regular',
-      status: 'pending'
-    });
+  const handleAddReservation = async () => {
+    try {
+      const response = await axiosInstance.post('/reservations/', newReservation);
+      setReservations([...reservations, response.data]);
+      setAddReservationDialog(false);
+      setNewReservation({
+        guest_name: '',
+        guest_phone: '',
+        reservation_date: '',
+        reservation_time: '',
+        number_of_guests: 1,
+        special_requests: '',
+        status: 'PENDING'
+      });
+    } catch (error) {
+      console.error('Error creating reservation:', error);
+      alert('Failed to create reservation. Please try again.');
+    }
   };
 
-  const handleUpdateReservation = () => {
+  const handleUpdateReservation = async () => {
     if (!selectedReservation) return;
     
-    const updatedReservations = reservations.map(res => 
-      res.id === selectedReservation.id ? selectedReservation : res
-    );
-    setReservations(updatedReservations);
-    setReservationDialog(false);
-    setEditMode(false);
+    try {
+      const { id, ...updateData } = selectedReservation;
+      await axiosInstance.patch(`/reservations/${id}/`, updateData);
+      
+      // Update local state
+      const updatedReservations = reservations.map(res => 
+        res.id === selectedReservation.id ? selectedReservation : res
+      );
+      setReservations(updatedReservations);
+      setReservationDialog(false);
+      setEditMode(false);
+    } catch (error) {
+      console.error('Error updating reservation:', error);
+      alert('Failed to update reservation. Please try again.');
+    }
   };
 
-  const handleDeleteReservation = (id: number) => {
-    const updatedReservations = reservations.filter(res => res.id !== id);
-    setReservations(updatedReservations);
+  const handleDeleteReservation = async (id: number) => {
+    if (window.confirm('Are you sure you want to delete this reservation?')) {
+      try {
+        await axiosInstance.delete(`/reservations/${id}/`);
+        const updatedReservations = reservations.filter(res => res.id !== id);
+        setReservations(updatedReservations);
+      } catch (error) {
+        console.error('Error deleting reservation:', error);
+        alert('Failed to delete reservation. Please try again.');
+      }
+    }
   };
 
   // CRUD Operations for Feedback
@@ -366,11 +428,11 @@ const AdminDashboard: React.FC = () => {
     setEmployees(updatedEmployees);
   };
 
-  // Filter using the state variables instead of mock data
+  // Filter using the API data for reservations
   const filteredReservations = reservations.filter(res => 
-    res.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    res.date.includes(searchQuery) ||
-    res.tableType.toLowerCase().includes(searchQuery.toLowerCase())
+    res.guest_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    res.reservation_date.includes(searchQuery) ||
+    (res.room?.room_name?.toLowerCase() || '').includes(searchQuery.toLowerCase())
   );
 
   const filteredFeedback = feedback.filter(feedback =>
@@ -710,17 +772,17 @@ const AdminDashboard: React.FC = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {mockReservationsData.slice(0, 4).map((row) => (
+                    {reservations.slice(0, 5).map((row) => (
                       <TableRow key={row.id} className="table-row">
-                        <TableCell>{row.name}</TableCell>
-                        <TableCell>{row.date}</TableCell>
-                        <TableCell>{row.time}</TableCell>
-                        <TableCell>{row.guests}</TableCell>
+                        <TableCell>{row.guest_name}</TableCell>
+                        <TableCell>{row.reservation_date}</TableCell>
+                        <TableCell>{row.reservation_time}</TableCell>
+                        <TableCell>{row.number_of_guests}</TableCell>
                         <TableCell>
                           <Chip 
-                            label={row.status} 
+                            label={row.status_display || row.status} 
                             size="small"
-                            className={`status-chip ${row.status}`}
+                            className={`status-chip ${row.status.toLowerCase()}`}
                           />
                         </TableCell>
                       </TableRow>
@@ -778,29 +840,30 @@ const AdminDashboard: React.FC = () => {
       >
         <Paper className="content-paper">
           <Box className="content-header">
-            <Typography variant="h5" className="content-title">Reservations</Typography>
+            <Typography variant="h5" className="content-title">
+              Manage Reservations
+            </Typography>
+            
             <Box className="content-actions">
               <TextField
+                placeholder="Search reservations..."
+                variant="outlined"
                 size="small"
-                placeholder="Search reservations"
                 value={searchQuery}
                 onChange={handleSearch}
                 className="search-field"
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <SearchIcon className="search-icon" />
+                      <SearchIcon />
                     </InputAdornment>
                   ),
                 }}
               />
-              <IconButton size="small" className="filter-btn">
-                <TuneIcon />
-              </IconButton>
               <Button 
                 variant="contained" 
-                startIcon={<AddIcon />}
-                className="add-btn"
+                startIcon={<AddIcon />} 
+                className="add-button"
                 onClick={() => setAddReservationDialog(true)}
               >
                 Add New
@@ -819,57 +882,72 @@ const AdminDashboard: React.FC = () => {
             <Tab label="Cancelled" />
           </Tabs>
 
-          <TableContainer className="table-container">
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>ID</TableCell>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Date</TableCell>
-                  <TableCell>Time</TableCell>
-                  <TableCell>Guests</TableCell>
-                  <TableCell>Table Type</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell align="right">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredReservations.map((row) => (
-                  <TableRow key={row.id} className="table-row">
-                    <TableCell>{row.id}</TableCell>
-                    <TableCell>{row.name}</TableCell>
-                    <TableCell>{row.date}</TableCell>
-                    <TableCell>{row.time}</TableCell>
-                    <TableCell>{row.guests}</TableCell>
-                    <TableCell>{row.tableType}</TableCell>
-                    <TableCell>
-                      <Chip 
-                        label={row.status} 
-                        size="small"
-                        className={`status-chip ${row.status}`}
-                      />
-                    </TableCell>
-                    <TableCell align="right">
-                      <IconButton 
-                        size="small" 
-                        className="action-btn view-btn"
-                        onClick={() => handleOpenReservationDialog(row)}
-                      >
-                        <VisibilityIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton 
-                        size="small" 
-                        className="action-btn delete-btn"
-                        onClick={() => handleDeleteReservation(row.id)}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </TableCell>
+          {reservationLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+              <CircularProgress />
+            </Box>
+          ) : reservationError ? (
+            <Alert severity="error" sx={{ m: 2 }}>{reservationError}</Alert>
+          ) : (
+            <TableContainer className="table-container">
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>ID</TableCell>
+                    <TableCell>Name</TableCell>
+                    <TableCell>Date</TableCell>
+                    <TableCell>Time</TableCell>
+                    <TableCell>Guests</TableCell>
+                    <TableCell>Table Type</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell align="right">Actions</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {filteredReservations.map((row) => (
+                    <TableRow key={row.id} className="table-row">
+                      <TableCell>{row.id}</TableCell>
+                      <TableCell>{row.guest_name}</TableCell>
+                      <TableCell>{row.reservation_date}</TableCell>
+                      <TableCell>{row.reservation_time}</TableCell>
+                      <TableCell>{row.number_of_guests}</TableCell>
+                      <TableCell>{row.room?.room_name || 'Unassigned'}</TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={row.status_display || row.status} 
+                          className={`status-chip ${row.status.toLowerCase()}`}
+                        />
+                      </TableCell>
+                      <TableCell align="right" className="action-cell">
+                        <IconButton size="small" onClick={() => handleOpenReservationDialog(row)}>
+                          <VisibilityIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton 
+                          size="small" 
+                          onClick={() => handleStatusChange(row.id, 'CONFIRMED')}
+                          disabled={row.status === 'CONFIRMED'}
+                          className="confirm-button"
+                        >
+                          <CheckCircleIcon fontSize="small" style={{ color: row.status === 'CONFIRMED' ? '#4caf50' : '#aaa' }} />
+                        </IconButton>
+                        <IconButton 
+                          size="small" 
+                          onClick={() => handleStatusChange(row.id, 'CANCELLED')}
+                          disabled={row.status === 'CANCELLED'}
+                          className="cancel-button"
+                        >
+                          <CancelIcon fontSize="small" style={{ color: row.status === 'CANCELLED' ? '#f44336' : '#aaa' }} />
+                        </IconButton>
+                        <IconButton size="small" onClick={() => handleDeleteReservation(row.id)}>
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
         </Paper>
         
         <Dialog
@@ -896,10 +974,21 @@ const AdminDashboard: React.FC = () => {
                       <TextField
                         label="Customer Name"
                         fullWidth
-                        value={selectedReservation.name}
+                        value={selectedReservation.guest_name}
                         onChange={(e) => setSelectedReservation({
                           ...selectedReservation,
-                          name: e.target.value
+                          guest_name: e.target.value
+                        })}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label="Phone"
+                        fullWidth
+                        value={selectedReservation.guest_phone}
+                        onChange={(e) => setSelectedReservation({
+                          ...selectedReservation,
+                          guest_phone: e.target.value
                         })}
                       />
                     </Grid>
@@ -908,10 +997,10 @@ const AdminDashboard: React.FC = () => {
                         label="Date"
                         type="date"
                         fullWidth
-                        value={selectedReservation.date}
+                        value={selectedReservation.reservation_date}
                         onChange={(e) => setSelectedReservation({
                           ...selectedReservation,
-                          date: e.target.value
+                          reservation_date: e.target.value
                         })}
                         InputLabelProps={{ shrink: true }}
                       />
@@ -921,10 +1010,10 @@ const AdminDashboard: React.FC = () => {
                         label="Time"
                         type="time"
                         fullWidth
-                        value={selectedReservation.time}
+                        value={selectedReservation.reservation_time}
                         onChange={(e) => setSelectedReservation({
                           ...selectedReservation,
-                          time: e.target.value
+                          reservation_time: e.target.value
                         })}
                         InputLabelProps={{ shrink: true }}
                       />
@@ -934,21 +1023,10 @@ const AdminDashboard: React.FC = () => {
                         label="Number of Guests"
                         type="number"
                         fullWidth
-                        value={selectedReservation.guests}
+                        value={selectedReservation.number_of_guests}
                         onChange={(e) => setSelectedReservation({
                           ...selectedReservation,
-                          guests: parseInt(e.target.value)
-                        })}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        label="Table Type"
-                        fullWidth
-                        value={selectedReservation.tableType}
-                        onChange={(e) => setSelectedReservation({
-                          ...selectedReservation,
-                          tableType: e.target.value
+                          number_of_guests: parseInt(e.target.value)
                         })}
                       />
                     </Grid>
@@ -963,17 +1041,34 @@ const AdminDashboard: React.FC = () => {
                           status: e.target.value
                         })}
                       >
-                        <MenuItem value="confirmed">Confirmed</MenuItem>
-                        <MenuItem value="pending">Pending</MenuItem>
-                        <MenuItem value="cancelled">Cancelled</MenuItem>
+                        <MenuItem value="PENDING">Pending</MenuItem>
+                        <MenuItem value="CONFIRMED">Confirmed</MenuItem>
+                        <MenuItem value="CANCELLED">Cancelled</MenuItem>
                       </TextField>
+                    </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        label="Special Requests"
+                        fullWidth
+                        multiline
+                        rows={3}
+                        value={selectedReservation.special_requests || ''}
+                        onChange={(e) => setSelectedReservation({
+                          ...selectedReservation,
+                          special_requests: e.target.value
+                        })}
+                      />
                     </Grid>
                   </Grid>
                 ) : (
                   <Grid container spacing={2}>
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle2">Customer Name</Typography>
+                      <Typography variant="body1" className="detail-value">{selectedReservation.guest_name}</Typography>
+                    </Grid>
                     <Grid item xs={12} sm={6}>
-                      <Typography variant="subtitle2">Customer</Typography>
-                      <Typography variant="body1" className="detail-value">{selectedReservation.name}</Typography>
+                      <Typography variant="subtitle2">Phone</Typography>
+                      <Typography variant="body1" className="detail-value">{selectedReservation.guest_phone}</Typography>
                     </Grid>
                     <Grid item xs={12} sm={6}>
                       <Typography variant="subtitle2">Reservation ID</Typography>
@@ -981,26 +1076,36 @@ const AdminDashboard: React.FC = () => {
                     </Grid>
                     <Grid item xs={12} sm={6}>
                       <Typography variant="subtitle2">Date</Typography>
-                      <Typography variant="body1" className="detail-value">{selectedReservation.date}</Typography>
+                      <Typography variant="body1" className="detail-value">{selectedReservation.reservation_date}</Typography>
                     </Grid>
                     <Grid item xs={12} sm={6}>
                       <Typography variant="subtitle2">Time</Typography>
-                      <Typography variant="body1" className="detail-value">{selectedReservation.time}</Typography>
+                      <Typography variant="body1" className="detail-value">{selectedReservation.reservation_time}</Typography>
                     </Grid>
                     <Grid item xs={12} sm={6}>
                       <Typography variant="subtitle2">Number of Guests</Typography>
-                      <Typography variant="body1" className="detail-value">{selectedReservation.guests}</Typography>
+                      <Typography variant="body1" className="detail-value">{selectedReservation.number_of_guests}</Typography>
                     </Grid>
                     <Grid item xs={12} sm={6}>
                       <Typography variant="subtitle2">Table Type</Typography>
-                      <Typography variant="body1" className="detail-value">{selectedReservation.tableType}</Typography>
+                      <Typography variant="body1" className="detail-value">{selectedReservation.room?.room_name || 'Unassigned'}</Typography>
                     </Grid>
                     <Grid item xs={12}>
                       <Typography variant="subtitle2">Status</Typography>
                       <Chip 
-                        label={selectedReservation.status} 
-                        className={`status-chip ${selectedReservation.status}`}
+                        label={selectedReservation.status_display || selectedReservation.status} 
+                        className={`status-chip ${selectedReservation.status.toLowerCase()}`}
                       />
+                    </Grid>
+                    {selectedReservation.special_requests && (
+                      <Grid item xs={12}>
+                        <Typography variant="subtitle2">Special Requests</Typography>
+                        <Typography variant="body1" className="detail-value">{selectedReservation.special_requests}</Typography>
+                      </Grid>
+                    )}
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle2">Created At</Typography>
+                      <Typography variant="body1" className="detail-value">{new Date(selectedReservation.created_at || '').toLocaleString()}</Typography>
                     </Grid>
                   </Grid>
                 )}
@@ -1055,8 +1160,18 @@ const AdminDashboard: React.FC = () => {
                 <TextField
                   label="Customer Name"
                   fullWidth
-                  value={newReservation.name}
-                  onChange={(e) => setNewReservation({ ...newReservation, name: e.target.value })}
+                  value={newReservation.guest_name}
+                  onChange={(e) => setNewReservation({ ...newReservation, guest_name: e.target.value })}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Phone Number"
+                  fullWidth
+                  value={newReservation.guest_phone}
+                  onChange={(e) => setNewReservation({ ...newReservation, guest_phone: e.target.value })}
+                  required
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -1064,9 +1179,10 @@ const AdminDashboard: React.FC = () => {
                   label="Date"
                   type="date"
                   fullWidth
-                  value={newReservation.date}
-                  onChange={(e) => setNewReservation({ ...newReservation, date: e.target.value })}
+                  value={newReservation.reservation_date}
+                  onChange={(e) => setNewReservation({ ...newReservation, reservation_date: e.target.value })}
                   InputLabelProps={{ shrink: true }}
+                  required
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -1074,9 +1190,10 @@ const AdminDashboard: React.FC = () => {
                   label="Time"
                   type="time"
                   fullWidth
-                  value={newReservation.time}
-                  onChange={(e) => setNewReservation({ ...newReservation, time: e.target.value })}
+                  value={newReservation.reservation_time}
+                  onChange={(e) => setNewReservation({ ...newReservation, reservation_time: e.target.value })}
                   InputLabelProps={{ shrink: true }}
+                  required
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -1084,24 +1201,34 @@ const AdminDashboard: React.FC = () => {
                   label="Number of Guests"
                   type="number"
                   fullWidth
-                  value={newReservation.guests}
-                  onChange={(e) => setNewReservation({ ...newReservation, guests: parseInt(e.target.value) })}
+                  value={newReservation.number_of_guests}
+                  onChange={(e) => setNewReservation({ ...newReservation, number_of_guests: parseInt(e.target.value) })}
+                  InputProps={{
+                    inputProps: { min: 1 }
+                  }}
+                  required
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField
-                  label="Table Type"
-                  fullWidth
-                  value={newReservation.tableType}
-                  onChange={(e) => setNewReservation({ ...newReservation, tableType: e.target.value })}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
                   label="Status"
+                  select
                   fullWidth
                   value={newReservation.status}
                   onChange={(e) => setNewReservation({ ...newReservation, status: e.target.value })}
+                >
+                  <MenuItem value="PENDING">Pending</MenuItem>
+                  <MenuItem value="CONFIRMED">Confirmed</MenuItem>
+                </TextField>
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Special Requests"
+                  fullWidth
+                  multiline
+                  rows={3}
+                  value={newReservation.special_requests}
+                  onChange={(e) => setNewReservation({ ...newReservation, special_requests: e.target.value })}
                 />
               </Grid>
             </Grid>
@@ -1122,6 +1249,7 @@ const AdminDashboard: React.FC = () => {
             </Button>
           </DialogActions>
         </Dialog>
+        
       </motion.div>
     </AnimatePresence>
   );
@@ -1990,6 +2118,60 @@ const AdminDashboard: React.FC = () => {
         return renderSettings();
       default:
         return renderDashboard();
+    }
+  };
+
+  // Replace the existing fetchReservations function
+  const fetchReservations = async () => {
+    setReservationLoading(true);
+    setReservationError(null);
+    try {
+      const response = await axiosInstance.get('/reservations/');
+      console.log('Reservation data:', response.data);
+      setReservations(response.data);
+      setReservationLoading(false);
+    } catch (error) {
+      console.error('Error fetching reservations:', error);
+      setReservationError('Failed to load reservations. Please try again.');
+      setReservationLoading(false);
+    }
+  };
+
+  // Add this to useEffect
+  useEffect(() => {
+    if (authToken) {
+      fetchReservations();
+    }
+  }, [authToken]); // Fetch when auth token is available
+
+  // Add this function to your component
+  const handleStatusChange = async (id: number, newStatus: string) => {
+    try {
+      await axiosInstance.patch(`/reservations/${id}/`, {
+        status: newStatus
+      });
+      
+      // Update local state
+      const updatedReservations = reservations.map(res => 
+        res.id === id ? {...res, status: newStatus, status_display: getStatusDisplay(newStatus)} : res
+      );
+      setReservations(updatedReservations);
+      
+      // Show notification
+      alert(`Reservation status updated to ${getStatusDisplay(newStatus)}`);
+    } catch (error) {
+      console.error('Error updating status:', error);
+      alert('Failed to update reservation status. Please try again.');
+    }
+  };
+
+  // Helper function to get display text for statuses
+  const getStatusDisplay = (status: string): string => {
+    switch(status) {
+      case 'PENDING': return 'Pending';
+      case 'CONFIRMED': return 'Confirmed';
+      case 'CANCELLED': return 'Cancelled';
+      default: return status;
     }
   };
 

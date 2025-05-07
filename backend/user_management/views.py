@@ -20,7 +20,7 @@ class TestAuthenticatedView(APIView):
 
 class LoginView(APIView):
     def post(self, request):
-        email = request.data.get('email')
+        email = request.data.get('username') or request.data.get('email')
         password = request.data.get('password')
 
         user = authenticate(request, username=email, password=password)

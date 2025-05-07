@@ -20,7 +20,10 @@ import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import SportsBasketballIcon from '@mui/icons-material/SportsBasketball';
 import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
 import '../styles/loginPage.css';
-
+import { useAuth } from '../../context/AuthContext';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+const API_BASE_URL = 'http://127.0.0.1:8000/api';
 const AdminLogin: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -31,6 +34,8 @@ const AdminLogin: React.FC = () => {
   const [isLocked, setIsLocked] = useState(false);
   const [lockTimer, setLockTimer] = useState(0);
   const [logoPosition, setLogoPosition] = useState({ x: 0, y: 0 });
+  const { setAuthToken, setUserRole } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -63,16 +68,36 @@ const AdminLogin: React.FC = () => {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (isLocked) return;
     
-    if (username === 'admin' && password === 'admin') {
-      // Redirect to dashboard or set auth state
-      window.location.href = '/admin/dashboard';
-    } else {
-      setError('Invalid username or password');
+    try {
+      // If your backend expects email but you want to keep the username field
+      // Either change this to match what the backend expects
+      const response = await axios.post(`${API_BASE_URL}/auth/login/`, {
+        email: username, // Send as email instead of username
+        password
+      });
+      
+      // Store token and user info in auth context
+      setAuthToken(response.data.token);
+      setUserRole(response.data.user.role);
+      
+      // Redirect to admin dashboard
+      navigate('/admin/dashboard');
+    } catch (error: any) {
+      console.error('Login error:', error);
+      
+      // Display more detailed error information
+      if (error.response && error.response.data) {
+        console.log('Error details:', error.response.data);
+        setError(error.response.data.error || 'Login failed. Please try again.');
+      } else {
+        setError('Cannot connect to server. Please try again later.');
+      }
+      
       setLoginAttempts(prev => prev + 1);
       
       if (loginAttempts + 1 >= 3) {
