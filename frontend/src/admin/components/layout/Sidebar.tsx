@@ -18,6 +18,7 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LogoutIcon from '@mui/icons-material/Logout';
 import SportsBasketballIcon from '@mui/icons-material/SportsBasketball';
+import RestaurantMenuIcon from '@mui/icons-material/RestaurantMenu';
 
 interface SidebarProps {
   selectedSection: string;
@@ -56,6 +57,17 @@ const Sidebar: React.FC<SidebarProps> = ({ selectedSection, onSectionChange }) =
             <BookOnlineIcon className="sidebar-icon" />
           </ListItemIcon>
           <ListItemText primary="Reservations" />
+        </ListItem>
+        <ListItem 
+          button 
+          selected={selectedSection === 'menu'}
+          onClick={() => onSectionChange('menu')}
+          className={`sidebar-item ${selectedSection === 'menu' ? 'active' : ''}`}
+        >
+          <ListItemIcon>
+            <RestaurantMenuIcon className="sidebar-icon" />
+          </ListItemIcon>
+          <ListItemText primary="Menu" />
         </ListItem>
         <ListItem 
           button 

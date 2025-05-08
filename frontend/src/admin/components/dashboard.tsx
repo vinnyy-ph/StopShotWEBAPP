@@ -5,7 +5,7 @@ import {
   Box, 
   CircularProgress, 
   Typography,
-  Menu,
+  Menu as MuiMenu,
   MenuItem,
   Toolbar,
   Drawer,
@@ -26,6 +26,7 @@ import Feedback from './sections/Feedback';
 import Employees from './sections/Employees';
 import Analytics from './sections/Analytics';
 import Settings from './sections/Settings';
+import Menu from './sections/Menu';
 
 // Import CSS
 import '../styles/dashboard.css';
@@ -49,6 +50,19 @@ export interface Reservation {
   special_requests?: string;
   created_at?: string;
   updated_at?: string;
+}
+
+// Add types for menu items (add this near the other interface definitions)
+export interface MenuItem {
+  menu_id: number;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  is_available: boolean;
+  created_at?: string;
+  updated_at?: string;
+  image_url?: string;
 }
 
 // Mock data for components
@@ -311,6 +325,45 @@ const AdminDashboard: React.FC = () => {
     return true;
   };
 
+  // In the AdminDashboard component, add these handlers
+  const handleAddMenuItem = async (menuItemData: any) => {
+    try {
+      const response = await axiosInstance.post('/menus/create', menuItemData);
+      console.log('Menu item created:', response.data);
+      return true;
+    } catch (error) {
+      console.error('Error creating menu item:', error);
+      alert('Failed to create menu item. Please try again.');
+      return false;
+    }
+  };
+
+  const handleUpdateMenuItem = async (menuItemData: any) => {
+    try {
+      const response = await axiosInstance.put(`/menus/${menuItemData.menu_id}/`, menuItemData);
+      console.log('Menu item updated:', response.data);
+      return true;
+    } catch (error) {
+      console.error('Error updating menu item:', error);
+      alert('Failed to update menu item. Please try again.');
+      return false;
+    }
+  };
+
+  const handleDeleteMenuItem = async (id: number) => {
+    if (window.confirm('Are you sure you want to delete this menu item?')) {
+      try {
+        await axiosInstance.delete(`/menus/${id}/`);
+        return true;
+      } catch (error) {
+        console.error('Error deleting menu item:', error);
+        alert('Failed to delete menu item. Please try again.');
+        return false;
+      }
+    }
+    return false;
+  };
+
   const renderContent = () => {
     if (loading) {
       return (
@@ -339,6 +392,12 @@ const AdminDashboard: React.FC = () => {
                  onUpdateReservation={handleUpdateReservation}
                  onDeleteReservation={handleDeleteReservation}
                  onStatusChange={handleStatusChange}
+               />;
+      case 'menu':
+        return <Menu 
+                 onAddMenuItem={handleAddMenuItem}
+                 onUpdateMenuItem={handleUpdateMenuItem}
+                 onDeleteMenuItem={handleDeleteMenuItem}
                />;
       case 'feedback':
         return <Feedback 
@@ -424,7 +483,7 @@ const AdminDashboard: React.FC = () => {
         </Box>
       </Box>
 
-      <Menu
+      <MuiMenu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
@@ -433,9 +492,9 @@ const AdminDashboard: React.FC = () => {
         <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
         <MenuItem onClick={handleMenuClose}>Settings</MenuItem>
         <MenuItem onClick={handleMenuClose}>Logout</MenuItem>
-      </Menu>
+      </MuiMenu>
 
-      <Menu
+      <MuiMenu
         anchorEl={notificationAnchorEl}
         open={Boolean(notificationAnchorEl)}
         onClose={handleMenuClose}
@@ -458,7 +517,7 @@ const AdminDashboard: React.FC = () => {
         <MenuItem onClick={handleMenuClose} className="notification-action">
           <Typography variant="body2" align="center">View all notifications</Typography>
         </MenuItem>
-      </Menu>
+      </MuiMenu>
     </Box>
   );
 };

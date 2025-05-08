@@ -311,7 +311,7 @@ const Footer: React.FC = () => {
       {/* Copyright */}
       <Box className="footer-copyright" sx={{ pt: 3, pb: 3, textAlign: 'center' }}>
         <Typography variant="caption" sx={{ color: '#777' }}>
-          © 2025 All Rights Reserved. Stop Shot - Mandaluyong | Powered by Lorem Ipsum
+          © 2025 All Rights Reserved. Stop Shot - Mandaluyong | Powered by BSCS 3-3 Group 4
         </Typography>
       </Box>
     </Box>
