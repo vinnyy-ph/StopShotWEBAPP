@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import {
   Box,
   Button,
-  Paper,
   Typography,
   Table,
   TableBody,
@@ -16,11 +16,9 @@ import {
   CircularProgress,
   TextField,
   InputAdornment,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem as MuiMenuItem,
-  useTheme
+  styled,
+  Tabs,
+  Tab
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -52,10 +50,119 @@ interface MenuProps {
   onDeleteMenuItem: (id: number) => Promise<boolean>;
 }
 
+// Styled components
+const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
+  backgroundColor: '#121212',
+  '& .MuiTable-root': {
+    borderCollapse: 'separate',
+    borderSpacing: '0 0',
+  },
+}));
+
+const StyledTableHeadCell = styled(TableCell)(({ theme }) => ({
+  backgroundColor: '#121212',
+  color: '#a0a0a0',
+  borderBottom: '1px solid #333',
+  fontSize: '0.75rem',
+  fontWeight: 500,
+  textTransform: 'uppercase',
+  padding: '10px 16px',
+}));
+
+const StyledTableCell = styled(TableCell)(({ theme }) => ({
+  borderBottom: '1px solid #1a1a1a',
+  color: 'white',
+  padding: '16px',
+}));
+
+const StyledTableRow = styled(TableRow)(({ theme }) => ({
+  backgroundColor: '#121212',
+  '&:hover': {
+    backgroundColor: '#1a1a1a',
+  },
+}));
+
+const StyledCategoryChip = styled(Chip)(({ theme }) => ({
+  backgroundColor: '#1e3a8a',
+  color: '#4299e1',
+  borderRadius: '16px',
+  fontWeight: 500,
+  fontSize: '0.75rem',
+  height: '24px',
+}));
+
+const StyledStatusChip = styled(Chip)(({ theme }) => ({
+  borderRadius: '16px',
+  fontWeight: 500,
+  fontSize: '0.75rem',
+  height: '24px',
+  '&.available': {
+    backgroundColor: '#1e462a',
+    color: '#48bb78',
+  },
+  '&.unavailable': {
+    backgroundColor: '#461e1e',
+    color: '#f56565',
+  }
+}));
+
+const StyledTab = styled(Tab)(({ theme }) => ({
+  color: '#a0a0a0',
+  textTransform: 'none',
+  fontSize: '0.875rem',
+  minWidth: 80,
+  '&.Mui-selected': {
+    color: 'white',
+  },
+  '&:hover': {
+    color: 'white',
+    opacity: 1,
+  },
+}));
+
+const StyledTabs = styled(Tabs)(({ theme }) => ({
+  marginBottom: 16,
+  '& .MuiTabs-indicator': {
+    backgroundColor: '#3182ce',
+  },
+}));
+
+const StyledSearchField = styled(TextField)(({ theme }) => ({
+  '& .MuiOutlinedInput-root': {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 4,
+    height: 38,
+    color: 'white',
+    '& fieldset': {
+      border: 'none'
+    },
+    '&:hover fieldset': {
+      border: 'none'
+    },
+    '&.Mui-focused fieldset': {
+      border: 'none'
+    }
+  },
+  '& .MuiInputBase-input': {
+    padding: '8px 14px'
+  }
+}));
+
+const StyledAddButton = styled(Button)(({ theme }) => ({
+  backgroundColor: '#1976d2',
+  color: 'white',
+  textTransform: 'none',
+  borderRadius: 4,
+  boxShadow: 'none',
+  '&:hover': {
+    backgroundColor: '#1565c0',
+    boxShadow: 'none',
+  }
+}));
+
 const Menu: React.FC<MenuProps> = ({ onAddMenuItem, onUpdateMenuItem, onDeleteMenuItem }) => {
   const { authToken } = useAuth();
   const API_BASE_URL = 'http://127.0.0.1:8000/api';
-  const theme = useTheme();
   
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [filteredItems, setFilteredItems] = useState<MenuItem[]>([]);
@@ -64,11 +171,10 @@ const Menu: React.FC<MenuProps> = ({ onAddMenuItem, onUpdateMenuItem, onDeleteMe
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('All Categories');
-  const [availabilityFilter, setAvailabilityFilter] = useState('all');
+  const [tabValue, setTabValue] = useState(0);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
-  const [categories, setCategories] = useState<string[]>(initialCategories);
+  const [categories, setCategories] = useState<string[]>([]);
 
   const axiosInstance = axios.create({
     baseURL: API_BASE_URL,
@@ -91,10 +197,10 @@ const Menu: React.FC<MenuProps> = ({ onAddMenuItem, onUpdateMenuItem, onDeleteMe
     }
   }, [menuItems]);
 
-  // Filter menu items when search term changes
+  // Filter menu items when search term or tab changes
   useEffect(() => {
     filterMenuItems();
-  }, [searchTerm, categoryFilter, availabilityFilter, menuItems]);
+  }, [searchTerm, tabValue, menuItems]);
 
   const fetchMenuItems = async () => {
     setLoading(true);
@@ -122,18 +228,22 @@ const Menu: React.FC<MenuProps> = ({ onAddMenuItem, onUpdateMenuItem, onDeleteMe
       );
     }
     
-    // Filter by category - use exact case-insensitive matching
-    if (categoryFilter !== 'All Categories') {
-      filtered = filtered.filter(item => 
-        item.category.toLowerCase() === categoryFilter.toLowerCase()
-      );
-    }
-    
-    // Filter by availability
-    if (availabilityFilter !== 'all') {
-      filtered = filtered.filter(item => 
-        availabilityFilter === 'available' ? item.is_available : !item.is_available
-      );
+    // Filter by tab selection
+    if (tabValue > 0) {
+      // Tab 1: All Categories (no filter)
+      // Tab 2: Available Items
+      if (tabValue === 1) {
+        filtered = filtered.filter(item => item.is_available);
+      }
+      // Tab 3: Unavailable Items
+      else if (tabValue === 2) {
+        filtered = filtered.filter(item => !item.is_available);
+      }
+      // Tab 4+: Filter by category (if available)
+      else if (categories.length > 0 && tabValue < categories.length + 2) {
+        const categoryFilter = categories[tabValue - 2];
+        filtered = filtered.filter(item => item.category === categoryFilter);
+      }
     }
     
     setFilteredItems(filtered);
@@ -147,6 +257,10 @@ const Menu: React.FC<MenuProps> = ({ onAddMenuItem, onUpdateMenuItem, onDeleteMe
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
+  };
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
   };
 
   const handleOpenAddDialog = () => {
@@ -213,273 +327,142 @@ const Menu: React.FC<MenuProps> = ({ onAddMenuItem, onUpdateMenuItem, onDeleteMe
     );
   }
 
-  // Dark mode styling with stronger values to ensure proper application
-  const darkModeStyles = {
-    paper: {
-      backgroundColor: '#1e1e1e',
-      color: '#ffffff',
-    },
-    tableRow: {
-      '&:hover': {
-        backgroundColor: 'rgba(255, 255, 255, 0.08)',
-      }
-    },
-    tableCell: {
-      color: '#ffffff',
-      borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-    },
-    tableHead: {
-      backgroundColor: '#2d2d2d',
-    },
-    input: {
-      color: '#ffffff',
-      '& .MuiOutlinedInput-notchedOutline': {
-        borderColor: 'rgba(255, 255, 255, 0.23)',
-      },
-      '&:hover .MuiOutlinedInput-notchedOutline': {
-        borderColor: 'rgba(255, 255, 255, 0.5)',
-      },
-      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-        borderColor: '#90caf9',
-      },
-      '& .MuiInputLabel-root': {
-        color: 'rgba(255, 255, 255, 0.7)',
-      },
-      '& .MuiSelect-icon': {
-        color: 'rgba(255, 255, 255, 0.7)',
-      },
-      '& .MuiInputBase-input': {
-        color: '#ffffff',
-      }
-    }
-  };
-
   return (
-    <Box sx={{ p: 2, bgcolor: '#121212', color: '#ffffff', minHeight: '100vh' }} className="menu-management">
-      <Box 
-        sx={{ 
-          display: 'flex', 
-          flexDirection: { xs: 'column', sm: 'row' },
-          justifyContent: 'space-between',
-          alignItems: { xs: 'flex-start', sm: 'center' },
-          mb: 3,
-          gap: 2
-        }}
-      >
-        <Typography variant="h5" component="h1" sx={{ fontWeight: 'bold', color: '#ffffff' }}>
+    <Box sx={{ p: 2, bgcolor: '#121212', color: 'white', minHeight: '100vh' }}>
+      {/* Header Section */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
           Menu Management
         </Typography>
         
-        <Button 
-          variant="contained" 
-          color="primary" 
-          startIcon={<AddIcon />}
-          onClick={handleOpenAddDialog}
-        >
-          Add Item
-        </Button>
-      </Box>
-
-      <Paper 
-        sx={{ 
-          width: '100%', 
-          mb: 3, 
-          p: 2, 
-          borderRadius: 2,
-          ...darkModeStyles.paper
-        }} 
-        elevation={3}
-      >
-        <Box 
-          sx={{ 
-            display: 'flex', 
-            flexDirection: { xs: 'column', md: 'row' }, 
-            gap: 2, 
-            mb: 2 
-          }}
-        >
-          <TextField 
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <StyledSearchField
             placeholder="Search menu items..."
-            variant="outlined"
             size="small"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            sx={{ 
-              flexGrow: 1,
-              '& .MuiOutlinedInput-root': darkModeStyles.input,
-              '& .MuiInputLabel-root': { color: '#ffffff' },
-              '& .MuiInputAdornment-root': { color: '#ffffff' }
-            }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon sx={{ color: '#ffffff' }} />
+                  <SearchIcon sx={{ color: '#a0a0a0' }} />
                 </InputAdornment>
               ),
             }}
           />
-          
-          <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel sx={{ color: '#ffffff' }}>Category</InputLabel>
-            <Select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value as string)}
-              label="Category"
-              sx={{ 
-                color: '#ffffff',
-                '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255, 255, 255, 0.23)' },
-                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255, 255, 255, 0.5)' },
-                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#90caf9' },
-                '.MuiSvgIcon-root': { color: '#ffffff' }
-              }}
-              MenuProps={{
-                PaperProps: {
-                  sx: { bgcolor: '#1e1e1e' }
-                }
-              }}
-            >
-              {categories.map(cat => (
-                <MuiMenuItem key={cat} value={cat} sx={{ color: '#ffffff' }}>{cat}</MuiMenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          
-          <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel sx={{ color: '#ffffff' }}>Availability</InputLabel>
-            <Select
-              value={availabilityFilter}
-              onChange={(e) => setAvailabilityFilter(e.target.value as string)}
-              label="Availability"
-              sx={{ 
-                color: '#ffffff',
-                '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255, 255, 255, 0.23)' },
-                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255, 255, 255, 0.5)' },
-                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#90caf9' },
-                '.MuiSvgIcon-root': { color: '#ffffff' }
-              }}
-              MenuProps={{
-                PaperProps: {
-                  sx: { bgcolor: '#1e1e1e' }
-                }
-              }}
-            >
-              <MuiMenuItem value="all" sx={{ color: '#ffffff' }}>All Items</MuiMenuItem>
-              <MuiMenuItem value="available" sx={{ color: '#ffffff' }}>Available Only</MuiMenuItem>
-              <MuiMenuItem value="unavailable" sx={{ color: '#ffffff' }}>Unavailable Only</MuiMenuItem>
-            </Select>
-          </FormControl>
+          <StyledAddButton
+            startIcon={<AddIcon />}
+            variant="contained"
+            onClick={handleOpenAddDialog}
+          >
+            ADD ITEM
+          </StyledAddButton>
         </Box>
-      </Paper>
+      </Box>
 
-      <Paper 
-        sx={{ 
-          width: '100%', 
-          mb: 2, 
-          overflow: 'hidden', 
-          borderRadius: 2,
-          ...darkModeStyles.paper
-        }} 
-        elevation={3}
+      {/* Tabs */}
+      <StyledTabs
+        value={tabValue}
+        onChange={handleTabChange}
+        variant="scrollable"
+        scrollButtons="auto"
       >
-        <TableContainer sx={{ maxHeight: '60vh', bgcolor: '#1e1e1e' }}>
-          <Table stickyHeader>
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 'bold', ...darkModeStyles.tableHead, ...darkModeStyles.tableCell }}>Name</TableCell>
-                <TableCell sx={{ fontWeight: 'bold', ...darkModeStyles.tableHead, ...darkModeStyles.tableCell }}>Description</TableCell>
-                <TableCell sx={{ fontWeight: 'bold', ...darkModeStyles.tableHead, ...darkModeStyles.tableCell }}>Price</TableCell>
-                <TableCell sx={{ fontWeight: 'bold', ...darkModeStyles.tableHead, ...darkModeStyles.tableCell }}>Category</TableCell>
-                <TableCell align="center" sx={{ fontWeight: 'bold', ...darkModeStyles.tableHead, ...darkModeStyles.tableCell }}>Status</TableCell>
-                <TableCell align="right" sx={{ fontWeight: 'bold', ...darkModeStyles.tableHead, ...darkModeStyles.tableCell }}>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredItems
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((item) => (
-                  <TableRow 
-                    key={item.menu_id}
-                    hover
-                    sx={{ 
-                      '&:last-child td, &:last-child th': { border: 0 },
-                      bgcolor: '#1e1e1e',
-                      ...darkModeStyles.tableRow
-                    }}
-                  >
-                    <TableCell component="th" scope="row" sx={{ fontWeight: 'medium', ...darkModeStyles.tableCell }}>
-                      {item.name}
-                    </TableCell>
-                    <TableCell sx={darkModeStyles.tableCell}>
-                      {item.description.length > 50
-                        ? `${item.description.substring(0, 50)}...`
-                        : item.description}
-                    </TableCell>
-                    <TableCell sx={darkModeStyles.tableCell}>
-                      ${typeof item.price === 'number' ? item.price.toFixed(2) : Number(item.price).toFixed(2)}
-                    </TableCell>
-                    <TableCell sx={darkModeStyles.tableCell}>
-                      <Chip 
-                        label={item.category} 
-                        color="primary" 
-                        variant="outlined"
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell align="center" sx={darkModeStyles.tableCell}>
-                      <Chip 
-                        label={item.is_available ? "Available" : "Unavailable"} 
-                        color={item.is_available ? "success" : "error"}
-                        size="small"
-                        sx={{ minWidth: 100 }}
-                      />
-                    </TableCell>
-                    <TableCell align="right" sx={darkModeStyles.tableCell}>
-                      <IconButton 
-                        color="primary" 
-                        size="small"
-                        onClick={() => handleOpenEditDialog(item)}
-                        sx={{ mr: 1 }}
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton 
-                        color="error" 
-                        size="small"
-                        onClick={() => handleDeleteMenuItem(item.menu_id)}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              {filteredItems.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 3, ...darkModeStyles.tableCell }}>
-                    <Typography sx={{ color: '#9e9e9e' }}>
-                      No menu items found.
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25, 50]}
-          component="div"
-          count={filteredItems.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-          sx={{
-            color: '#ffffff',
-            '.MuiTablePagination-selectIcon, .MuiTablePagination-actions': {
-              color: '#ffffff',
-            }
-          }}
-        />
-      </Paper>
+        <StyledTab label="All Items" />
+        <StyledTab label="Available" />
+        <StyledTab label="Unavailable" />
+        {categories.slice(1).map((category, index) => (
+          <StyledTab key={index} label={category} />
+        ))}
+      </StyledTabs>
+
+      {/* Table */}
+      <StyledTableContainer>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <StyledTableHeadCell>Name</StyledTableHeadCell>
+              <StyledTableHeadCell>Description</StyledTableHeadCell>
+              <StyledTableHeadCell>Price</StyledTableHeadCell>
+              <StyledTableHeadCell>Category</StyledTableHeadCell>
+              <StyledTableHeadCell>Status</StyledTableHeadCell>
+              <StyledTableHeadCell align="right">Actions</StyledTableHeadCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {filteredItems
+              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+              .map((item) => (
+                <StyledTableRow key={item.menu_id}>
+                  <StyledTableCell sx={{ fontWeight: 'bold', textTransform: 'uppercase' }}>
+                    {item.name}
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    {item.description.length > 50
+                      ? `${item.description.substring(0, 50)}...`
+                      : item.description}
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    ${typeof item.price === 'number' ? item.price.toFixed(2) : Number(item.price).toFixed(2)}
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    <StyledCategoryChip 
+                      label={item.category.toUpperCase()} 
+                      size="small"
+                    />
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    <StyledStatusChip 
+                      label={item.is_available ? "Available" : "Unavailable"} 
+                      className={item.is_available ? 'available' : 'unavailable'}
+                      size="small"
+                    />
+                  </StyledTableCell>
+                  <StyledTableCell align="right">
+                    <IconButton 
+                      size="small"
+                      onClick={() => handleOpenEditDialog(item)}
+                      sx={{ color: '#3182ce' }}
+                    >
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton 
+                      size="small"
+                      onClick={() => handleDeleteMenuItem(item.menu_id)}
+                      sx={{ color: '#e53e3e' }}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </StyledTableCell>
+                </StyledTableRow>
+              ))}
+            {filteredItems.length === 0 && (
+              <StyledTableRow>
+                <StyledTableCell colSpan={6} align="center" sx={{ py: 3 }}>
+                  <Typography sx={{ color: '#9e9e9e' }}>
+                    No menu items found.
+                  </Typography>
+                </StyledTableCell>
+              </StyledTableRow>
+            )}
+          </TableBody>
+        </Table>
+      </StyledTableContainer>
+      <TablePagination
+        rowsPerPageOptions={[5, 10, 25, 50]}
+        component="div"
+        count={filteredItems.length}
+        rowsPerPage={rowsPerPage}
+        page={page}
+        onPageChange={handleChangePage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+        sx={{
+          color: '#a0a0a0',
+          '.MuiTablePagination-selectIcon, .MuiTablePagination-actions': {
+            color: '#a0a0a0',
+          }
+        }}
+        labelRowsPerPage="Rows per page:"
+        labelDisplayedRows={({ from, to, count }) => `${from}-${to} of ${count}`}
+      />
 
       <MenuItemDialog 
         open={openDialog}
