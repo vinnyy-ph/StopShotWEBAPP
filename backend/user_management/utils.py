@@ -9,6 +9,6 @@ def send_otp_email(user):
     send_mail(
         subject="Your OTP for Password Reset",
         message=f"Hello {user.username}, your OTP is {code}. It will expire in 5 minutes.",
-        from_email="stopshopsportsbar@gmail.com",
+        from_email="stopshotsportsbar@gmail.com",
         recipient_list=[user.email],
     )
