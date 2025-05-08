@@ -27,6 +27,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import InfoIcon from '@mui/icons-material/Info';
 import MicIcon from '@mui/icons-material/Mic';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import EmailIcon from '@mui/icons-material/Email';
 import '../styles/pages/reservations.css';
 
 const API_BASE_URL = 'http://127.0.0.1:8000/api';
@@ -41,7 +42,7 @@ interface DayAvailability {
 // Form data
 interface ReservationFormData {
   guest_name: string;
-  guest_phone: string;
+  guest_email: string;
   number_of_guests: number;
   special_requests: string;
 }
@@ -58,7 +59,7 @@ const ReservationsPage: React.FC = () => {
   // Form state
   const [formData, setFormData] = useState<ReservationFormData>({
     guest_name: '',
-    guest_phone: '',
+    guest_email: '',
     number_of_guests: 1,
     special_requests: ''
   });
@@ -219,20 +220,13 @@ const ReservationsPage: React.FC = () => {
   const validateForm = () => {
     const errors: {[key: string]: string} = {};
     
-    if (!formData.guest_phone.trim()) {
-      errors.guest_phone = 'Phone number is required';
+    if (!formData.guest_email.trim()) {
+      errors.guest_email = 'Email is required';
     } else {
-      // Remove any non-digit characters for validation
-      const digitsOnly = formData.guest_phone.replace(/[^0-9]/g, '');
-      
-      // Check for Philippine mobile number format:
-      // 1. Starting with 09 followed by 9 more digits (11 digits total)
-      // 2. OR starting with 639 followed by 9 more digits (12 digits total)
-      if (!(
-          (digitsOnly.startsWith('09') && digitsOnly.length === 11) || 
-          (digitsOnly.startsWith('639') && digitsOnly.length === 12)
-      )) {
-        errors.guest_phone = 'Enter a valid Philippine mobile number (e.g., 09XX XXX XXXX or +63 9XX XXX XXXX)';
+      // Basic email validation regex
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.guest_email)) {
+        errors.guest_email = 'Enter a valid email address';
       }
     }
     
@@ -283,7 +277,7 @@ const ReservationsPage: React.FC = () => {
       
       const reservationData = {
         guest_name: formData.guest_name,
-        guest_phone: formData.guest_phone,
+        guest_email: formData.guest_email,
         reservation_date: reservationDate,
         reservation_time: formattedTime,
         number_of_guests: formData.number_of_guests,
@@ -537,21 +531,22 @@ const ReservationsPage: React.FC = () => {
                   
                   <TextField
                     variant="outlined"
-                    placeholder="Enter your contact number"
+                    placeholder="Enter your email address"
                     fullWidth
-                    name="guest_phone"
-                    value={formData.guest_phone}
+                    type="email"
+                    name="guest_email"
+                    value={formData.guest_email}
                     onChange={handleInputChange}
-                    error={!!formErrors.guest_phone}
+                    error={!!formErrors.guest_email}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
-                          <PhoneIcon sx={{ color: formErrors.guest_phone ? '#f44336' : '#d38236' }} />
+                          <EmailIcon sx={{ color: formErrors.guest_email ? '#f44336' : '#d38236' }} />
                         </InputAdornment>
                       ),
                     }}
                   />
-                  {formErrors.guest_phone && <Typography className="error-text">{formErrors.guest_phone}</Typography>}
+                  {formErrors.guest_email && <Typography className="error-text">{formErrors.guest_email}</Typography>}
                   
                   <FormControl fullWidth error={!!formErrors.time}>
                     <Select
