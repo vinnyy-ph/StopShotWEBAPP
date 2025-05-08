@@ -10,9 +10,7 @@ class Menu(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     image_url = models.URLField(blank=True, null=True)
-    # allergens = models.TextField(blank=True, null=True)
-    # is_vegetarian = models.BooleanField(default=False)
-    # is_vegan = models.BooleanField(default=False)
+
 
     def __str__(self):
         return self.name
