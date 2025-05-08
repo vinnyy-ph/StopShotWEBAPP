@@ -5,7 +5,7 @@ This document provides an overview of the reservation system's API, intended for
 ## Reservation Flow Simplified
 
 1.  **User Request:** 
-A user visits the website/app and fills out a reservation request form including:
+    A user visits the website/app and fills out a reservation request form including:
     *   Desired Date
     *   Time
     *   Guest Count
@@ -15,26 +15,24 @@ A user visits the website/app and fills out a reservation request form including
     *   Special Requests (Optional)
 
 2.  **Request Saved:** 
-The system saves this request with a `PENDING` status. No specific room (e.g., "Table 5") is assigned yet.
+    The system saves this request with a `PENDING` status. No specific room (e.g., "Table 5") is assigned yet.
 
 3.  **Admin Review:** 
-An administrator reviews the `PENDING` requests.
+    An administrator reviews the `PENDING` requests.
 
 4.  **Admin Assignment & Confirmation:** 
-The admin selects an available *specific* room (e.g., "Karaoke Room 1") matching the requested type and time. They update the reservation to assign the specific `room_id` and change the `status` to `CONFIRMED`.
+    The admin selects an available *specific* room (e.g., "Karaoke Room 1") matching the requested type and time. They update the reservation to assign the specific `room_id` and change the `status` to `CONFIRMED`.
     *   **Conflict Check:** The system prevents confirming a reservation if the selected room/time overlaps with another confirmed booking.
     *   **Karaoke Minimum:** Karaoke rooms must be booked for at least 1 hour.
 
 5.  **User Notified/Sees Update:** 
-The user can view their reservation's updated status (`CONFIRMED`) and the assigned room details.
+    The user can view their reservation's updated status (`CONFIRMED`) and the assigned room details.
 
 ---
 
 ## API Endpoints for Frontend
 
-Base URL: `/api/`
-
-All endpoints returning reservation details will use the standard reservation object structure.
+**Base URL:** `/api/`
 
 --- 
 
@@ -57,11 +55,15 @@ All endpoints returning reservation details will use the standard reservation ob
         "special_requests": "Near window."
     }
     ```
+    **Fields:**
     *   `guest_email`: Required.
     *   `duration`: Optional (defaults to 1hr backend). Format `HH:MM:SS`.
     *   `room_type`: Required (`TABLE` or `KARAOKE_ROOM`).
-*   **Success Response (`201 Created`):** The created reservation object (status=`PENDING`, room=`null`).
-*   **Error Response (`400 Bad Request`):** Contains validation errors (e.g., date invalid, duration too short).
+    *   `special_requests`: Optional.
+*   **Success Response (`201 Created`):** 
+    The created reservation object (status=`PENDING`, room=`null`).
+*   **Error Response (`400 Bad Request`):** 
+    Contains validation errors (e.g., date invalid, duration too short).
     ```json
     { "duration": ["Karaoke room bookings must be for at least 1 hour."] }
     ```
@@ -86,32 +88,35 @@ All endpoints returning reservation details will use the standard reservation ob
 *   **Method:** `PATCH` (Recommended for partial updates)
 *   **Endpoint:** `/api/reservations/{id}/` (Replace `{id}` with the reservation ID)
 *   **Authentication:** Required (Admin/Staff Token/Session).
-*   **Request Body (`JSON` Example - Confirming and Assigning Room):**
-    ```json
-    {
-        "status": "CONFIRMED",
-        "room_id": 5               // The actual ID of the specific Room object to assign
-    }
-    ```
-*   **Request Body (`JSON` Example - Changing Duration):**
-    ```json
-    {
-        "duration": "03:00:00"
-    }
-    ```
+*   **Request Body (`JSON`):** 
+    *   *Example - Confirming and Assigning Room:*
+        ```json
+        {
+            "status": "CONFIRMED",
+            "room_id": 5 
+        }
+        ```
+    *   *Example - Changing Duration:*
+        ```json
+        {
+            "duration": "03:00:00"
+        }
+        ```
 *   **Success Response (`200 OK`):** The fully updated reservation object.
-*   **Error Response (`400 Bad Request`):** Contains validation errors, especially the double-booking conflict error:
-    ```json
-    {
-        "non_field_errors": [
-            "Karaoke Room 1 is already booked between 19:00 and 21:00 on 2024-12-25. Requested slot: 20:00 to 22:00."
-        ]
-    }
-    ```
-    Or field-specific errors like:
-    ```json
-    { "duration": ["Karaoke room bookings must be for at least 1 hour."] }
-    ```
+*   **Error Response (`400 Bad Request`):** 
+    Contains validation errors (e.g., double-booking conflict, duration rules).
+    *   *Example (Conflict):*
+        ```json
+        {
+            "non_field_errors": [
+                "Karaoke Room 1 is already booked between 19:00 and 21:00 on 2024-12-25. Requested slot: 20:00 to 22:00."
+            ]
+        }
+        ```
+    *   *Example (Duration):*
+        ```json
+        { "duration": ["Karaoke room bookings must be for at least 1 hour."] }
+        ```
 
 --- 
 
@@ -152,9 +157,10 @@ All endpoints returning reservation details will use the standard reservation ob
     *   `reservation_date=YYYY-MM-DD` 
     *   `status=CONFIRMED` 
     *   `room__room_type=[TABLE | KARAOKE_ROOM]` 
-    *   Example: `?reservation_date=2025-11-10&status=CONFIRMED&room__room_type=KARAOKE_ROOM`
+    *   *Example:* `?reservation_date=2025-11-10&status=CONFIRMED&room__room_type=KARAOKE_ROOM`
 *   **Authentication:** None required (when using *all* the above query parameters).
-*   **Response (`200 OK`):** An array `[...]` containing minimal details of confirmed reservation slots matching the filters. **Note:** The system prevents conflicting bookings, so the slots listed here will not overlap for the *same specific room*.
+*   **Response (`200 OK`):** 
+    An array `[...]` containing minimal details of confirmed reservation slots matching the filters. *Note: The system prevents conflicting bookings, so the slots listed here will not overlap for the same specific room.*
     ```json
     [
         {
