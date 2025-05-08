@@ -1,0 +1,172 @@
+# Reservations App README
+
+This document provides an overview of the reservation system's API, intended for frontend developers.
+
+## Reservation Flow Simplified
+
+1.  **User Request:** 
+A user visits the website/app and fills out a reservation request form including:
+    *   Desired Date
+    *   Time
+    *   Guest Count
+    *   Preferred Room Type (`TABLE` or `KARAOKE_ROOM`)
+    *   Guest Email (Required)
+    *   Booking Duration (Optional - defaults to 1 hour if not specified)
+    *   Special Requests (Optional)
+
+2.  **Request Saved:** 
+The system saves this request with a `PENDING` status. No specific room (e.g., "Table 5") is assigned yet.
+
+3.  **Admin Review:** 
+An administrator reviews the `PENDING` requests.
+
+4.  **Admin Assignment & Confirmation:** 
+The admin selects an available *specific* room (e.g., "Karaoke Room 1") matching the requested type and time. They update the reservation to assign the specific `room_id` and change the `status` to `CONFIRMED`.
+    *   **Conflict Check:** The system prevents confirming a reservation if the selected room/time overlaps with another confirmed booking.
+    *   **Karaoke Minimum:** Karaoke rooms must be booked for at least 1 hour.
+
+5.  **User Notified/Sees Update:** 
+The user can view their reservation's updated status (`CONFIRMED`) and the assigned room details.
+
+---
+
+## API Endpoints for Frontend
+
+Base URL: `/api/`
+
+All endpoints returning reservation details will use the standard reservation object structure.
+
+--- 
+
+### 1. Create Reservation Request
+
+*   **Purpose:** Submits a new reservation request.
+*   **Method:** `POST`
+*   **Endpoint:** `/api/reservations/`
+*   **Authentication:** None required.
+*   **Request Body:** `JSON`
+    ```json
+    {
+        "guest_name": "Bob",
+        "guest_email": "bob@example.com",
+        "reservation_date": "2024-12-25",
+        "reservation_time": "18:00:00",
+        "duration": "01:00:00",
+        "number_of_guests": 2,
+        "room_type": "TABLE",
+        "special_requests": "Near window."
+    }
+    ```
+    *   `guest_email`: Required.
+    *   `duration`: Optional (defaults to 1hr backend). Format `HH:MM:SS`.
+    *   `room_type`: Required (`TABLE` or `KARAOKE_ROOM`).
+*   **Success Response (`201 Created`):** The created reservation object (status=`PENDING`, room=`null`).
+*   **Error Response (`400 Bad Request`):** Contains validation errors (e.g., date invalid, duration too short).
+    ```json
+    { "duration": ["Karaoke room bookings must be for at least 1 hour."] }
+    ```
+
+--- 
+
+### 2. List/View User's Reservations
+
+*   **Purpose:** Get reservations linked to the authenticated user.
+*   **Method:** `GET`
+*   **Endpoint (List):** `/api/reservations/`
+*   **Endpoint (Detail):** `/api/reservations/{id}/`
+*   **Authentication:** Required (Token/Session).
+*   **Response (List):** `200 OK` with an array `[...]` of the user's reservation objects.
+*   **Response (Detail):** `200 OK` with a single reservation object. `404 Not Found` if not found or not owned by the user.
+
+--- 
+
+### 3. Confirm/Update Reservation (Admin Action)
+
+*   **Purpose:** Allows an Admin/Staff user to confirm a pending reservation by assigning a room and changing the status. Can also be used to update status, room, or duration of existing reservations.
+*   **Method:** `PATCH` (Recommended for partial updates)
+*   **Endpoint:** `/api/reservations/{id}/` (Replace `{id}` with the reservation ID)
+*   **Authentication:** Required (Admin/Staff Token/Session).
+*   **Request Body (`JSON` Example - Confirming and Assigning Room):**
+    ```json
+    {
+        "status": "CONFIRMED",
+        "room_id": 5               // The actual ID of the specific Room object to assign
+    }
+    ```
+*   **Request Body (`JSON` Example - Changing Duration):**
+    ```json
+    {
+        "duration": "03:00:00"
+    }
+    ```
+*   **Success Response (`200 OK`):** The fully updated reservation object.
+*   **Error Response (`400 Bad Request`):** Contains validation errors, especially the double-booking conflict error:
+    ```json
+    {
+        "non_field_errors": [
+            "Karaoke Room 1 is already booked between 19:00 and 21:00 on 2024-12-25. Requested slot: 20:00 to 22:00."
+        ]
+    }
+    ```
+    Or field-specific errors like:
+    ```json
+    { "duration": ["Karaoke room bookings must be for at least 1 hour."] }
+    ```
+
+--- 
+
+### 4. Check Daily Availability Summary
+
+*   **Purpose:** Get a summary of availability status (Available, Limited, Unavailable) for each room type for a specific day (based on 4 PM - 1 AM window).
+*   **Method:** `GET`
+*   **Endpoint:** `/api/availability/summary/`
+*   **Query Parameter:** `date=YYYY-MM-DD` (e.g., `?date=2024-12-25`)
+*   **Authentication:** None required.
+*   **Response (`200 OK`):
+    ```json
+    {
+        "date": "2024-12-25",
+        "availability_by_type": {
+            "TABLE": {
+                "room_type_display": "Table",
+                "percentage_booked": 25.00,
+                "availability_status": "AVAILABLE"
+            },
+            "KARAOKE_ROOM": {
+                "room_type_display": "Karaoke Room",
+                "percentage_booked": 95.00,
+                "availability_status": "LIMITED_AVAILABILITY"
+            }
+        }
+    }
+    ```
+
+--- 
+
+### 5. Get Specific Booked Time Slots (Table / Karaoke)
+
+*   **Purpose:** Get the exact list of confirmed bookings for a specific room type on a given date. Useful for disabling specific time slots in the UI.
+*   **Method:** `GET`
+*   **Endpoint:** `/api/reservations/`
+*   **Query Parameters:**
+    *   `reservation_date=YYYY-MM-DD` (Required)
+    *   `status=CONFIRMED` (Required)
+    *   `room__room_type=[TABLE | KARAOKE_ROOM]` (Required)
+    *   Example: `?reservation_date=2024-12-25&status=CONFIRMED&room__room_type=KARAOKE_ROOM`
+*   **Authentication:** Required (*Note: Permissions might need adjustment if non-admins need this data for UI availability.*)
+*   **Response (`200 OK`):** An array `[...]` containing confirmed reservation objects matching the filters. Each object includes the specific `room` assigned, `reservation_time`, and `duration`.
+
+---
+
+### 6. Delete Reservation
+
+*   **Purpose:** Deletes a specific reservation.
+*   **Method:** `DELETE`
+*   **Endpoint:** `/api/reservations/{id}/`
+*   **Authentication:** Required (Admin/Staff or Owner of reservation).
+*   **Success Response (`204 No Content`):** Empty response body.
+*   **Error Response (`404 Not Found`):** If reservation not found or user lacks permission.
+
+---
+
+*Remember to include authentication tokens in the `Authorization` header for protected endpoints.* 
