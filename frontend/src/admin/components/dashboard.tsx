@@ -153,7 +153,7 @@ export const getStatusDisplay = (status: string): string => {
 };
 
 const AdminDashboard: React.FC = () => {
-  const { authToken } = useAuth();
+  const { authToken, logout } = useAuth();
   const axiosInstance = axios.create({
     baseURL: API_BASE_URL,
     headers: {
@@ -226,6 +226,16 @@ const AdminDashboard: React.FC = () => {
   const handleSectionChange = (section: string) => {
     setSelectedSection(section);
     setMobileOpen(false);
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    window.location.href = '/admin/login';
+  };
+
+  const handleSettingsClick = () => {
+    handleMenuClose();
+    setSelectedSection('settings');
   };
 
   const handleStatusChange = async (id: number, newStatus: string) => {
@@ -489,9 +499,8 @@ const AdminDashboard: React.FC = () => {
         onClose={handleMenuClose}
         className="profile-menu"
       >
-        <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
-        <MenuItem onClick={handleMenuClose}>Settings</MenuItem>
-        <MenuItem onClick={handleMenuClose}>Logout</MenuItem>
+        <MenuItem onClick={handleSettingsClick}>Settings</MenuItem>
+        <MenuItem onClick={handleLogout}>Logout</MenuItem>
       </MuiMenu>
 
       <MuiMenu

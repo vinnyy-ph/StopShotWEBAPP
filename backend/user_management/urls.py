@@ -2,6 +2,7 @@ from django.urls import path
 from .views import (
     TestAuthenticatedView, 
     LoginView, 
+    LogoutView,
     RequestResetView,
     UserProfileView,  # This should be correctly imported
     VerifyOTPView, 
@@ -13,6 +14,7 @@ from rest_framework.authtoken.views import obtain_auth_token
 urlpatterns = [
     path('auth/test-authenticated/', TestAuthenticatedView.as_view()),
     path('auth/login/', LoginView.as_view()),  # Login endpoint
+    path('auth/logout/', LogoutView.as_view()),  # Logout endpoint
     path('auth/request-reset/', RequestResetView.as_view()),
     path('auth/verify-otp/', VerifyOTPView.as_view()),
     path('auth/reset-password/', ResetPasswordView.as_view()),

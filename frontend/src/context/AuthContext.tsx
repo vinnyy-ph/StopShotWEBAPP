@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import axios from 'axios';
 
 interface AuthContextType {
   authToken: string | null;
@@ -6,7 +7,7 @@ interface AuthContextType {
   userRole: string | null;
   setUserRole: (role: string | null) => void;
   isAuthenticated: boolean;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -15,7 +16,7 @@ const AuthContext = createContext<AuthContextType>({
   userRole: null,
   setUserRole: () => {},
   isAuthenticated: false,
-  logout: () => {}
+  logout: async () => {}
 });
 
 export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
@@ -42,9 +43,24 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
     }
   }, [userRole]);
 
-  const logout = () => {
-    setAuthToken(null);
-    setUserRole(null);
+  const logout = async () => {
+    try {
+      // Call the logout endpoint if we have a token
+      if (authToken) {
+        await axios.post('http://127.0.0.1:8000/api/auth/logout/', {}, {
+          headers: {
+            'Authorization': `Token ${authToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error logging out:', error);
+    } finally {
+      // Clear the token and role regardless of whether the API call succeeded
+      setAuthToken(null);
+      setUserRole(null);
+    }
   };
 
   return (

@@ -7,6 +7,7 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
+  ListItemButton,
   Typography
 } from '@mui/material';
 
@@ -19,6 +20,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import LogoutIcon from '@mui/icons-material/Logout';
 import SportsBasketballIcon from '@mui/icons-material/SportsBasketball';
 import RestaurantMenuIcon from '@mui/icons-material/RestaurantMenu';
+import { useAuth } from '../../../context/AuthContext';
 
 interface SidebarProps {
   selectedSection: string;
@@ -26,106 +28,127 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ selectedSection, onSectionChange }) => {
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    window.location.href = '/admin/login';
+  };
+
   return (
     <div className="sidebar-container">
-      <Box className="sidebar-header">
+      <div className="sidebar-header">
         <SportsBasketballIcon className="sidebar-logo-icon" />
-        <Typography variant="h6" className="sidebar-title">
-          StopShot Admin
-        </Typography>
-      </Box>
+        <Typography variant="h6" className="sidebar-title">StopShot</Typography>
+      </div>
+      
       <Divider className="sidebar-divider" />
+      
       <List className="sidebar-nav">
-        <ListItem 
-          button 
-          selected={selectedSection === 'dashboard'}
-          onClick={() => onSectionChange('dashboard')}
-          className={`sidebar-item ${selectedSection === 'dashboard' ? 'active' : ''}`}
-        >
-          <ListItemIcon>
-            <DashboardIcon className="sidebar-icon" />
-          </ListItemIcon>
-          <ListItemText primary="Dashboard" />
+        <ListItem disablePadding>
+          <ListItemButton 
+            selected={selectedSection === 'dashboard'} 
+            onClick={() => onSectionChange('dashboard')} 
+            className={`sidebar-item ${selectedSection === 'dashboard' ? 'active' : ''}`}
+          >
+            <ListItemIcon>
+              <DashboardIcon className="sidebar-icon" />
+            </ListItemIcon>
+            <ListItemText primary="Dashboard" />
+          </ListItemButton>
         </ListItem>
-        <ListItem 
-          button 
-          selected={selectedSection === 'reservations'}
-          onClick={() => onSectionChange('reservations')}
-          className={`sidebar-item ${selectedSection === 'reservations' ? 'active' : ''}`}
-        >
-          <ListItemIcon>
-            <BookOnlineIcon className="sidebar-icon" />
-          </ListItemIcon>
-          <ListItemText primary="Reservations" />
+        
+        <ListItem disablePadding>
+          <ListItemButton 
+            selected={selectedSection === 'reservations'} 
+            onClick={() => onSectionChange('reservations')} 
+            className={`sidebar-item ${selectedSection === 'reservations' ? 'active' : ''}`}
+          >
+            <ListItemIcon>
+              <BookOnlineIcon className="sidebar-icon" />
+            </ListItemIcon>
+            <ListItemText primary="Reservations" />
+          </ListItemButton>
         </ListItem>
-        <ListItem 
-          button 
-          selected={selectedSection === 'menu'}
-          onClick={() => onSectionChange('menu')}
-          className={`sidebar-item ${selectedSection === 'menu' ? 'active' : ''}`}
-        >
-          <ListItemIcon>
-            <RestaurantMenuIcon className="sidebar-icon" />
-          </ListItemIcon>
-          <ListItemText primary="Menu" />
+        
+        <ListItem disablePadding>
+          <ListItemButton 
+            selected={selectedSection === 'menu'} 
+            onClick={() => onSectionChange('menu')} 
+            className={`sidebar-item ${selectedSection === 'menu' ? 'active' : ''}`}
+          >
+            <ListItemIcon>
+              <RestaurantMenuIcon className="sidebar-icon" />
+            </ListItemIcon>
+            <ListItemText primary="Menu" />
+          </ListItemButton>
         </ListItem>
-        <ListItem 
-          button 
-          selected={selectedSection === 'feedback'}
-          onClick={() => onSectionChange('feedback')}
-          className={`sidebar-item ${selectedSection === 'feedback' ? 'active' : ''}`}
-        >
-          <ListItemIcon>
-            <FeedbackIcon className="sidebar-icon" />
-          </ListItemIcon>
-          <ListItemText primary="Feedback" />
+        
+        <ListItem disablePadding>
+          <ListItemButton 
+            selected={selectedSection === 'feedback'} 
+            onClick={() => onSectionChange('feedback')} 
+            className={`sidebar-item ${selectedSection === 'feedback' ? 'active' : ''}`}
+          >
+            <ListItemIcon>
+              <FeedbackIcon className="sidebar-icon" />
+            </ListItemIcon>
+            <ListItemText primary="Feedback" />
+          </ListItemButton>
         </ListItem>
-        <ListItem 
-          button
-          selected={selectedSection === 'employees'}
-          onClick={() => onSectionChange('employees')}
-          className={`sidebar-item ${selectedSection === 'employees' ? 'active' : ''}`}
-        >
-          <ListItemIcon>
-            <WorkIcon className="sidebar-icon" />
-          </ListItemIcon>
-          <ListItemText primary="Employees" />
+        
+        <ListItem disablePadding>
+          <ListItemButton 
+            selected={selectedSection === 'employees'} 
+            onClick={() => onSectionChange('employees')} 
+            className={`sidebar-item ${selectedSection === 'employees' ? 'active' : ''}`}
+          >
+            <ListItemIcon>
+              <WorkIcon className="sidebar-icon" />
+            </ListItemIcon>
+            <ListItemText primary="Employees" />
+          </ListItemButton>
         </ListItem>
-        <ListItem 
-          button
-          selected={selectedSection === 'analytics'}
-          onClick={() => onSectionChange('analytics')}
-          className={`sidebar-item ${selectedSection === 'analytics' ? 'active' : ''}`}
-        >
-          <ListItemIcon>
-            <BarChartIcon className="sidebar-icon" />
-          </ListItemIcon>
-          <ListItemText primary="Analytics" />
+        
+        <ListItem disablePadding>
+          <ListItemButton 
+            selected={selectedSection === 'analytics'} 
+            onClick={() => onSectionChange('analytics')} 
+            className={`sidebar-item ${selectedSection === 'analytics' ? 'active' : ''}`}
+          >
+            <ListItemIcon>
+              <BarChartIcon className="sidebar-icon" />
+            </ListItemIcon>
+            <ListItemText primary="Analytics" />
+          </ListItemButton>
         </ListItem>
-        <ListItem 
-          button
-          selected={selectedSection === 'settings'}
-          onClick={() => onSectionChange('settings')}
-          className={`sidebar-item ${selectedSection === 'settings' ? 'active' : ''}`}
-        >
-          <ListItemIcon>
-            <SettingsIcon className="sidebar-icon" />
-          </ListItemIcon>
-          <ListItemText primary="Settings" />
+        
+        <ListItem disablePadding>
+          <ListItemButton
+            selected={selectedSection === 'settings'} 
+            onClick={() => onSectionChange('settings')} 
+            className={`sidebar-item ${selectedSection === 'settings' ? 'active' : ''}`}
+          >
+            <ListItemIcon>
+              <SettingsIcon className="sidebar-icon" />
+            </ListItemIcon>
+            <ListItemText primary="Settings" />
+          </ListItemButton>
         </ListItem>
       </List>
-      <Box sx={{ flexGrow: 1 }} />
+      
       <Box className="sidebar-footer">
         <Divider className="sidebar-divider" />
-        <ListItem 
-          button 
-          onClick={() => window.location.href = '/admin/login'} 
-          className="sidebar-logout"
-        >
-          <ListItemIcon>
-            <LogoutIcon className="sidebar-icon" />
-          </ListItemIcon>
-          <ListItemText primary="Logout" />
+        <ListItem disablePadding>
+          <ListItemButton
+            onClick={handleLogout} 
+            className="sidebar-logout"
+          >
+            <ListItemIcon>
+              <LogoutIcon className="sidebar-icon" />
+            </ListItemIcon>
+            <ListItemText primary="Logout" />
+          </ListItemButton>
         </ListItem>
       </Box>
     </div>
