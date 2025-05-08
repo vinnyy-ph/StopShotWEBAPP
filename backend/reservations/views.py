@@ -1,69 +1,206 @@
-from rest_framework import viewsets, permissions, filters, status
+from rest_framework import viewsets, permissions, filters, status as drf_status
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Reservation, Room
+from .models import Reservation, Room, ROOM_TYPE_CHOICES, TABLE, KARAOKE_ROOM
 from .serializers import (
     CreateReservationSerializer,
     ViewReservationSerializer,
-    AdminReservationUpdateSerializer
+    AdminReservationUpdateSerializer,
+    PublicBookingSlotSerializer
 )
 from .permissions import IsOwnerOrAdmin
+
+from rest_framework.views import APIView
+import datetime
+from django.utils import timezone
+from django.db.models import Q 
+
+VENUE_TOTAL_OPERATING_HOURS_PER_BUSINESS_DAY = datetime.timedelta(hours=9)
+
+BUSINESS_DAY_START_TIME = datetime.time(16, 0, 0)  # 4:00 PM
+BUSINESS_DAY_END_TIME = datetime.time(1, 0, 0)    # 1:00 AM
 
 class ReservationViewSet(viewsets.ModelViewSet):
     """
     API endpoint for reservations.
-    - ANYONE can create reservations (POST /api/reservations/).
-    - Users can list their own reservations (GET /api/reservations/). (If logged in)
-    - Users can retrieve/update/delete their own reservations (GET/PUT/PATCH/DELETE /api/reservations/{id}/). (If logged in)
-    - Admins can list all reservations with filters/search (GET /api/reservations/).
-    - Admins can retrieve/update/delete any reservation.
+    - Users create reservations with room_type preference (POST /api/reservations/). Room is not assigned yet.
+    - Admins can list/filter reservations (including by room_type) and assign a specific Room.
     """
-    queryset = Reservation.objects.all() #
+    queryset = Reservation.objects.all().select_related('user', 'room')
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['status', 'reservation_date', 'room'] 
-    search_fields = ['guest_name', 'guest_phone', 'user__username', 'user__email', 'room__room_name']
+    filterset_fields = ['status', 'reservation_date', 'room', 'room_type', 'room__room_type']
+    search_fields = ['guest_name', 'guest_email', 'user__username', 'user__email', 'room__room_name', 'room_type']
     ordering_fields = ['reservation_date', 'reservation_time', 'created_at']
     ordering = ['-reservation_date', '-reservation_time'] 
 
     def get_queryset(self):
-        """ Filter reservations based on user role. """
+        """ Filter reservations based on user role or for public slot view. """
         user = self.request.user
+        query_params = self.request.query_params
+        queryset = super().get_queryset()
 
-        if user.is_authenticated and user.is_staff:
-            return Reservation.objects.all() 
+        is_public_slot_query = (
+            self.action == 'list' and 
+            query_params.get('status') == 'CONFIRMED' and 
+            query_params.get('reservation_date') and 
+            query_params.get('room__room_type')
+        )
+
+        if is_public_slot_query:
+            # No user filtering needed for public slots query
+            # Filters for date, status, room__room_type are handled by DjangoFilterBackend
+            return queryset 
+        elif user.is_authenticated and user.is_staff:
+            return queryset # Staff see all (filtered by query params if any)
         elif user.is_authenticated:
-            return Reservation.objects.filter(user=user) 
+            return queryset.filter(user=user) # Regular users see only their own
         else:
-             return Reservation.objects.none() 
+            # This case shouldn't be reached for list/retrieve due to permissions,
+            # but return none just in case.
+             return queryset.none() 
 
     def get_serializer_class(self):
-        """ Return appropriate serializer based on action and user role. """
         user = self.request.user
-    
         is_admin = user.is_authenticated and user.is_staff
+        query_params = self.request.query_params
+
+        # Check if this is a request for public booked slots
+        is_public_slot_query = (
+            self.action == 'list' and 
+            query_params.get('status') == 'CONFIRMED' and 
+            query_params.get('reservation_date') and 
+            query_params.get('room__room_type')
+        )
 
         if self.action == 'create':
             return CreateReservationSerializer
         elif self.action in ['update', 'partial_update'] and is_admin:
             return AdminReservationUpdateSerializer
-    
-        return ViewReservationSerializer
+        elif is_public_slot_query:
+            return PublicBookingSlotSerializer # Use minimal serializer for public slots
+        else:
+            # For retrieve, or standard list for authenticated users/admins
+            return ViewReservationSerializer
 
     def get_permissions(self):
-        """ Apply different permissions based on action. """
+        query_params = self.request.query_params
+        # Check if this is a request for public booked slots
+        is_public_slot_query = (
+            self.action == 'list' and 
+            query_params.get('status') == 'CONFIRMED' and 
+            query_params.get('reservation_date') and 
+            query_params.get('room__room_type')
+        )
+
         if self.action == 'create':
             permission_classes = [permissions.AllowAny]
+        elif is_public_slot_query:
+             permission_classes = [permissions.AllowAny] # Allow anyone to see booked slots
         elif self.action in ['update', 'partial_update', 'destroy']:
             permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdmin]
-        else:
+        else: # Standard list (for user's own) or retrieve
             permission_classes = [permissions.IsAuthenticated]
         return [permission() for permission in permission_classes]
 
     def perform_create(self, serializer):
-        """ Set status to PENDING. Associate user ONLY if authenticated. """
-        if self.request.user.is_authenticated:
-            serializer.save(user=self.request.user, status='PENDING')
-        else:
-            serializer.save(user=None, status='PENDING')
+        """
+        Set status to PENDING. Associate user ONLY if authenticated.
+        Room is NOT assigned here. Admin will assign it later.
+        """
+        user = self.request.user if self.request.user.is_authenticated else None
+        serializer.save(user=user)
+
+class DailyAvailabilitySummaryView(APIView):
+    """
+    Provides a summary of daily availability based on confirmed bookings.
+    Accepts a 'date' query parameter in YYYY-MM-DD format.
+    e.g., /api/availability/summary/?date=2024-05-10
+    """
+    permission_classes = [permissions.AllowAny] # Accessible to anyone
+
+    def get(self, request):
+        date_str = request.query_params.get('date')
+        if not date_str:
+            return Response({"error": "Date query parameter is required."}, status=drf_status.HTTP_400_BAD_REQUEST)
+
+        try:
+            target_date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+        except ValueError:
+            return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=drf_status.HTTP_400_BAD_REQUEST)
+
+        business_day_start_dt = timezone.make_aware(datetime.datetime.combine(target_date, BUSINESS_DAY_START_TIME))
+        business_day_end_dt = timezone.make_aware(datetime.datetime.combine(target_date + datetime.timedelta(days=1), BUSINESS_DAY_END_TIME))
+
+        reservations_in_window = Reservation.objects.filter(
+            status='CONFIRMED'
+        ).filter(
+            (Q(reservation_date=target_date) & Q(reservation_time__gte=BUSINESS_DAY_START_TIME)) |
+            (Q(reservation_date=(target_date + datetime.timedelta(days=1))) & Q(reservation_time__lt=BUSINESS_DAY_END_TIME))
+        ).select_related('room') 
+
+        availability_results = {}
+
+        for room_type_value, room_type_display in ROOM_TYPE_CHOICES:
+            # Find active rooms of the current type
+            active_rooms_of_type = Room.objects.filter(
+                room_can_be_booked=True,
+                room_type=room_type_value
+            )
+            num_rooms_of_type = active_rooms_of_type.count()
+
+            if num_rooms_of_type == 0:
+                availability_results[room_type_value] = {
+                    "room_type_display": room_type_display,
+                    "percentage_booked": 100.0,
+                    "availability_status": "UNAVAILABLE",
+                    "message": f"No {room_type_display} rooms are configured or currently bookable."
+                }
+                continue 
+            total_available_duration_for_type = VENUE_TOTAL_OPERATING_HOURS_PER_BUSINESS_DAY * num_rooms_of_type
+
+     
+            total_booked_duration_for_type = datetime.timedelta(0)
+            reservations_for_type = [ 
+                res for res in reservations_in_window 
+                if res.room and res.room.room_type == room_type_value
+            ]
+            
+            for res in reservations_for_type:
+                res_start_dt = res.get_start_datetime()
+                res_end_dt = res.get_end_datetime()
+
+                if not res_start_dt or not res_end_dt or not res.duration:
+                    continue
+
+                overlap_start = max(business_day_start_dt, res_start_dt)
+                overlap_end = min(business_day_end_dt, res_end_dt)
+
+                if overlap_end > overlap_start:
+                    total_booked_duration_for_type += (overlap_end - overlap_start)
+
+            percentage_booked = 0.0
+            if total_available_duration_for_type.total_seconds() > 0:
+                percentage_booked = (total_booked_duration_for_type.total_seconds() / total_available_duration_for_type.total_seconds()) * 100
+            elif total_booked_duration_for_type.total_seconds() > 0:
+                 percentage_booked = 100.0
+
+            percentage_booked = min(max(0, percentage_booked), 100.0)
+
+            availability_status = "AVAILABLE"
+            if percentage_booked >= 100:
+                availability_status = "UNAVAILABLE"
+            elif percentage_booked >= 50:
+                availability_status = "LIMITED_AVAILABILITY"
+            
+            availability_results[room_type_value] = {
+                "room_type_display": room_type_display,
+                "percentage_booked": round(percentage_booked, 2),
+                "availability_status": availability_status
+            }
+
+        return Response({
+            "date": target_date.isoformat(),
+            "availability_by_type": availability_results
+        }, status=drf_status.HTTP_200_OK)
 
