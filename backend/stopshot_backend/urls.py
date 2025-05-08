@@ -22,4 +22,6 @@ urlpatterns = [
     path('api/', include('user_management.urls')),  
     path('api/', include('reservations.urls')),
     path('api/', include('menu_items.urls')),
+    path('api/', include('user_feedback.urls')),
+    path('api/', include('user_message.urls')),
 ]

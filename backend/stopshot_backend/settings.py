@@ -42,7 +42,9 @@ INSTALLED_APPS = [
     'user_management',
     'reservations',
     'django_filters',
-    'menu_items'
+    'menu_items',
+    'user_feedback',
+    'user_message',
 ]
 
 MIDDLEWARE = [
@@ -146,6 +148,8 @@ REST_FRAMEWORK = {
   ),
 }
 
+
+# Email settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
