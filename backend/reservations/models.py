@@ -82,19 +82,31 @@ class Reservation(models.Model):
 
     def clean(self):
         super().clean()
+        errors = {} # Dictionary to hold potential validation errors
 
+        # Check Room Capacity
+        if self.room and self.number_of_guests:
+            if self.number_of_guests > self.room.max_number_of_people:
+                errors['number_of_guests'] = ValidationError(
+                    f"The number of guests ({self.number_of_guests}) exceeds the capacity "
+                    f"of {self.room.room_name} ({self.room.max_number_of_people})."
+                )
+
+        # Minimum duration for Karaoke Room
         if self.room_type == KARAOKE_ROOM and self.duration:
             if self.duration < datetime.timedelta(hours=1):
-                raise ValidationError({
-                    'duration': 'Karaoke room bookings must be for at least 1 hour.'
-                })
-
+                # Use errors.setdefault to append if key already exists
+                errors.setdefault('duration', []).append(ValidationError(
+                    'Karaoke room bookings must be for at least 1 hour.'
+                ))
+        
+        # Check for double bookings only if status is CONFIRMED and room is set
         if self.status == 'CONFIRMED' and self.room and self.reservation_date and self.reservation_time and self.duration:
             start_datetime = self.get_start_datetime()
             end_datetime = self.get_end_datetime()
 
             if not start_datetime or not end_datetime:
-                return 
+                return # Can't check overlap without times
 
             overlapping_reservations = Reservation.objects.filter(
                 room=self.room,
@@ -110,11 +122,18 @@ class Reservation(models.Model):
                     continue 
 
                 if start_datetime < existing_end_dt and existing_start_dt < end_datetime:
-                    raise ValidationError(
+                    # This is a non-field error related to the combination of fields
+                    conflict_error = ValidationError(
                         f"{self.room.room_name} is already booked between {existing_start_dt.strftime('%H:%M')} and "
                         f"{existing_end_dt.strftime('%H:%M')} on {self.reservation_date}. "
                         f"Requested slot: {start_datetime.strftime('%H:%M')} to {end_datetime.strftime('%H:%M')}."
                     )
+                    errors.setdefault(NON_FIELD_ERRORS, []).append(conflict_error)
+                    break # No need to check further overlaps once one is found
+
+        # Raise ValidationError if any errors were collected
+        if errors:
+            raise ValidationError(errors)
 
     def __str__(self):
         room_name = self.room.room_name if self.room else "Unassigned"
