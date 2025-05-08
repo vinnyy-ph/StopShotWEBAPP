@@ -8,7 +8,7 @@ from django.core.exceptions import ValidationError
 class RoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
-        fields = '__all__'
+        fields = ['id', 'room_name', 'room_type'] 
 
 class BasicUserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -54,9 +54,30 @@ class CreateReservationSerializer(serializers.ModelSerializer):
                 })
         return data
 
+class PublicBookingSlotSerializer(serializers.ModelSerializer):
+
+    room = RoomSerializer(read_only=True)
+
+    class Meta:
+        model = Reservation
+        fields = [
+            'room',
+            'reservation_date',
+            'reservation_time',
+            'duration'
+        ]
+   
+        read_only_fields = fields 
+
+class DetailRoomSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Room
+        fields = '__all__' # Or list all fields needed for detailed view
+
 class ViewReservationSerializer(serializers.ModelSerializer):
     user = BasicUserSerializer(read_only=True)
-    room = RoomSerializer(read_only=True)
+    # Use the more detailed Room serializer here
+    room = DetailRoomSerializer(read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     room_type = serializers.CharField(source='get_room_type_display', read_only=True)
 
@@ -99,40 +120,39 @@ class AdminReservationUpdateSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [] 
 
-    def validate(self, data):
-        instance_data = {} 
-        if self.instance:
-            instance_data = {
-                'reservation_date': self.instance.reservation_date,
-                'reservation_time': self.instance.reservation_time,
-                'duration': self.instance.duration,
-                'room': self.instance.room,
-                'status': self.instance.status,
-                'room_type': self.instance.room_type, 
-                'pk': self.instance.pk 
-            }
+    def update(self, instance, validated_data):
+        """ Override update to run full_clean() before saving. """
+       
+        potential_status = validated_data.get('status', instance.status)
+        potential_room = validated_data.get('room', instance.room) 
+        potential_duration = validated_data.get('duration', instance.duration)
 
-        status_to_validate = data.get('status', instance_data.get('status'))
-        room_to_validate = data.get('room', instance_data.get('room'))
-        duration_to_validate = data.get('duration', instance_data.get('duration'))
-
-        temp_reservation_for_validation = Reservation(
-            pk=instance_data.get('pk'), 
-            reservation_date=instance_data.get('reservation_date'),
-            reservation_time=instance_data.get('reservation_time'),
-            duration=duration_to_validate,
-            room=room_to_validate,
-            status=status_to_validate,
-            room_type=instance_data.get('room_type') 
-
-        )
+        run_clean = False
+        if potential_status == 'CONFIRMED':
+            run_clean = True
+        elif instance.status == 'CONFIRMED' and ('room' in validated_data or 'duration' in validated_data):
+             run_clean = True 
         
-        try:
-            temp_reservation_for_validation.clean() 
-        except ValidationError as e:
+        if run_clean:
+            original_status = instance.status
+            original_room = instance.room
+            original_duration = instance.duration
 
-            if hasattr(e, 'error_dict'): 
-                raise serializers.ValidationError(e.error_dict)
-            else:
-                raise serializers.ValidationError(e.messages)
-        return data
+            instance.status = potential_status
+            instance.room = potential_room
+            instance.duration = potential_duration
+            
+            try:
+                instance.full_clean(exclude=None) 
+            except ValidationError as e:
+                instance.status = original_status
+                instance.room = original_room
+                instance.duration = original_duration
+
+                raise serializers.ValidationError(e.message_dict if hasattr(e, 'message_dict') else e.messages)
+            finally:
+                instance.status = original_status
+                instance.room = original_room
+                instance.duration = original_duration
+
+        return super().update(instance, validated_data)

@@ -5,7 +5,8 @@ from .models import Reservation, Room, ROOM_TYPE_CHOICES, TABLE, KARAOKE_ROOM
 from .serializers import (
     CreateReservationSerializer,
     ViewReservationSerializer,
-    AdminReservationUpdateSerializer
+    AdminReservationUpdateSerializer,
+    PublicBookingSlotSerializer
 )
 from .permissions import IsOwnerOrAdmin
 
@@ -25,46 +26,80 @@ class ReservationViewSet(viewsets.ModelViewSet):
     - Users create reservations with room_type preference (POST /api/reservations/). Room is not assigned yet.
     - Admins can list/filter reservations (including by room_type) and assign a specific Room.
     """
-    queryset = Reservation.objects.all()
+    queryset = Reservation.objects.all().select_related('user', 'room')
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['status', 'reservation_date', 'room', 'room_type'] 
+    filterset_fields = ['status', 'reservation_date', 'room', 'room_type', 'room__room_type']
     search_fields = ['guest_name', 'guest_email', 'user__username', 'user__email', 'room__room_name', 'room_type']
     ordering_fields = ['reservation_date', 'reservation_time', 'created_at']
     ordering = ['-reservation_date', '-reservation_time'] 
 
     def get_queryset(self):
-        """ Filter reservations based on user role. """
+        """ Filter reservations based on user role or for public slot view. """
         user = self.request.user
-        if user.is_authenticated and user.is_staff:
-            return Reservation.objects.all() 
+        query_params = self.request.query_params
+        queryset = super().get_queryset()
+
+        is_public_slot_query = (
+            self.action == 'list' and 
+            query_params.get('status') == 'CONFIRMED' and 
+            query_params.get('reservation_date') and 
+            query_params.get('room__room_type')
+        )
+
+        if is_public_slot_query:
+            # No user filtering needed for public slots query
+            # Filters for date, status, room__room_type are handled by DjangoFilterBackend
+            return queryset 
+        elif user.is_authenticated and user.is_staff:
+            return queryset # Staff see all (filtered by query params if any)
         elif user.is_authenticated:
-       
-            return Reservation.objects.filter(user=user) 
+            return queryset.filter(user=user) # Regular users see only their own
         else:
-       
-            return Reservation.objects.none() 
+            # This case shouldn't be reached for list/retrieve due to permissions,
+            # but return none just in case.
+             return queryset.none() 
 
     def get_serializer_class(self):
-        """ Return appropriate serializer based on action and user role. """
         user = self.request.user
         is_admin = user.is_authenticated and user.is_staff
+        query_params = self.request.query_params
+
+        # Check if this is a request for public booked slots
+        is_public_slot_query = (
+            self.action == 'list' and 
+            query_params.get('status') == 'CONFIRMED' and 
+            query_params.get('reservation_date') and 
+            query_params.get('room__room_type')
+        )
 
         if self.action == 'create':
             return CreateReservationSerializer
-
         elif self.action in ['update', 'partial_update'] and is_admin:
             return AdminReservationUpdateSerializer
- 
-        return ViewReservationSerializer
+        elif is_public_slot_query:
+            return PublicBookingSlotSerializer # Use minimal serializer for public slots
+        else:
+            # For retrieve, or standard list for authenticated users/admins
+            return ViewReservationSerializer
 
     def get_permissions(self):
-        """ Apply different permissions based on action. """
+        query_params = self.request.query_params
+        # Check if this is a request for public booked slots
+        is_public_slot_query = (
+            self.action == 'list' and 
+            query_params.get('status') == 'CONFIRMED' and 
+            query_params.get('reservation_date') and 
+            query_params.get('room__room_type')
+        )
+
         if self.action == 'create':
             permission_classes = [permissions.AllowAny]
+        elif is_public_slot_query:
+             permission_classes = [permissions.AllowAny] # Allow anyone to see booked slots
         elif self.action in ['update', 'partial_update', 'destroy']:
             permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdmin]
-        else: 
+        else: # Standard list (for user's own) or retrieve
             permission_classes = [permissions.IsAuthenticated]
         return [permission() for permission in permission_classes]
 

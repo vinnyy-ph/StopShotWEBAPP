@@ -148,15 +148,50 @@ All endpoints returning reservation details will use the standard reservation ob
 *   **Purpose:** Get the exact list of confirmed bookings for a specific room type on a given date. Useful for disabling specific time slots in the UI.
 *   **Method:** `GET`
 *   **Endpoint:** `/api/reservations/`
-*   **Query Parameters:**
-    *   `reservation_date=YYYY-MM-DD` (Required)
-    *   `status=CONFIRMED` (Required)
-    *   `room__room_type=[TABLE | KARAOKE_ROOM]` (Required)
-    *   Example: `?reservation_date=2024-12-25&status=CONFIRMED&room__room_type=KARAOKE_ROOM`
-*   **Authentication:** Required (*Note: Permissions might need adjustment if non-admins need this data for UI availability.*)
-*   **Response (`200 OK`):** An array `[...]` containing confirmed reservation objects matching the filters. Each object includes the specific `room` assigned, `reservation_time`, and `duration`.
+*   **Query Parameters (ALL Required for this purpose):**
+    *   `reservation_date=YYYY-MM-DD` 
+    *   `status=CONFIRMED` 
+    *   `room__room_type=[TABLE | KARAOKE_ROOM]` 
+    *   Example: `?reservation_date=2025-11-10&status=CONFIRMED&room__room_type=KARAOKE_ROOM`
+*   **Authentication:** None required (when using *all* the above query parameters).
+*   **Response (`200 OK`):** An array `[...]` containing minimal details of confirmed reservation slots matching the filters. **Note:** The system prevents conflicting bookings, so the slots listed here will not overlap for the *same specific room*.
+    ```json
+    [
+        {
+            "room": {
+                "id": 1,
+                "room_name": "Karaoke Room 1",
+                "room_type": "KARAOKE_ROOM"
+            },
+            "reservation_date": "2025-11-10",
+            "reservation_time": "16:00:00", // 4 PM - 6 PM slot
+            "duration": "02:00:00"
+        },
+        {
+            "room": {
+                "id": 1,
+                "room_name": "Karaoke Room 1",
+                "room_type": "KARAOKE_ROOM"
+            },
+            "reservation_date": "2025-11-10",
+            "reservation_time": "19:00:00", // 7 PM - 9 PM slot (Example - does not conflict)
+            "duration": "02:00:00" 
+        },
+        {
+            "room": {
+                "id": 2, // Example for a DIFFERENT Karaoke Room
+                "room_name": "Karaoke Room 2",
+                "room_type": "KARAOKE_ROOM"
+            },
+            "reservation_date": "2025-11-10",
+            "reservation_time": "17:00:00", // 5 PM - 7 PM slot (Okay, different room)
+            "duration": "02:00:00" 
+        }
+        // ... other non-conflicting booked slots ...
+    ]
+    ```
 
----
+--- 
 
 ### 6. Delete Reservation
 
@@ -169,4 +204,4 @@ All endpoints returning reservation details will use the standard reservation ob
 
 ---
 
-*Remember to include authentication tokens in the `Authorization` header for protected endpoints.* 
+*Remember to include authentication tokens in the `Authorization` header for protected endpoints (like viewing full user reservation details or admin actions).*
