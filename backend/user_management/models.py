@@ -21,18 +21,22 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser, PermissionsMixin):
     ROLE_CHOICES = (
-        ('ADMIN', 'Admin Owner'),
-        ('EMPLOYEE', 'Employee'),
+        ('ADMIN', 'Admin'), 
+        ('OWNER', 'Owner'), 
+        ('BAR_MANAGER', 'Bar Manager'),
+        ('HEAD_CHEF', 'Head Chef'),
+        ('BARTENDER', 'Bartender'),
+        ('SERVER', 'Server'),
         ('CUSTOMER', 'Customer'),
     )
-
+    
     email = models.EmailField(unique=True)
-    username = models.CharField(max_length=150, unique=True)
+    full_name = models.CharField(max_length=255, blank=True)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='CUSTOMER')
-
+    hire_date = models.DateField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-
+    
     objects = UserManager()
 
     USERNAME_FIELD = 'email'

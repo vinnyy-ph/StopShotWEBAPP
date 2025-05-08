@@ -13,6 +13,12 @@ class CreateEmployeeSerializer(serializers.ModelSerializer):
         validated_data['is_staff'] = True  # Optional lang: for admin dashboard access
         return User.objects.create_user(**validated_data)
 
+class UpdateEmployeeStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['is_active']
+
+
 class RequestResetSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
