@@ -55,7 +55,7 @@ class Reservation(models.Model):
     guest_email = models.EmailField()
     reservation_date = models.DateField()
     reservation_time = models.TimeField()
-    duration = models.DurationField(default=datetime.timedelta(hours=2)) 
+    duration = models.DurationField(default=datetime.timedelta(hours=1)) 
     number_of_guests = models.PositiveIntegerField(default=1) 
     special_requests = models.TextField(blank=True, null=True)
 

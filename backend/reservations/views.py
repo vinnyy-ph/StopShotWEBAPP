@@ -1,13 +1,23 @@
-from rest_framework import viewsets, permissions, filters, status
+from rest_framework import viewsets, permissions, filters, status as drf_status
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Reservation, Room
+from .models import Reservation, Room, ROOM_TYPE_CHOICES, TABLE, KARAOKE_ROOM
 from .serializers import (
     CreateReservationSerializer,
     ViewReservationSerializer,
     AdminReservationUpdateSerializer
 )
 from .permissions import IsOwnerOrAdmin
+
+from rest_framework.views import APIView
+import datetime
+from django.utils import timezone
+from django.db.models import Q 
+
+VENUE_TOTAL_OPERATING_HOURS_PER_BUSINESS_DAY = datetime.timedelta(hours=9)
+
+BUSINESS_DAY_START_TIME = datetime.time(16, 0, 0)  # 4:00 PM
+BUSINESS_DAY_END_TIME = datetime.time(1, 0, 0)    # 1:00 AM
 
 class ReservationViewSet(viewsets.ModelViewSet):
     """
@@ -65,4 +75,97 @@ class ReservationViewSet(viewsets.ModelViewSet):
         """
         user = self.request.user if self.request.user.is_authenticated else None
         serializer.save(user=user)
+
+class DailyAvailabilitySummaryView(APIView):
+    """
+    Provides a summary of daily availability based on confirmed bookings.
+    Accepts a 'date' query parameter in YYYY-MM-DD format.
+    e.g., /api/availability/summary/?date=2024-05-10
+    """
+    permission_classes = [permissions.AllowAny] # Accessible to anyone
+
+    def get(self, request):
+        date_str = request.query_params.get('date')
+        if not date_str:
+            return Response({"error": "Date query parameter is required."}, status=drf_status.HTTP_400_BAD_REQUEST)
+
+        try:
+            target_date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+        except ValueError:
+            return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=drf_status.HTTP_400_BAD_REQUEST)
+
+        business_day_start_dt = timezone.make_aware(datetime.datetime.combine(target_date, BUSINESS_DAY_START_TIME))
+        business_day_end_dt = timezone.make_aware(datetime.datetime.combine(target_date + datetime.timedelta(days=1), BUSINESS_DAY_END_TIME))
+
+        reservations_in_window = Reservation.objects.filter(
+            status='CONFIRMED'
+        ).filter(
+            (Q(reservation_date=target_date) & Q(reservation_time__gte=BUSINESS_DAY_START_TIME)) |
+            (Q(reservation_date=(target_date + datetime.timedelta(days=1))) & Q(reservation_time__lt=BUSINESS_DAY_END_TIME))
+        ).select_related('room') 
+
+        availability_results = {}
+
+        for room_type_value, room_type_display in ROOM_TYPE_CHOICES:
+            # Find active rooms of the current type
+            active_rooms_of_type = Room.objects.filter(
+                room_can_be_booked=True,
+                room_type=room_type_value
+            )
+            num_rooms_of_type = active_rooms_of_type.count()
+
+            if num_rooms_of_type == 0:
+                availability_results[room_type_value] = {
+                    "room_type_display": room_type_display,
+                    "percentage_booked": 100.0,
+                    "availability_status": "UNAVAILABLE",
+                    "message": f"No {room_type_display} rooms are configured or currently bookable."
+                }
+                continue 
+            total_available_duration_for_type = VENUE_TOTAL_OPERATING_HOURS_PER_BUSINESS_DAY * num_rooms_of_type
+
+     
+            total_booked_duration_for_type = datetime.timedelta(0)
+            reservations_for_type = [ 
+                res for res in reservations_in_window 
+                if res.room and res.room.room_type == room_type_value
+            ]
+            
+            for res in reservations_for_type:
+                res_start_dt = res.get_start_datetime()
+                res_end_dt = res.get_end_datetime()
+
+                if not res_start_dt or not res_end_dt or not res.duration:
+                    continue
+
+                overlap_start = max(business_day_start_dt, res_start_dt)
+                overlap_end = min(business_day_end_dt, res_end_dt)
+
+                if overlap_end > overlap_start:
+                    total_booked_duration_for_type += (overlap_end - overlap_start)
+
+            percentage_booked = 0.0
+            if total_available_duration_for_type.total_seconds() > 0:
+                percentage_booked = (total_booked_duration_for_type.total_seconds() / total_available_duration_for_type.total_seconds()) * 100
+            elif total_booked_duration_for_type.total_seconds() > 0:
+                 percentage_booked = 100.0
+
+            percentage_booked = min(max(0, percentage_booked), 100.0)
+
+            availability_status = "AVAILABLE"
+            if percentage_booked >= 100:
+                availability_status = "UNAVAILABLE"
+            elif percentage_booked >= 50:
+                availability_status = "LIMITED_AVAILABILITY"
+            
+            availability_results[room_type_value] = {
+                "room_type_display": room_type_display,
+                "percentage_booked": round(percentage_booked, 2),
+                "availability_status": availability_status
+            }
+
+        return Response({
+            "date": target_date.isoformat(),
+            "availability_by_type": availability_results
+        }, status=drf_status.HTTP_200_OK)
 
