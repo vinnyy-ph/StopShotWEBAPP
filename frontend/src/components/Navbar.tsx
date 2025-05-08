@@ -251,6 +251,8 @@ const Navbar: React.FC = () => {
             ))}
             <Button
               variant="contained"
+              component={Link}
+              to="/reservations"
               sx={{
                 backgroundColor: '#d38236',
                 borderRadius: '100px',
