@@ -42,7 +42,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, onDarkModeChange }) => {
       try {
         // Create axios instance with auth header
         const axiosInstance = axios.create({
-          baseURL: 'http://127.0.0.1:8000/api',
+          baseURL: 'http://stopshotapp-env-2.eba-8srvpzqc.ap-southeast-2.elasticbeanstalk.com/api',
           headers: {
             'Authorization': `Token ${authToken}`,
             'Content-Type': 'application/json'
@@ -75,7 +75,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, onDarkModeChange }) => {
     
     try {
       const axiosInstance = axios.create({
-        baseURL: 'http://127.0.0.1:8000/api',
+        baseURL: 'http://stopshotapp-env-2.eba-8srvpzqc.ap-southeast-2.elasticbeanstalk.com/api',
         headers: {
           'Authorization': `Token ${authToken}`,
           'Content-Type': 'application/json'

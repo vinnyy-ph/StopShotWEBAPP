@@ -120,7 +120,7 @@ const FeedbackPage: React.FC = () => {
   useEffect(() => {
     const fetchFeedbacks = async () => {
       try {
-        const response = await axios.get('http://127.0.0.1:8000/api/feedback/');
+        const response = await axios.get('http://stopshotapp-env-2.eba-8srvpzqc.ap-southeast-2.elasticbeanstalk.com/api/feedback/');
         // Get random 5 feedbacks if there are more than 5
         const feedbacks = response.data;
         const randomFeedbacks = feedbacks.length > 5 
@@ -220,7 +220,7 @@ const FeedbackPage: React.FC = () => {
     
     try {
       // Send feedback to backend API with timeout
-      await axios.post('http://127.0.0.1:8000/api/feedback/', feedbackData, {
+      await axios.post('http://stopshotapp-env-2.eba-8srvpzqc.ap-southeast-2.elasticbeanstalk.com/api/feedback/', feedbackData, {
         timeout: 8000 // 8 second timeout
       });
       

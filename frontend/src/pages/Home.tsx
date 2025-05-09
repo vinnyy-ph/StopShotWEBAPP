@@ -264,7 +264,7 @@ const HomePage: React.FC = () => {
   const fetchMenuHighlights = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://127.0.0.1:8000/api/menus/list');
+      const response = await fetch('http://stopshotapp-env-2.eba-8srvpzqc.ap-southeast-2.elasticbeanstalk.com/api/menus/list');
       
       if (!response.ok) {
         throw new Error('Failed to fetch menu items');
@@ -298,7 +298,7 @@ const HomePage: React.FC = () => {
   const fetchFeedback = async () => {
     try {
       setFeedbackLoading(true);
-      const response = await fetch('http://127.0.0.1:8000/api/feedback/');
+      const response = await fetch('http://stopshotapp-env-2.eba-8srvpzqc.ap-southeast-2.elasticbeanstalk.com/api/feedback/');
       
       if (!response.ok) {
         throw new Error('Failed to fetch feedback');

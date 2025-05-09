@@ -47,7 +47,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
     try {
       // Call the logout endpoint if we have a token
       if (authToken) {
-        await axios.post('http://127.0.0.1:8000/api/auth/logout/', {}, {
+        await axios.post('http://stopshotapp-env-2.eba-8srvpzqc.ap-southeast-2.elasticbeanstalk.com/api/auth/logout/', {}, {
           headers: {
             'Authorization': `Token ${authToken}`,
             'Content-Type': 'application/json'

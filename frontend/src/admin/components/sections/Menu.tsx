@@ -53,7 +53,7 @@ interface MenuProps {
 
 const Menu: React.FC<MenuProps> = ({ onAddMenuItem, onUpdateMenuItem, onDeleteMenuItem }) => {
   const { authToken } = useAuth();
-  const API_BASE_URL = 'http://127.0.0.1:8000/api';
+  const API_BASE_URL = 'http://stopshotapp-env-2.eba-8srvpzqc.ap-southeast-2.elasticbeanstalk.com/api';
   
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [filteredItems, setFilteredItems] = useState<MenuItem[]>([]);
@@ -295,6 +295,11 @@ const Menu: React.FC<MenuProps> = ({ onAddMenuItem, onUpdateMenuItem, onDeleteMe
                           label={item.category} 
                           size="small"
                           className="category-chip"
+                          sx={{ 
+                            backgroundColor: '#2e4a66', 
+                            color: '#ffffff',
+                            fontWeight: 500
+                          }}
                         />
                       </TableCell>
                       <TableCell>
@@ -310,14 +315,14 @@ const Menu: React.FC<MenuProps> = ({ onAddMenuItem, onUpdateMenuItem, onDeleteMe
                           onClick={() => handleOpenEditDialog(item)}
                           className="action-btn edit-btn"
                         >
-                          <EditIcon fontSize="small" />
+                          <EditIcon fontSize="small" sx={{ color: '#8eccff' }} />
                         </IconButton>
                         <IconButton 
                           size="small"
                           onClick={() => handleDeleteMenuItem(item.menu_id)}
                           className="action-btn delete-btn"
                         >
-                          <DeleteIcon fontSize="small" />
+                          <DeleteIcon fontSize="small" sx={{ color: '#ff7043' }} />
                         </IconButton>
                       </TableCell>
                     </TableRow>
@@ -345,6 +350,17 @@ const Menu: React.FC<MenuProps> = ({ onAddMenuItem, onUpdateMenuItem, onDeleteMe
           className="table-pagination"
           labelRowsPerPage="Rows per page:"
           labelDisplayedRows={({ from, to, count }) => `${from}-${to} of ${count}`}
+          sx={{
+            color: '#e0e0e0',
+            '.MuiTablePagination-selectIcon': { color: '#e0e0e0' },
+            '.MuiTablePagination-actions': { color: '#e0e0e0' },
+            '& .MuiIconButton-root': {
+              color: '#8eccff',
+              '&.Mui-disabled': {
+                color: '#555555'
+              }
+            }
+          }}
         />
       </Paper>
 

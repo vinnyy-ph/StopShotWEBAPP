@@ -101,7 +101,7 @@ const ContactPage: React.FC = () => {
     };
     
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/message/', {
+      const response = await fetch('http://stopshotapp-env-2.eba-8srvpzqc.ap-southeast-2.elasticbeanstalk.com/api/message/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

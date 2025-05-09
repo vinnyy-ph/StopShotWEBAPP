@@ -65,7 +65,7 @@ interface Room {
 
 // Create axios instance with authorization header
 const axiosInstance = axios.create({
-  baseURL: 'http://127.0.0.1:8000/api',
+  baseURL: 'http://stopshotapp-env-2.eba-8srvpzqc.ap-southeast-2.elasticbeanstalk.com/api',
   headers: {
     'Content-Type': 'application/json',
   }
@@ -393,7 +393,7 @@ const filteredReservations = getFilteredReservationsByStatus().filter(res =>
                     </TableCell>
                     <TableCell align="right" className="action-cell">
                       <IconButton size="small" onClick={() => handleViewReservation(row)}>
-                        <VisibilityIcon fontSize="small" />
+                        <VisibilityIcon fontSize="small" style={{ color: '#8eccff' }} />
                       </IconButton>
                       
                       {/* Only show confirm button if not already confirmed or cancelled */}
@@ -407,7 +407,7 @@ const filteredReservations = getFilteredReservationsByStatus().filter(res =>
                           <CheckCircleIcon 
                             fontSize="small" 
                             style={{ 
-                              color: !row.room ? '#ffaa00' : '#aaa' 
+                              color: !row.room ? '#ffaa00' : '#4caf50' 
                             }} 
                           />
                         </IconButton>
@@ -420,14 +420,14 @@ const filteredReservations = getFilteredReservationsByStatus().filter(res =>
                           onClick={() => handleStatusChange(row.id, 'CANCELLED')}
                           className="cancel-button"
                         >
-                          <CancelIcon fontSize="small" />
+                          <CancelIcon fontSize="small" style={{ color: '#f44336' }} />
                         </IconButton>
                       )}
                       
                       {/* Only show delete button for pending reservations */}
                       {row.status === 'PENDING' && (
                         <IconButton size="small" onClick={() => onDeleteReservation(row.id)}>
-                          <DeleteIcon fontSize="small" />
+                          <DeleteIcon fontSize="small" style={{ color: '#ff7043' }} />
                         </IconButton>
                       )}
                     </TableCell>

@@ -48,7 +48,7 @@ const FeedbackResponseDialog: React.FC<FeedbackResponseDialogProps> = ({
     try {
       // Call the backend API to send the response
       await axios.post(
-        `http://127.0.0.1:8000/api/feedback/${feedbackItem.feedback_id}/response/`, 
+        `http://stopshotapp-env-2.eba-8srvpzqc.ap-southeast-2.elasticbeanstalk.com/api/feedback/${feedbackItem.feedback_id}/response/`, 
         { response_text: responseText },
         {
           headers: {

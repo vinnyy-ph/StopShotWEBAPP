@@ -54,7 +54,7 @@ const Feedback: React.FC<FeedbackProps> = ({
     setError('');
     
     try {
-      const response = await axios.get('http://127.0.0.1:8000/api/feedback/', {
+      const response = await axios.get('http://stopshotapp-env-2.eba-8srvpzqc.ap-southeast-2.elasticbeanstalk.com/api/feedback/', {
         headers: {
           'Authorization': `Token ${localStorage.getItem('authToken')}`
         }
@@ -95,7 +95,7 @@ const Feedback: React.FC<FeedbackProps> = ({
     if (window.confirm('Are you sure you want to delete this feedback?')) {
       try {
         // The correct way to call the delete API with the ID in the URL
-        await axios.delete(`http://127.0.0.1:8000/api/feedback/${id}/`, {
+        await axios.delete(`http://stopshotapp-env-2.eba-8srvpzqc.ap-southeast-2.elasticbeanstalk.com/api/feedback/${id}/`, {
           headers: {
             'Authorization': `Token ${localStorage.getItem('authToken')}`
           }
@@ -224,7 +224,15 @@ const Feedback: React.FC<FeedbackProps> = ({
                   <Typography className="summary-title">Average Rating</Typography>
                   <Typography variant="h4" className="summary-value">{stats.averageRating}</Typography>
                 </Box>
-                <Rating value={stats.averageRating} precision={0.1} readOnly />
+                <Rating 
+                  value={stats.averageRating} 
+                  precision={0.1} 
+                  readOnly 
+                  sx={{ 
+                    '& .MuiRating-iconFilled': { color: '#f5b74e' },
+                    '& .MuiRating-iconEmpty': { color: '#666666' }
+                  }}
+                />
               </Paper>
               
               <Paper className="summary-card">
@@ -234,39 +242,49 @@ const Feedback: React.FC<FeedbackProps> = ({
                 </Box>
                 <Box className="rating-breakdown">
                   <Box className="rating-bar">
-                    <Typography variant="caption">5★</Typography>
+                    <Typography variant="caption" sx={{ color: '#e0e0e0' }}>5★</Typography>
                     <Box className="bar-container">
                       <Box className="bar-fill" sx={{ width: `${getPercentage(5)}%` }}></Box>
                     </Box>
-                    <Typography variant="caption">{Math.round(getPercentage(5))}%</Typography>
+                    <Typography variant="caption" sx={{ color: '#e0e0e0' }}>
+                      {Math.round(getPercentage(5))}%
+                    </Typography>
                   </Box>
                   <Box className="rating-bar">
-                    <Typography variant="caption">4★</Typography>
+                    <Typography variant="caption" sx={{ color: '#e0e0e0' }}>4★</Typography>
                     <Box className="bar-container">
                       <Box className="bar-fill" sx={{ width: `${getPercentage(4)}%` }}></Box>
                     </Box>
-                    <Typography variant="caption">{Math.round(getPercentage(4))}%</Typography>
+                    <Typography variant="caption" sx={{ color: '#e0e0e0' }}>
+                      {Math.round(getPercentage(4))}%
+                    </Typography>
                   </Box>
                   <Box className="rating-bar">
-                    <Typography variant="caption">3★</Typography>
+                    <Typography variant="caption" sx={{ color: '#e0e0e0' }}>3★</Typography>
                     <Box className="bar-container">
                       <Box className="bar-fill" sx={{ width: `${getPercentage(3)}%` }}></Box>
                     </Box>
-                    <Typography variant="caption">{Math.round(getPercentage(3))}%</Typography>
+                    <Typography variant="caption" sx={{ color: '#e0e0e0' }}>
+                      {Math.round(getPercentage(3))}%
+                    </Typography>
                   </Box>
                   <Box className="rating-bar">
-                    <Typography variant="caption">2★</Typography>
+                    <Typography variant="caption" sx={{ color: '#e0e0e0' }}>2★</Typography>
                     <Box className="bar-container">
                       <Box className="bar-fill" sx={{ width: `${getPercentage(2)}%` }}></Box>
                     </Box>
-                    <Typography variant="caption">{Math.round(getPercentage(2))}%</Typography>
+                    <Typography variant="caption" sx={{ color: '#e0e0e0' }}>
+                      {Math.round(getPercentage(2))}%
+                    </Typography>
                   </Box>
                   <Box className="rating-bar">
-                    <Typography variant="caption">1★</Typography>
+                    <Typography variant="caption" sx={{ color: '#e0e0e0' }}>1★</Typography>
                     <Box className="bar-container">
                       <Box className="bar-fill" sx={{ width: `${getPercentage(1)}%` }}></Box>
                     </Box>
-                    <Typography variant="caption">{Math.round(getPercentage(1))}%</Typography>
+                    <Typography variant="caption" sx={{ color: '#e0e0e0' }}>
+                      {Math.round(getPercentage(1))}%
+                    </Typography>
                   </Box>
                 </Box>
               </Paper>
@@ -282,15 +300,23 @@ const Feedback: React.FC<FeedbackProps> = ({
                   <Paper key={item.feedback_id} className="feedback-card">
                     <Box className="feedback-card-header">
                       <Box className="feedback-user">
-                        <Avatar className="feedback-avatar">{getNameInitial(item)}</Avatar>
+                        <Avatar className="feedback-avatar" sx={{ bgcolor: '#2e4a66' }}>{getNameInitial(item)}</Avatar>
                         <Box>
-                          <Typography variant="subtitle2">{getUserName(item)}</Typography>
-                          <Typography variant="caption" className="feedback-date">
+                          <Typography variant="subtitle2" sx={{ color: '#ffffff' }}>{getUserName(item)}</Typography>
+                          <Typography variant="caption" className="feedback-date" sx={{ color: '#b0b0b0' }}>
                             {formatDate(item.created_at)}
                           </Typography>
                         </Box>
                       </Box>
-                      <Rating value={item.experience_rating} readOnly size="small" />
+                      <Rating 
+                        value={item.experience_rating} 
+                        readOnly 
+                        size="small" 
+                        sx={{ 
+                          '& .MuiRating-iconFilled': { color: '#f5b74e' },
+                          '& .MuiRating-iconEmpty': { color: '#666666' }
+                        }}
+                      />
                     </Box>
                     
                     <Typography variant="body2" className="feedback-message">
@@ -300,16 +326,16 @@ const Feedback: React.FC<FeedbackProps> = ({
 
                     {item.response_text && (
                       <Box sx={{ 
-                        backgroundColor: 'rgba(211, 130, 54, 0.05)', 
+                        backgroundColor: 'rgba(211, 130, 54, 0.15)', 
                         p: 1, 
                         borderRadius: 1, 
                         mb: 2,
                         borderLeft: '3px solid var(--accent-color)'
                       }}>
-                        <Typography variant="caption" sx={{ display: 'block', fontWeight: 'bold', color: 'var(--accent-color)' }}>
+                        <Typography variant="caption" sx={{ display: 'block', fontWeight: 'bold', color: '#f5b74e' }}>
                           Our Response:
                         </Typography>
-                        <Typography variant="body2">
+                        <Typography variant="body2" sx={{ color: '#e0e0e0' }}>
                           {item.response_text}
                         </Typography>
                       </Box>
@@ -319,9 +345,13 @@ const Feedback: React.FC<FeedbackProps> = ({
                       {!item.response_text && (
                         <Button 
                           size="small" 
-                          startIcon={<CheckCircleIcon />}
+                          startIcon={<CheckCircleIcon sx={{ color: '#4caf50' }} />}
                           className="btn-respond"
                           onClick={() => handleRespondToFeedback(item)}
+                          sx={{ 
+                            color: '#e0e0e0',
+                            '&:hover': { backgroundColor: 'rgba(76, 175, 80, 0.1)' }
+                          }}
                         >
                           Respond
                         </Button>
@@ -331,7 +361,7 @@ const Feedback: React.FC<FeedbackProps> = ({
                         className="action-btn delete-btn"
                         onClick={() => handleDeleteFeedback(item.feedback_id)}
                       >
-                        <DeleteIcon fontSize="small" />
+                        <DeleteIcon fontSize="small" sx={{ color: '#ff7043' }} />
                       </IconButton>
                     </Box>
                   </Paper>
