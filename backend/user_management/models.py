@@ -39,7 +39,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     hire_date = models.DateField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-    phone_num = models.IntegerField(blank=True , null=True)
+    phone_num = models.CharField(max_length=15, blank=True, null=True) 
     objects = UserManager()
 
     USERNAME_FIELD = 'email'

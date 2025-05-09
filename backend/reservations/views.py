@@ -16,7 +16,8 @@ from .permissions import IsOwnerOrAdmin
 from rest_framework.views import APIView
 import datetime
 from django.utils import timezone
-from django.db.models import Q 
+from django.db.models import Q
+from django.contrib.auth import get_user_model
 
 VENUE_TOTAL_OPERATING_HOURS_PER_BUSINESS_DAY = datetime.timedelta(hours=9)
 
@@ -117,11 +118,37 @@ class ReservationViewSet(viewsets.ModelViewSet):
         """
 
     def perform_create(self, serializer):
-        """ Set status to PENDING. Associate user ONLY if authenticated. """
-        if self.request.user.is_authenticated:
-            serializer.save(user=self.request.user, status='PENDING')
-        else:
-            serializer.save(user=None, status='PENDING')
+        """
+        Set status to PENDING.
+        Get or create a user based on guest_email and guest_name.
+        Associate this user with the reservation.
+        Room is NOT assigned here. Admin will assign it later.
+        """
+        guest_email = serializer.validated_data.get('guest_email')
+        guest_name = serializer.validated_data.get('guest_name', '') # Default to empty string if not provided
+
+        User = get_user_model() # Get the active user model
+
+        user = None
+        if guest_email:
+            parts = guest_name.split(' ', 1)
+            first_name = parts[0]
+            last_name = parts[1] if len(parts) > 1 else ''
+
+            user, created = User.objects.get_or_create(
+                email=guest_email,
+                defaults={
+                    'username': guest_email, 
+                    'first_name': first_name,
+                    'last_name': last_name,
+                    'role': 'CUSTOMER', 
+                    'is_active': True
+                }
+            )
+        elif self.request.user.is_authenticated:
+            user = self.request.user
+
+        serializer.save(user=user)
 
 class DailyAvailabilitySummaryView(APIView):
     """
