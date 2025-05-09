@@ -63,6 +63,24 @@ interface MenuItem {
   image_url: string | null;
 }
 
+// Feedback interface
+interface Feedback {
+  feedback_id: number;
+  user: {
+    username: string;
+    email: string;
+    first_name: string;
+    last_name: string;
+    phone_num: string | null;
+    role: string;
+  };
+  feedback_text: string;
+  response_text: string | null;
+  experience_rating: number;
+  created_at: string;
+  updated_at: string;
+}
+
 // Gallery images for atmosphere section
 const atmosphereImages = [
   {
@@ -89,6 +107,9 @@ const HomePage: React.FC = () => {
   const [menuHighlights, setMenuHighlights] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+  const [feedbackLoading, setFeedbackLoading] = useState(true);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
 
   // Auto-slide every 5 seconds
   useEffect(() => {
@@ -101,6 +122,9 @@ const HomePage: React.FC = () => {
 
     // Fetch menu items for highlights
     fetchMenuHighlights();
+    
+    // Fetch feedback data
+    fetchFeedback();
 
     return () => clearInterval(slideInterval);
   }, []);
@@ -135,6 +159,26 @@ const HomePage: React.FC = () => {
       setError('Unable to load menu highlights. Please try again later.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Fetch feedback data
+  const fetchFeedback = async () => {
+    try {
+      setFeedbackLoading(true);
+      const response = await fetch('http://127.0.0.1:8000/api/feedback/');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch feedback');
+      }
+      
+      const data: Feedback[] = await response.json();
+      setFeedbacks(data);
+    } catch (error) {
+      console.error('Error fetching feedback data:', error);
+      setFeedbackError('Unable to load customer feedback. Please try again later.');
+    } finally {
+      setFeedbackLoading(false);
     }
   };
 
@@ -459,74 +503,7 @@ const HomePage: React.FC = () => {
             />
           </Divider>
 
-          {/* Gallery Section - Replacing Events Section */}
-          <Box sx={{ mb: 8 }}>
-            <Typography 
-              variant="h5" 
-              sx={{ 
-                textAlign: 'center',
-                mb: 4,
-                color: 'white',
-                fontWeight: 600
-              }}
-            >
-              EXPERIENCE THE ATMOSPHERE
-            </Typography>
-            
-            <Grid container spacing={2}>
-              {atmosphereImages.map((image, index) => (
-                <Grid item xs={12} sm={6} md={3} key={index}>
-                  <Box
-                    sx={{
-                      position: 'relative',
-                      height: index % 2 === 0 ? 280 : 350,
-                      borderRadius: 2,
-                      overflow: 'hidden',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                      transition: 'all 0.3s ease',
-                      '&:hover': {
-                        transform: 'scale(1.03)',
-                        boxShadow: '0 12px 24px rgba(0,0,0,0.4)',
-                        '& .overlay-text': {
-                          opacity: 1,
-                        }
-                      }
-                    }}
-                  >
-                    <Box
-                      component="img"
-                      src={image.url}
-                      alt={image.title}
-                      sx={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                      }}
-                    />
-                    <Box
-                      className="overlay-text"
-                      sx={{
-                        position: 'absolute',
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        backgroundColor: 'rgba(0,0,0,0.7)',
-                        padding: 2,
-                        transition: 'opacity 0.3s ease',
-                        opacity: 0,
-                      }}
-                    >
-                      <Typography variant="body1" sx={{ color: 'white', fontWeight: 500 }}>
-                        {image.title}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Grid>
-              ))}
-            </Grid>
-          </Box>
-
-          {/* Testimonials / Reviews Section */}
+          {/* Testimonials / Reviews Section - Dynamic Marquee */}
           <Box className="reviews-section" sx={{ 
             py: 6, 
             px: 3, 
@@ -547,60 +524,132 @@ const HomePage: React.FC = () => {
                 mb: 4
               }}
             >
-              WHAT OUR FANS SAY
+              WHAT OUR CUSTOMERS SAY
             </Typography>
-            <Grid container spacing={4} justifyContent="center">
-              {[
-                {
-                  text: "The atmosphere during the playoffs is electric! Best screens in the city and the wing specials are incredible.",
-                  author: "Mike R., Regular since 2021"
+            
+            {feedbackLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                <CircularProgress sx={{ color: '#d38236' }} />
+              </Box>
+            ) : feedbackError ? (
+              <Typography color="error" align="center">{feedbackError}</Typography>
+            ) : (
+              <Box sx={{ 
+                position: 'relative',
+                overflow: 'hidden',
+                '&::before, &::after': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  width: '50px',
+                  height: '100%',
+                  zIndex: 2,
                 },
-                {
-                  text: "My go-to spot for watching UFC fights. Great crowd, amazing cocktails, and the staff really know their sports.",
-                  author: "Sarah K., Fight Night Fan"
+                '&::before': {
+                  left: 0,
+                  background: 'linear-gradient(to right, rgba(0,0,0,0.5), transparent)',
                 },
-                {
-                  text: "The private karaoke rooms are perfect for birthdays. We had a blast singing and the drink service was on point!",
-                  author: "David L., Celebration Expert"
+                '&::after': {
+                  right: 0,
+                  background: 'linear-gradient(to left, rgba(0,0,0,0.5), transparent)',
                 }
-              ].map((review, idx) => (
-                <Grid item xs={12} md={4} key={idx}>
-                  <Box sx={{ 
-                    bgcolor: 'rgba(0,0,0,0.5)',
-                    p: 3,
-                    borderRadius: 2,
-                    height: '100%',
-                    backdropFilter: 'blur(4px)',
-                    border: '1px solid rgba(255,255,255,0.1)',
+              }}>
+                <Box 
+                  sx={{ 
                     display: 'flex',
-                    flexDirection: 'column'
-                  }}>
-                    <Typography 
-                      variant="body1" 
-                      className="review-text"
+                    width: 'max-content', // This ensures all cards can be seen
+                    gap: 3,
+                    py: 2,
+                    '@keyframes marquee': {
+                      '0%': { transform: 'translateX(0)' },
+                      '100%': { transform: `translateX(-${feedbacks.length * 350}px)` }
+                    },
+                    animation: feedbacks.length > 2 ? 'marquee 45s linear infinite' : 'none',
+                    '&:hover': {
+                      animationPlayState: 'paused'
+                    }
+                  }}
+                >
+                  {/* Display all testimonials twice to create seamless loop */}
+                  {[...feedbacks, ...feedbacks].map((feedback, index) => (
+                    <Box 
+                      key={`${feedback.feedback_id}-${index}`}
                       sx={{ 
-                        fontStyle: 'italic',
-                        color: '#eee',
-                        flexGrow: 1
+                        bgcolor: 'rgba(0,0,0,0.5)',
+                        p: 3,
+                        borderRadius: 2,
+                        backdropFilter: 'blur(4px)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        width: '320px',
+                        height: '220px',
+                        transition: 'transform 0.3s ease',
+                        '&:hover': {
+                          transform: 'translateY(-5px)',
+                          boxShadow: '0 10px 20px rgba(0,0,0,0.2)'
+                        }
                       }}
                     >
-                      "{review.text}"
-                    </Typography>
-                    <Typography 
-                      variant="subtitle2" 
-                      className="review-author"
-                      sx={{ 
-                        color: '#d38236',
-                        mt: 2,
-                        fontWeight: 500
-                      }}
-                    >
-                      {review.author}
-                    </Typography>
-                  </Box>
-                </Grid>
-              ))}
-            </Grid>
+                      <Box sx={{ display: 'flex', mb: 2, alignItems: 'center' }}>
+                        {Array(feedback.experience_rating).fill(0).map((_, i) => (
+                          <Box 
+                            key={i}
+                            component="span" 
+                            sx={{ 
+                              color: '#d38236', 
+                              fontSize: '18px', 
+                              mr: 0.5 
+                            }}
+                          >
+                            ★
+                          </Box>
+                        ))}
+                      </Box>
+                      <Typography 
+                        variant="body1" 
+                        className="review-text"
+                        sx={{ 
+                          fontStyle: 'italic',
+                          color: '#eee',
+                          flexGrow: 1,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 4,
+                          WebkitBoxOrient: 'vertical'
+                        }}
+                      >
+                        "{feedback.feedback_text}"
+                      </Typography>
+                      <Typography 
+                        variant="subtitle2" 
+                        className="review-author"
+                        sx={{ 
+                          color: '#d38236',
+                          mt: 2,
+                          fontWeight: 500
+                        }}
+                      >
+                        {feedback.user.first_name} {feedback.user.last_name}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+                
+                <Typography 
+                  variant="body2" 
+                  align="center" 
+                  sx={{ 
+                    mt: 2, 
+                    color: 'rgba(255,255,255,0.7)',
+                    fontStyle: 'italic'
+                  }}
+                >
+                  Hover to pause • {feedbacks.length} reviews from our guests
+                </Typography>
+              </Box>
+            )}
           </Box>
 
           {/* Call-to-Action Section */}
