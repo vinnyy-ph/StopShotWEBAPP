@@ -12,6 +12,7 @@ import {
   ListItemIcon,
   Zoom,
   Badge,
+  Typography,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
@@ -22,6 +23,7 @@ import InfoIcon from '@mui/icons-material/Info';
 import ContactPhoneIcon from '@mui/icons-material/ContactPhone';
 import RateReviewIcon from '@mui/icons-material/RateReview';
 import SportsBasketballIcon from '@mui/icons-material/SportsBasketball';
+import CircleIcon from '@mui/icons-material/Circle';
 import { Link } from 'react-router-dom';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
@@ -145,7 +147,7 @@ const Navbar: React.FC = () => {
           padding: '0 20px'
         }}
       >
-        {/* Left side: Clickable logo with bouncing ball effect */}
+        {/* Left side: Clickable logo with bouncing billiard ball effect */}
         <Box className="navbar-logo-container">
           <Link to="/" style={{ display: 'flex', alignItems: 'center' }}>
             <img 
@@ -158,14 +160,37 @@ const Navbar: React.FC = () => {
               }}
             />
             <Zoom in={showBall} timeout={500}>
-              <SportsBasketballIcon 
+              <Box 
                 sx={{ 
-                  color: '#d38236',
+                  position: 'relative',
                   ml: 1,
-                  fontSize: '24px',
-                  animation: 'bounce 2s infinite'
-                }} 
-              />
+                  animation: 'bounce 2s infinite',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <CircleIcon 
+                  sx={{ 
+                    color: '#d38236',
+                    fontSize: '24px',
+                    backgroundColor: '#d38236',
+                    borderRadius: '50%',
+                    boxShadow: '0 0 3px rgba(255,255,255,0.5)'
+                  }} 
+                />
+                <Typography 
+                  sx={{
+                    position: 'absolute',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    color: '#ffffff',
+                    userSelect: 'none'
+                  }}
+                >
+                  9
+                </Typography>
+              </Box>
             </Zoom>
           </Link>
         </Box>

@@ -15,10 +15,8 @@ import {
 } from '@mui/material';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
-import SportsBasketballIcon from '@mui/icons-material/SportsBasketball';
-import SportsBaseballIcon from '@mui/icons-material/SportsBaseball';
-import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
 import LocalBarIcon from '@mui/icons-material/LocalBar';
+import { RiBilliardsFill } from "react-icons/ri";
 import MicExternalOnIcon from '@mui/icons-material/MicExternalOn';
 import EventIcon from '@mui/icons-material/Event';
 import '../styles/pages/homepage.css';
@@ -245,11 +243,9 @@ const HomePage: React.FC = () => {
           <Container>
             <Grid container spacing={2} justifyContent="center" alignItems="center">
               {[
-                { icon: <SportsSoccerIcon sx={{ fontSize: 36, color: '#d38236' }} />, label: "Soccer" },
-                { icon: <SportsBasketballIcon sx={{ fontSize: 36, color: '#d38236' }} />, label: "Basketball" },
-                { icon: <SportsBaseballIcon sx={{ fontSize: 36, color: '#d38236' }} />, label: "Baseball" },
                 { icon: <LocalBarIcon sx={{ fontSize: 36, color: '#d38236' }} />, label: "Premium Bar" },
-                { icon: <MicExternalOnIcon sx={{ fontSize: 36, color: '#d38236' }} />, label: "Karaoke" }
+                { icon: <MicExternalOnIcon sx={{ fontSize: 36, color: '#d38236' }} />, label: "Karaoke" },
+                { icon: <RiBilliardsFill style={{ fontSize: 36, color: '#d38236' }} />, label: "Billiards" }
               ].map((item, index) => (
                 <Grid item xs={6} sm={4} md={2} key={index} sx={{ textAlign: 'center' }}>
                   <Box sx={{ 
@@ -291,7 +287,7 @@ const HomePage: React.FC = () => {
                 WebkitTextFillColor: 'transparent'
               }}
             >
-              YOUR ULTIMATE SPORTS DESTINATION
+              YOUR ULTIMATE GO TO CHILL DESTINATION
             </Typography>
             <Typography 
               variant="h6" 
