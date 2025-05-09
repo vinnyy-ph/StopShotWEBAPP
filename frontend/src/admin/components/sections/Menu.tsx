@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
+  Paper,
   Box,
-  Button,
   Typography,
   Table,
   TableBody,
@@ -16,9 +16,10 @@ import {
   CircularProgress,
   TextField,
   InputAdornment,
-  styled,
+  Button,
   Tabs,
-  Tab
+  Tab,
+  Alert
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -28,7 +29,7 @@ import MenuItemDialog from '../dialogs/MenuItemDialog';
 import axios from 'axios';
 import { useAuth } from '../../../context/AuthContext';
 
-// MenuItem interface
+// MenuItem interface remains the same
 export interface MenuItem {
   menu_id: number;
   name: string;
@@ -49,116 +50,6 @@ interface MenuProps {
   onUpdateMenuItem: (menuItem: MenuItem) => Promise<boolean>;
   onDeleteMenuItem: (id: number) => Promise<boolean>;
 }
-
-// Styled components
-const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
-  backgroundColor: '#121212',
-  '& .MuiTable-root': {
-    borderCollapse: 'separate',
-    borderSpacing: '0 0',
-  },
-}));
-
-const StyledTableHeadCell = styled(TableCell)(({ theme }) => ({
-  backgroundColor: '#121212',
-  color: '#a0a0a0',
-  borderBottom: '1px solid #333',
-  fontSize: '0.75rem',
-  fontWeight: 500,
-  textTransform: 'uppercase',
-  padding: '10px 16px',
-}));
-
-const StyledTableCell = styled(TableCell)(({ theme }) => ({
-  borderBottom: '1px solid #1a1a1a',
-  color: 'white',
-  padding: '16px',
-}));
-
-const StyledTableRow = styled(TableRow)(({ theme }) => ({
-  backgroundColor: '#121212',
-  '&:hover': {
-    backgroundColor: '#1a1a1a',
-  },
-}));
-
-const StyledCategoryChip = styled(Chip)(({ theme }) => ({
-  backgroundColor: '#1e3a8a',
-  color: '#4299e1',
-  borderRadius: '16px',
-  fontWeight: 500,
-  fontSize: '0.75rem',
-  height: '24px',
-}));
-
-const StyledStatusChip = styled(Chip)(({ theme }) => ({
-  borderRadius: '16px',
-  fontWeight: 500,
-  fontSize: '0.75rem',
-  height: '24px',
-  '&.available': {
-    backgroundColor: '#1e462a',
-    color: '#48bb78',
-  },
-  '&.unavailable': {
-    backgroundColor: '#461e1e',
-    color: '#f56565',
-  }
-}));
-
-const StyledTab = styled(Tab)(({ theme }) => ({
-  color: '#a0a0a0',
-  textTransform: 'none',
-  fontSize: '0.875rem',
-  minWidth: 80,
-  '&.Mui-selected': {
-    color: 'white',
-  },
-  '&:hover': {
-    color: 'white',
-    opacity: 1,
-  },
-}));
-
-const StyledTabs = styled(Tabs)(({ theme }) => ({
-  marginBottom: 16,
-  '& .MuiTabs-indicator': {
-    backgroundColor: '#3182ce',
-  },
-}));
-
-const StyledSearchField = styled(TextField)(({ theme }) => ({
-  '& .MuiOutlinedInput-root': {
-    backgroundColor: '#1a1a1a',
-    borderRadius: 4,
-    height: 38,
-    color: 'white',
-    '& fieldset': {
-      border: 'none'
-    },
-    '&:hover fieldset': {
-      border: 'none'
-    },
-    '&.Mui-focused fieldset': {
-      border: 'none'
-    }
-  },
-  '& .MuiInputBase-input': {
-    padding: '8px 14px'
-  }
-}));
-
-const StyledAddButton = styled(Button)(({ theme }) => ({
-  backgroundColor: '#d38236',
-  color: 'white',
-  textTransform: 'none',
-  borderRadius: 4,
-  boxShadow: 'none',
-  '&:hover': {
-    backgroundColor: '#c06e29',
-    boxShadow: '0 2px 8px rgba(211, 130, 54, 0.4)',
-  }
-}));
 
 const Menu: React.FC<MenuProps> = ({ onAddMenuItem, onUpdateMenuItem, onDeleteMenuItem }) => {
   const { authToken } = useAuth();
@@ -313,156 +204,149 @@ const Menu: React.FC<MenuProps> = ({ onAddMenuItem, onUpdateMenuItem, onDeleteMe
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="80vh" sx={{ color: 'white' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
         <CircularProgress />
       </Box>
     );
   }
 
-  if (error) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="80vh" sx={{ color: 'white' }}>
-        <Typography color="error">{error}</Typography>
-      </Box>
-    );
-  }
-
   return (
-    <Box sx={{ p: 2, bgcolor: '#121212', color: 'white', minHeight: '100vh' }}>
-      {/* Header Section */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-          Menu Management
-        </Typography>
-        
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <StyledSearchField
-            placeholder="Search menu items..."
-            size="small"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon sx={{ color: '#a0a0a0' }} />
-                </InputAdornment>
-              ),
-            }}
-          />
-          <StyledAddButton
-            startIcon={<AddIcon />}
-            variant="contained"
-            onClick={handleOpenAddDialog}
-          >
-            ADD ITEM
-          </StyledAddButton>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3 }}
+    >
+      <Paper className="content-paper">
+        <Box className="content-header">
+          <Typography variant="h5" className="content-title">
+            Manage Menu Items
+          </Typography>
+          
+          <Box className="content-actions">
+            <TextField
+              placeholder="Search menu items..."
+              variant="outlined"
+              size="small"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-field"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <Button 
+              variant="contained" 
+              startIcon={<AddIcon />} 
+              className="add-btn"
+              onClick={handleOpenAddDialog}
+            >
+              Add Item
+            </Button>
+          </Box>
         </Box>
-      </Box>
 
-      {/* Tabs */}
-      <StyledTabs
-        value={tabValue}
-        onChange={handleTabChange}
-        variant="scrollable"
-        scrollButtons="auto"
-      >
-        <StyledTab label="All Items" />
-        <StyledTab label="Available" />
-        <StyledTab label="Unavailable" />
-        {categories.slice(1).map((category, index) => (
-          <StyledTab key={index} label={category} />
-        ))}
-      </StyledTabs>
+        <Tabs
+          value={tabValue}
+          onChange={handleTabChange}
+          className="content-tabs"
+        >
+          <Tab label="All Items" />
+          <Tab label="Available" />
+          <Tab label="Unavailable" />
+          {categories.slice(1).map((category, index) => (
+            <Tab key={index} label={category} />
+          ))}
+        </Tabs>
 
-      {/* Table */}
-      <StyledTableContainer>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <StyledTableHeadCell>Name</StyledTableHeadCell>
-              <StyledTableHeadCell>Description</StyledTableHeadCell>
-              <StyledTableHeadCell>Price</StyledTableHeadCell>
-              <StyledTableHeadCell>Category</StyledTableHeadCell>
-              <StyledTableHeadCell>Status</StyledTableHeadCell>
-              <StyledTableHeadCell align="right">Actions</StyledTableHeadCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredItems
-              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map((item) => (
-                <StyledTableRow key={item.menu_id}>
-                  <StyledTableCell sx={{ fontWeight: 'bold', textTransform: 'uppercase' }}>
-                    {item.name}
-                  </StyledTableCell>
-                  <StyledTableCell>
-                    {item.description.length > 50
-                      ? `${item.description.substring(0, 50)}...`
-                      : item.description}
-                  </StyledTableCell>
-                  <StyledTableCell>
-                    ${typeof item.price === 'number' ? item.price.toFixed(2) : Number(item.price).toFixed(2)}
-                  </StyledTableCell>
-                  <StyledTableCell>
-                    <StyledCategoryChip 
-                      label={item.category.toUpperCase()} 
-                      size="small"
-                    />
-                  </StyledTableCell>
-                  <StyledTableCell>
-                    <StyledStatusChip 
-                      label={item.is_available ? "Available" : "Unavailable"} 
-                      className={item.is_available ? 'available' : 'unavailable'}
-                      size="small"
-                    />
-                  </StyledTableCell>
-                  <StyledTableCell align="right">
-                    <IconButton 
-                      size="small"
-                      onClick={() => handleOpenEditDialog(item)}
-                      sx={{ color: '#3182ce' }}
-                    >
-                      <EditIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton 
-                      size="small"
-                      onClick={() => handleDeleteMenuItem(item.menu_id)}
-                      sx={{ color: '#e53e3e' }}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </StyledTableCell>
-                </StyledTableRow>
-              ))}
-            {filteredItems.length === 0 && (
-              <StyledTableRow>
-                <StyledTableCell colSpan={6} align="center" sx={{ py: 3 }}>
-                  <Typography sx={{ color: '#9e9e9e' }}>
-                    No menu items found.
-                  </Typography>
-                </StyledTableCell>
-              </StyledTableRow>
-            )}
-          </TableBody>
-        </Table>
-      </StyledTableContainer>
-      <TablePagination
-        rowsPerPageOptions={[5, 10, 25, 50]}
-        component="div"
-        count={filteredItems.length}
-        rowsPerPage={rowsPerPage}
-        page={page}
-        onPageChange={handleChangePage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-        sx={{
-          color: '#a0a0a0',
-          '.MuiTablePagination-selectIcon, .MuiTablePagination-actions': {
-            color: '#a0a0a0',
-          }
-        }}
-        labelRowsPerPage="Rows per page:"
-        labelDisplayedRows={({ from, to, count }) => `${from}-${to} of ${count}`}
-      />
+        {error ? (
+          <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>
+        ) : (
+          <TableContainer className="table-container">
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Description</TableCell>
+                  <TableCell>Price</TableCell>
+                  <TableCell>Category</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell align="right">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredItems
+                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                  .map((item) => (
+                    <TableRow key={item.menu_id} className="table-row">
+                      <TableCell sx={{ fontWeight: 500 }}>{item.name}</TableCell>
+                      <TableCell>
+                        {item.description.length > 50
+                          ? `${item.description.substring(0, 50)}...`
+                          : item.description}
+                      </TableCell>
+                      <TableCell>${typeof item.price === 'number' ? item.price.toFixed(2) : Number(item.price).toFixed(2)}</TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={item.category} 
+                          size="small"
+                          className="category-chip"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={item.is_available ? "Available" : "Unavailable"} 
+                          size="small"
+                          className={`status-chip ${item.is_available ? 'confirmed' : 'cancelled'}`}
+                        />
+                      </TableCell>
+                      <TableCell align="right" className="action-cell">
+                        <IconButton 
+                          size="small" 
+                          onClick={() => handleOpenEditDialog(item)}
+                          className="action-btn edit-btn"
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton 
+                          size="small"
+                          onClick={() => handleDeleteMenuItem(item.menu_id)}
+                          className="action-btn delete-btn"
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                {filteredItems.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center" className="empty-state">
+                      No menu items found.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+
+        <TablePagination
+          rowsPerPageOptions={[5, 10, 25, 50]}
+          component="div"
+          count={filteredItems.length}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          className="table-pagination"
+          labelRowsPerPage="Rows per page:"
+          labelDisplayedRows={({ from, to, count }) => `${from}-${to} of ${count}`}
+        />
+      </Paper>
 
       <MenuItemDialog 
         open={openDialog}
@@ -471,8 +355,8 @@ const Menu: React.FC<MenuProps> = ({ onAddMenuItem, onUpdateMenuItem, onDeleteMe
         onSave={handleSaveMenuItem}
         availableCategories={menuItems.map(item => item.category)}
       />
-    </Box>
+    </motion.div>
   );
 };
 
-export default Menu; 
+export default Menu;
