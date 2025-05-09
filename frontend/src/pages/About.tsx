@@ -577,14 +577,110 @@ const AboutPage: React.FC = () => {
         </Box>
         
         <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 4 }}>
-          <Grid container spacing={2}>
-            {['bar.png', 'billiards.png', 'outside.png', 'karaoke.png', 'show.png'].map((image, index) => (
-              <Grid item xs={6} md={4} lg={index === 0 ? 6 : 3} key={index}>
+            <Grid item xs={12} sx={{ mb: 2 }}>
+              <MotionBox 
+                className="atmosphere-image"
+                component="img"
+                src={`/gallery/front.png`}
+                alt="Front View"
+                whileHover={{ scale: 1.05, boxShadow: '0 10px 25px rgba(0,0,0,0.4), 0 0 20px rgba(211, 130, 54, 0.3)' }}
+                transition={{ type: "spring", stiffness: 300 }}
+                sx={{
+                  borderRadius: '12px',
+                  border: '2px solid #333',
+                  boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
+                  height: '100%',
+                  width: '100%',
+                  objectFit: 'cover'
+                }}
+              />
+            </Grid>
+            
+            {/* Small images row - moved here from bottom */}
+            <Grid container spacing={2} sx={{ mb: 2 }}>
+              <Grid item xs={6} sm={3}>
                 <MotionBox 
-                  className={`atmosphere-image ${index === 0 ? 'large' : ''}`}
+                  className="atmosphere-image"
                   component="img"
-                  src={`/gallery/${image}`}
-                  alt={`Sports Bar Atmosphere ${index + 1}`}
+                  src={`/gallery/outside.png`}
+                  alt="Outside View"
+                  whileHover={{ scale: 1.05, boxShadow: '0 10px 25px rgba(0,0,0,0.4), 0 0 20px rgba(211, 130, 54, 0.3)' }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                  sx={{
+                    borderRadius: '12px',
+                    border: '2px solid #333',
+                    boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
+                    height: { xs: '140px', md: '180px' },
+                    width: '100%',
+                    objectFit: 'cover'
+                  }}
+                />
+              </Grid>
+              <Grid item xs={6} sm={3}>
+                <MotionBox 
+                  className="atmosphere-image"
+                  component="img"
+                  src={`/gallery/show.png`}
+                  alt="Live Entertainment"
+                  whileHover={{ scale: 1.05, boxShadow: '0 10px 25px rgba(0,0,0,0.4), 0 0 20px rgba(211, 130, 54, 0.3)' }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                  sx={{
+                    borderRadius: '12px',
+                    border: '2px solid #333',
+                    boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
+                    height: { xs: '140px', md: '180px' },
+                    width: '100%',
+                    objectFit: 'cover'
+                  }}
+                />
+              </Grid>
+              <Grid item xs={6} sm={3}>
+                <MotionBox 
+                  className="atmosphere-image"
+                  component="img"
+                  src={`/gallery/beerpong.png`}
+                  alt="Beer Pong"
+                  whileHover={{ scale: 1.05, boxShadow: '0 10px 25px rgba(0,0,0,0.4), 0 0 20px rgba(211, 130, 54, 0.3)' }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                  sx={{
+                    borderRadius: '12px',
+                    border: '2px solid #333',
+                    boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
+                    height: { xs: '140px', md: '180px' },
+                    width: '100%',
+                    objectFit: 'cover'
+                  }}
+                />
+              </Grid>
+              <Grid item xs={6} sm={3}>
+                <MotionBox 
+                  className="atmosphere-image"
+                  component="img"
+                  src={`/gallery/drinks.png`}
+                  alt="Signature Drinks"
+                  whileHover={{ scale: 1.05, boxShadow: '0 10px 25px rgba(0,0,0,0.4), 0 0 20px rgba(211, 130, 54, 0.3)' }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                  sx={{
+                    borderRadius: '12px',
+                    border: '2px solid #333',
+                    boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
+                    height: { xs: '140px', md: '180px' },
+                    width: '100%',
+                    objectFit: 'cover'
+                  }}
+                />
+              </Grid>
+            </Grid>
+
+            {/* Bar and side images */}
+            <Grid container spacing={2}>
+              {/* Featured large image - Bar atmosphere */}
+              <Grid item xs={12} md={8}>
+                <MotionBox 
+                  className="atmosphere-image large"
+                  component="img"
+                  src={`/gallery/bar.png`}
+                  alt="Bar Atmosphere"
                   whileHover={{ 
                     scale: 1.05, 
                     boxShadow: '0 10px 25px rgba(0,0,0,0.4), 0 0 20px rgba(211, 130, 54, 0.3)'
@@ -593,12 +689,55 @@ const AboutPage: React.FC = () => {
                   sx={{
                     borderRadius: '12px',
                     border: '2px solid #333',
-                    boxShadow: '0 5px 15px rgba(0,0,0,0.3)'
+                    boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
+                    height: '100%',
+                    objectFit: 'cover'
                   }}
                 />
               </Grid>
-            ))}
-          </Grid>
+              
+              {/* Right side column */}
+              <Grid item xs={12} md={4}>
+                <Grid container spacing={0.1}>
+                  <Grid item xs={12}>
+                    <MotionBox 
+                      className="atmosphere-image"
+                      component="img"
+                      src={`/gallery/billiards.png`}
+                      alt="Billiards Tables"
+                      whileHover={{ scale: 1.05, boxShadow: '0 10px 25px rgba(0,0,0,0.4), 0 0 20px rgba(211, 130, 54, 0.3)' }}
+                      transition={{ type: "spring", stiffness: 300 }}
+                      sx={{
+                        borderRadius: '12px',
+                        border: '2px solid #333',
+                        boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
+                        height: '200px',
+                        width: '100%',
+                        objectFit: 'cover'
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <MotionBox 
+                      className="atmosphere-image"
+                      component="img"
+                      src={`/gallery/karaoke.png`}
+                      alt="Karaoke Room"
+                      whileHover={{ scale: 1.05, boxShadow: '0 10px 25px rgba(0,0,0,0.4), 0 0 20px rgba(211, 130, 54, 0.3)' }}
+                      transition={{ type: "spring", stiffness: 300 }}
+                      sx={{
+                        borderRadius: '12px',
+                        border: '2px solid #333',
+                        boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
+                        height: '200px',
+                        width: '100%',
+                        objectFit: 'cover'
+                      }}
+                    />
+                  </Grid>
+                </Grid>
+              </Grid>
+            </Grid>
           
           {/* Added featured activities */}
           <Box sx={{ mt: 6, mb: 4 }}>
