@@ -273,7 +273,7 @@ const ContactPage: React.FC = () => {
                     } 
                     secondary={
                       <Typography variant="body2" sx={{ color: '#bbb' }}>
-                        msysonxyz@genrail.com
+                        stopshot.management@gmail.com
                       </Typography>
                     }
                   />

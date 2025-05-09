@@ -246,7 +246,7 @@ const Footer: React.FC = () => {
             The ultimate sports destination in the heart of Mandaluyong. Come for the games, stay for the experience.
           </Typography>
           <Typography variant="body2" sx={{ color: '#d38236' }}>
-            msysonxyz@genrail.com
+            stopshot.management@gmail.com
           </Typography>
         </Grid>
 

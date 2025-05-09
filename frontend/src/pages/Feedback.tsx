@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Box, 
   Typography, 
@@ -19,8 +19,6 @@ import {
   Avatar,
   IconButton,
   InputAdornment,
-  Tooltip,
-  Zoom,
   Fade
 } from '@mui/material';
 import SportsBasketballIcon from '@mui/icons-material/SportsBasketball';
@@ -28,13 +26,12 @@ import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
 import StarIcon from '@mui/icons-material/Star';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import EmailIcon from '@mui/icons-material/Email';
-import PhoneIcon from '@mui/icons-material/Phone';
-import SendIcon from '@mui/icons-material/Send';
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import SendIcon from '@mui/icons-material/Send';
 import '../styles/pages/feedback.css';
 import axios from 'axios';
 
@@ -91,23 +88,9 @@ const ratingLabels = {
   5: 'Excellent'
 };
 
-// Labels for specific rating areas
-const specificRatingAreas = {
-  service: "Service Quality",
-  food: "Food & Drinks",
-  cleanliness: "Cleanliness",
-  value: "Value for Money"
-};
-
 const FeedbackPage: React.FC = () => {
   // Primary rating state
   const [rating, setRating] = useState<number | null>(null);
-  const [serviceRating, setServiceRating] = useState<number | null>(null);
-  const [foodRating, setFoodRating] = useState<number | null>(null);
-  const [cleanlinessRating, setCleanlinessRating] = useState<number | null>(null);
-  const [valueRating, setValueRating] = useState<number | null>(null);
-  
-  const [visitFrequency, setVisitFrequency] = useState('');
   const [hoverRating, setHoverRating] = useState<number>(-1);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   
@@ -116,13 +99,11 @@ const FeedbackPage: React.FC = () => {
   const [isPaused, setIsPaused] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [animationDirection, setAnimationDirection] = useState<'left' | 'right'>('left');
-  const testimonialRef = useRef<HTMLDivElement>(null);
 
   // Add state for form fields
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
-    phone: '',
     feedback_text: '',
   });
 
@@ -196,15 +177,9 @@ const FeedbackPage: React.FC = () => {
       setFormData({
         fullName: '',
         email: '',
-        phone: '',
         feedback_text: '',
       });
       setRating(null);
-      setServiceRating(null);
-      setFoodRating(null);
-      setCleanlinessRating(null);
-      setValueRating(null);
-      setVisitFrequency('');
     } catch (error) {
       console.error('Error submitting feedback:', error);
       // If there's an error, show an error message
@@ -223,12 +198,12 @@ const FeedbackPage: React.FC = () => {
   };
 
   // Function to get label text for rating value
-const getLabelText = (value: number) => {
-  if (!value || !ratingLabels[value as keyof typeof ratingLabels]) {
-    return 'Click to rate';
-  }
-  return `${value} Star${value !== 1 ? 's' : ''}, ${ratingLabels[value as keyof typeof ratingLabels]}`;
-};
+  const getLabelText = (value: number) => {
+    if (!value || !ratingLabels[value as keyof typeof ratingLabels]) {
+      return 'Click to rate';
+    }
+    return `${value} Star${value !== 1 ? 's' : ''}, ${ratingLabels[value as keyof typeof ratingLabels]}`;
+  };
 
   return (
     <Box className="feedback-page" sx={{ backgroundColor: '#121212', pt: 2, pb: 10 }}>
@@ -444,7 +419,6 @@ const getLabelText = (value: number) => {
             </IconButton>
             
             <Box 
-              ref={testimonialRef}
               className={`testimonials-container ${animationDirection === 'left' ? 'slide-left' : 'slide-right'}`}
               sx={{
                 display: 'flex',
