@@ -51,23 +51,64 @@ class _LoginScreenState extends State<LoginScreen> {
                 SizedBox(height: 40),
                 TextField(
                   controller: _usernameController,
+                  cursorColor: Color.fromARGB(255, 208, 131, 53),
                   decoration: InputDecoration(
                     labelText: 'Username',
+                    floatingLabelStyle: TextStyle(
+                      color: Color.fromARGB(
+                        255,
+                        208,
+                        131,
+                        53,
+                      ), // ← label color when focused
+                    ),
                     border: OutlineInputBorder(),
                     filled: true,
                     fillColor: const Color.fromARGB(255, 44, 44, 44),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(
+                        color: Color.fromARGB(
+                          255,
+                          208,
+                          131,
+                          53,
+                        ), // Set to your desired color
+                        width: 2,
+                      ),
+                    ),
                   ),
+
                   style: TextStyle(color: Colors.white),
                 ),
                 SizedBox(height: 20),
                 TextField(
                   controller: _passwordController,
+                  cursorColor: Color.fromARGB(255, 208, 131, 53),
                   obscureText: true,
                   decoration: InputDecoration(
                     labelText: 'Password',
+                    floatingLabelStyle: TextStyle(
+                      color: Color.fromARGB(
+                        255,
+                        208,
+                        131,
+                        53,
+                      ), // ← label color when focused
+                    ),
                     border: OutlineInputBorder(),
                     filled: true,
                     fillColor: const Color.fromARGB(255, 44, 44, 44),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(
+                        color: Color.fromARGB(
+                          255,
+                          208,
+                          131,
+                          53,
+                        ), // Set to your desired color
+                        width: 2,
+                      ),
+                    ),
                   ),
                   style: TextStyle(color: Colors.white),
                 ),
