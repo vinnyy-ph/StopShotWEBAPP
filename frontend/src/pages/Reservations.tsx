@@ -39,7 +39,7 @@ import { RiBilliardsFill } from "react-icons/ri";
 import '../styles/pages/reservations.css';
 import { Reservation, getStatusDisplay, getRoomTypeDisplay } from '../dashboard';
 
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
+const API_BASE_URL = 'http://stopshotapp-env-2.eba-8srvpzqc.ap-southeast-2.elasticbeanstalk.com/api';
 
 // Availability types
 interface DayAvailability {
