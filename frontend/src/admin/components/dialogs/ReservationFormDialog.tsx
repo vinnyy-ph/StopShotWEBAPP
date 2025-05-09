@@ -15,7 +15,8 @@ import {
   MenuItem,
   FormHelperText,
   IconButton,
-  CircularProgress
+  CircularProgress,
+  SelectChangeEvent
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
@@ -25,10 +26,14 @@ import CloseIcon from '@mui/icons-material/Close';
 import { Reservation } from '../dashboard';
 import { format, parse } from 'date-fns';
 
+// Update to match backend model
 interface Room {
   id: number;
   room_name: string;
+  room_description?: string;
+  room_can_be_booked: boolean;
   max_number_of_people: number;
+  room_type: string;
 }
 
 interface ReservationFormDialogProps {
@@ -52,13 +57,16 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
 }) => {
   const [formData, setFormData] = useState({
     guest_name: '',
+    guest_email: '',
     guest_phone: '',
     reservation_date: new Date(),
     reservation_time: new Date(),
+    duration: '01:00:00', // Default 1 hour
     number_of_guests: 1,
     special_requests: '',
     status: 'PENDING',
-    room_id: ''
+    room_id: '',
+    room_type: 'TABLE'
   });
   
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -86,13 +94,16 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
 
       setFormData({
         guest_name: reservation.guest_name || '',
+        guest_email: reservation.guest_email || '',
         guest_phone: reservation.guest_phone || '',
         reservation_date: new Date(reservation.reservation_date),
         reservation_time: timeDate,
+        duration: reservation.duration || '01:00:00',
         number_of_guests: reservation.number_of_guests || 1,
         special_requests: reservation.special_requests || '',
         status: reservation.status || 'PENDING',
-        room_id: reservation.room?.id || ''
+        room_id: reservation.room?.id?.toString() || '',
+        room_type: reservation.room_type || 'TABLE'
       });
     } else {
       // Default values for new reservation
@@ -102,13 +113,16 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
       
       setFormData({
         guest_name: '',
+        guest_email: '',
         guest_phone: '',
         reservation_date: now,
         reservation_time: startTime,
+        duration: '01:00:00', // Default 1 hour
         number_of_guests: 1,
         special_requests: '',
         status: 'PENDING',
-        room_id: ''
+        room_id: '',
+        room_type: 'TABLE'
       });
     }
   }, [reservation, open, mode]);
@@ -118,6 +132,12 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
     
     if (!formData.guest_name.trim()) {
       newErrors.guest_name = 'Name is required';
+    }
+    
+    if (!formData.guest_email.trim()) {
+      newErrors.guest_email = 'Email is required';
+    } else if (!/^\S+@\S+\.\S+$/.test(formData.guest_email)) {
+      newErrors.guest_email = 'Invalid email format';
     }
     
     if (!formData.guest_phone.trim()) {
@@ -142,10 +162,25 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
     }
   };
 
-  const handleSelectChange = (e: React.ChangeEvent<{ name?: string; value: unknown }>) => {
+  const handleSelectChange = (e: SelectChangeEvent) => {
     const name = e.target.name as string;
     const value = e.target.value;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // If selecting a room, also update room_type
+    if (name === 'room_id' && value) {
+      const selectedRoom = rooms.find(room => room.id.toString() === value);
+      if (selectedRoom) {
+        setFormData(prev => ({ 
+          ...prev, 
+          [name]: value,
+          room_type: selectedRoom.room_type
+        }));
+      } else {
+        setFormData(prev => ({ ...prev, [name]: value }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
   
   const handleSubmit = async () => {
@@ -228,6 +263,21 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
+                label="Email"
+                name="guest_email"
+                type="email"
+                value={formData.guest_email}
+                onChange={handleInputChange}
+                error={!!errors.guest_email}
+                helperText={errors.guest_email}
+                required
+                variant="outlined"
+              />
+            </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
                 label="Phone Number"
                 name="guest_phone"
                 value={formData.guest_phone}
@@ -302,21 +352,55 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
             
             <Grid item xs={12} sm={6}>
               <FormControl fullWidth required>
+                <InputLabel>Duration</InputLabel>
+                <Select
+                  name="duration"
+                  value={formData.duration}
+                  onChange={handleSelectChange}
+                  label="Duration"
+                >
+                  <MenuItem value="01:00:00">1 hour</MenuItem>
+                  <MenuItem value="01:30:00">1.5 hours</MenuItem>
+                  <MenuItem value="02:00:00">2 hours</MenuItem>
+                  <MenuItem value="03:00:00">3 hours</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth required>
                 <InputLabel>Room Type</InputLabel>
+                <Select
+                  name="room_type"
+                  value={formData.room_type}
+                  onChange={handleSelectChange}
+                  label="Room Type"
+                >
+                  <MenuItem value="TABLE">Table</MenuItem>
+                  <MenuItem value="KARAOKE_ROOM">Karaoke Room</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Room</InputLabel>
                 <Select
                   name="room_id"
                   value={formData.room_id}
                   onChange={handleSelectChange}
-                  label="Room Type"
+                  label="Room"
                 >
                   <MenuItem value="">
                     <em>Unassigned</em>
                   </MenuItem>
-                  {rooms.map((room) => (
-                    <MenuItem key={room.id} value={room.id}>
-                      {room.room_name} (Max: {room.max_number_of_people})
-                    </MenuItem>
-                  ))}
+                  {rooms
+                    .filter(room => room.room_type === formData.room_type)
+                    .map((room) => (
+                      <MenuItem key={room.id} value={room.id.toString()}>
+                        {room.room_name} (Max: {room.max_number_of_people})
+                      </MenuItem>
+                    ))}
                 </Select>
               </FormControl>
             </Grid>
@@ -353,19 +437,17 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
         </LocalizationProvider>
       </DialogContent>
 
-      <DialogActions sx={{ p: 2, bgcolor: theme => theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)' }}>
+      <DialogActions sx={{ p: 3, borderTop: '1px solid', borderColor: 'divider' }}>
         <Button 
           onClick={onClose} 
           color="inherit"
-          disabled={isLoading}
         >
           Cancel
         </Button>
-        <Button
+        <Button 
           onClick={handleSubmit}
           variant="contained"
           disabled={isLoading}
-          startIcon={isLoading ? <CircularProgress size={20} /> : null}
           sx={{
             bgcolor: '#d38236',
             '&:hover': {
@@ -373,7 +455,7 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
             }
           }}
         >
-          {isLoading ? 'Processing...' : saveButtonText}
+          {isLoading ? <CircularProgress size={24} color="inherit" /> : saveButtonText}
         </Button>
       </DialogActions>
     </Dialog>

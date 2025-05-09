@@ -38,7 +38,10 @@ class ReservationViewSet(viewsets.ModelViewSet):
     ordering = ['-reservation_date', '-reservation_time'] 
 
     def get_queryset(self):
-        """ Filter reservations based on user role or for public slot view. """
+        
+        return super().get_queryset()
+        
+        """ Filter reservations based on user role or for public slot view. 
         user = self.request.user
         query_params = self.request.query_params
         queryset = super().get_queryset()
@@ -62,6 +65,7 @@ class ReservationViewSet(viewsets.ModelViewSet):
             # This case shouldn't be reached for list/retrieve due to permissions,
             # but return none just in case.
              return queryset.none() 
+        """
 
     def get_serializer_class(self):
         user = self.request.user
@@ -87,7 +91,11 @@ class ReservationViewSet(viewsets.ModelViewSet):
             return ViewReservationSerializer
 
     def get_permissions(self):
-        """ Apply different permissions based on action. """
+        # For development only - allow all actions without authentication
+        return [permissions.AllowAny()]
+        
+        # Original code commented out for later restoration
+        """
         query_params = self.request.query_params
         
         is_public_slot_query = (
@@ -100,12 +108,13 @@ class ReservationViewSet(viewsets.ModelViewSet):
         if self.action == 'create':
             permission_classes = [permissions.AllowAny]
         elif is_public_slot_query:
-             permission_classes = [permissions.AllowAny] # Allow anyone to see booked slots
+             permission_classes = [permissions.AllowAny] 
         elif self.action in ['update', 'partial_update', 'destroy']:
             permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdmin]
-        else: # Standard list (for user's own) or retrieve
+        else:
             permission_classes = [permissions.IsAuthenticated]
         return [permission() for permission in permission_classes]
+        """
 
     def perform_create(self, serializer):
         """ Set status to PENDING. Associate user ONLY if authenticated. """

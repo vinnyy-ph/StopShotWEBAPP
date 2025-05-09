@@ -25,6 +25,10 @@ SECRET_KEY = 'django-insecure-=%$79dfxx4ws$x#7k%o4778d7(48eo)9!lizz5(r-6rp=rb^0&
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+# TEMPORARY: Set this to True to disable authentication requirements
+# SECURITY WARNING: NEVER enable this in production!
+DEBUG_NO_AUTH = True
+
 ALLOWED_HOSTS = []
 
 
@@ -57,6 +61,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'stopshot_backend.middleware.AuthWarningMiddleware',  # Add warning header when DEBUG_NO_AUTH is enabled
 ]
 
 ROOT_URLCONF = 'stopshot_backend.urls'
@@ -147,6 +152,10 @@ AUTH_USER_MODEL = 'user_management.User'
 REST_FRAMEWORK = {
   'DEFAULT_AUTHENTICATION_CLASSES': (   
     'rest_framework.authentication.TokenAuthentication',
+  ),
+  # Conditionally apply authentication based on DEBUG_NO_AUTH setting
+  'DEFAULT_PERMISSION_CLASSES': (
+      'rest_framework.permissions.AllowAny' if DEBUG_NO_AUTH else 'rest_framework.permissions.IsAuthenticated',
   ),
 }
 

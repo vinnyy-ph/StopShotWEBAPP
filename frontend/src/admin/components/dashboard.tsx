@@ -38,16 +38,24 @@ const API_BASE_URL = 'http://127.0.0.1:8000/api';
 export interface Reservation {
   id: number;
   guest_name: string;
+  guest_email: string;
   reservation_date: string;
   reservation_time: string;
+  duration?: string;
   number_of_guests: number;
   room?: {
+    id: number;
     room_name: string;
+    room_description?: string;
+    room_can_be_booked: boolean;
+    max_number_of_people: number;
+    room_type: string;
   };
+  room_type?: string;
+  special_requests?: string;
   status: string;
   status_display?: string;
-  guest_phone: string;
-  special_requests?: string;
+  guest_phone?: string;
   created_at?: string;
   updated_at?: string;
 }
