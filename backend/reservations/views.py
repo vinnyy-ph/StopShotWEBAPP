@@ -169,7 +169,6 @@ Created At: {reservation.created_at.strftime('%Y-%m-%d %H:%M:%S')}
             print(f"Management notification email sent for new reservation {reservation.id}")
         except Exception as e:
             print(f"Error sending management notification email for new reservation {reservation.id}: {e}")
-        
 
 class DailyAvailabilitySummaryView(APIView):
     """
