@@ -84,7 +84,7 @@
             <div class="user-info">
                 <p><strong>Full Name:</strong> {{ user.first_name }} {{ user.last_name }}</p>
                 <p><strong>Email:</strong> {{ user.email }}</p>
-                {% if user.phone_number %}<p><strong>Phone:</strong> {{ user.phone_number }}</p>{% endif %}
+                <p class="phone-field"><strong>Phone:</strong> {{ user.phone_number }}</p>
             </div>
             
             <h2>Message:</h2>

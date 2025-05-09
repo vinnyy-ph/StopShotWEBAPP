@@ -15,7 +15,8 @@ import {
   Divider,
   IconButton,
   Snackbar,
-  Alert
+  Alert,
+  FormHelperText
 } from '@mui/material';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import PhoneIcon from '@mui/icons-material/Phone';
@@ -36,17 +37,54 @@ const ContactPage: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isError, setIsError] = useState(false);
+  const [phoneError, setPhoneError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  
+  // Validate email format
+  const validateEmail = (email: string) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  };
+  
+  // Validate Philippine phone number format (09XXXXXXXXX or +639XXXXXXXX)
+  const validatePhoneNumber = (phone: string) => {
+    if (!phone) return true; // Phone is optional
+    const regex = /^(09|\+639)\d{9}$/;
+    return regex.test(phone);
+  };
   
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     
+    const email = formData.get('email') as string;
+    const phone = formData.get('phone_number') as string;
+    
+    // Reset validation errors
+    setEmailError("");
+    setPhoneError("");
+    
+    // Validate email and phone
+    let isValid = true;
+    
+    if (!validateEmail(email)) {
+      setEmailError("Please enter a valid email address");
+      isValid = false;
+    }
+    
+    if (phone && !validatePhoneNumber(phone)) {
+      setPhoneError("Please enter a valid Philippine phone number (09XXXXXXXXX or +639XXXXXXXX)");
+      isValid = false;
+    }
+    
+    if (!isValid) return;
+    
     // Create payload matching backend requirements
     const payload = {
-      email: formData.get('email'),
+      email: email,
       first_name: formData.get('first_name'),
       last_name: formData.get('last_name'),
-      phone_number: formData.get('phone_number'),
+      phone_number: phone,
       message_text: formData.get('message_text')
     };
     
@@ -431,43 +469,127 @@ const ContactPage: React.FC = () => {
                 />
               </Box>
               
-              <Box sx={{ p: 3, pt: 4 }}>
+              <Box sx={{ p: 3, pt: 4, display: 'flex', justifyContent: 'center', height: '100%', alignItems: 'center' }}>
                 {submitted ? (
                   <Box 
-                    className="success-message"
+                    className="success-message-container"
                     sx={{ 
-                      textAlign: 'center', 
-                      py: 4,
-                      animation: 'fadeIn 0.5s ease'
+                      p: 4,
+                      position: 'relative',
+                      overflow: 'hidden',
+                      borderRadius: '12px',
+                      background: 'radial-gradient(circle at top right, rgba(211, 130, 54, 0.2), transparent 70%)'
                     }}
                   >
-                    <CheckCircleIcon 
+                    <Box className="success-confetti"></Box>
+                    
+                    <Box 
+                      className="success-content"
                       sx={{ 
-                        fontSize: 60, 
-                        color: '#d38236',
-                        mb: 2
-                      }} 
-                    />
-                    <Typography variant="h5" sx={{ color: '#fff', mb: 2 }}>
-                      Message Sent!
-                    </Typography>
-                    <Typography variant="body1" sx={{ color: '#bbb', mb: 3 }}>
-                      Thanks for reaching out. We'll get back to you as soon as possible.
-                    </Typography>
-                    <Button 
-                      variant="outlined" 
-                      onClick={() => setSubmitted(false)}
-                      sx={{ 
-                        borderColor: '#d38236',
-                        color: '#d38236',
-                        '&:hover': {
-                          borderColor: '#d38236',
-                          backgroundColor: 'rgba(211, 130, 54, 0.1)'
-                        }
+                        textAlign: 'center',
+                        position: 'relative',
+                        zIndex: 5
                       }}
                     >
-                      Send Another Message
-                    </Button>
+                      <Box 
+                        className="success-icon-container" 
+                        sx={{
+                          width: '80px',
+                          height: '80px',
+                          borderRadius: '50%',
+                          backgroundColor: 'rgba(211, 130, 54, 0.15)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          margin: '0 auto 24px',
+                          position: 'relative',
+                          animation: 'pulse 2s infinite'
+                        }}
+                      >
+                        <CheckCircleIcon 
+                          sx={{ 
+                            fontSize: 44, 
+                            color: '#d38236'
+                          }} 
+                        />
+                      </Box>
+                      
+                      <Typography 
+                        variant="h4" 
+                        sx={{ 
+                          color: '#fff', 
+                          mb: 2,
+                          fontWeight: 700
+                        }}
+                        className="success-title"
+                      >
+                        Message Sent!
+                      </Typography>
+                      
+                      <Typography 
+                        variant="body1" 
+                        sx={{ 
+                          color: '#bbb', 
+                          mb: 4,
+                          fontSize: '1.1rem',
+                          maxWidth: '400px',
+                          mx: 'auto',
+                          lineHeight: 1.6
+                        }}
+                        className="success-message-text"
+                      >
+                        Thanks for reaching out. We'll get back to you as soon as possible.
+                      </Typography>
+                      
+                      <Button 
+                        variant="contained" 
+                        onClick={() => setSubmitted(false)}
+                        className="send-another-button"
+                        sx={{ 
+                          backgroundColor: '#d38236',
+                          color: '#fff',
+                          px: 4,
+                          py: 1.5,
+                          fontWeight: 600,
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 12px rgba(211, 130, 54, 0.3)',
+                          '&:hover': {
+                            backgroundColor: '#b06b2c',
+                            transform: 'translateY(-3px)',
+                            boxShadow: '0 6px 16px rgba(211, 130, 54, 0.4)'
+                          },
+                          transition: 'all 0.3s ease'
+                        }}
+                      >
+                        SEND ANOTHER MESSAGE
+                      </Button>
+                    </Box>
+                    
+                    <SportsBasketballIcon 
+                      className="bg-icon-1"
+                      sx={{ 
+                        color: 'rgba(211, 130, 54, 0.05)',
+                        fontSize: 180,
+                        position: 'absolute',
+                        top: '-50px',
+                        right: '-50px',
+                        transform: 'rotate(15deg)',
+                        zIndex: 1
+                      }}
+                    />
+                    
+                    <SportsSoccerIcon 
+                      className="bg-icon-2"
+                      sx={{ 
+                        color: 'rgba(211, 130, 54, 0.05)',
+                        fontSize: 140,
+                        position: 'absolute',
+                        bottom: '-40px',
+                        left: '-40px',
+                        transform: 'rotate(-10deg)',
+                        zIndex: 1
+                      }}
+                    />
                   </Box>
                 ) : (
                   <Box 
@@ -509,7 +631,7 @@ const ContactPage: React.FC = () => {
                           required
                           fullWidth
                           label="First Name"
-                          name="first_name" // Updated to match backend
+                          name="first_name"
                           variant="outlined"
                           InputProps={{
                             startAdornment: (
@@ -526,7 +648,7 @@ const ContactPage: React.FC = () => {
                           required
                           fullWidth
                           label="Last Name"
-                          name="last_name" // Updated to match backend
+                          name="last_name"
                           variant="outlined"
                           InputProps={{
                             startAdornment: (
@@ -543,9 +665,11 @@ const ContactPage: React.FC = () => {
                           required
                           fullWidth
                           label="Email Address"
-                          name="email" // Already matches the backend
+                          name="email"
                           type="email"
                           variant="outlined"
+                          error={!!emailError}
+                          helperText={emailError}
                           InputProps={{
                             startAdornment: (
                               <InputAdornment position="start">
@@ -560,8 +684,10 @@ const ContactPage: React.FC = () => {
                         <TextField
                           fullWidth
                           label="Phone Number"
-                          name="phone_number" // Updated to match backend
+                          name="phone_number"
                           variant="outlined"
+                          error={!!phoneError}
+                          helperText={phoneError}
                           InputProps={{
                             startAdornment: (
                               <InputAdornment position="start">
@@ -571,6 +697,11 @@ const ContactPage: React.FC = () => {
                           }}
                           className="form-input"
                         />
+                        {!phoneError && (
+                          <FormHelperText sx={{ color: 'rgba(255,255,255,0.5)', ml: 2 }}>
+                            Format: 09XXXXXXXXX or +639XXXXXXXX
+                          </FormHelperText>
+                        )}
                       </Grid>
                       {/* The Subject field is not in the backend API but we'll keep the UI intact */}
                       <Grid item xs={12}>
@@ -594,7 +725,7 @@ const ContactPage: React.FC = () => {
                           required
                           fullWidth
                           label="Message"
-                          name="message_text" // Updated to match backend
+                          name="message_text"
                           multiline
                           rows={4}
                           variant="outlined"

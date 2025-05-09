@@ -23,8 +23,8 @@ def send_message_email(user, message_text, phone_number=None):
     if phone_number:
         html_content = re.sub(r'{{\s*user\.phone_number\s*}}', phone_number, html_content)
     else:
-        # Remove the phone number line from the template if no phone number
-        html_content = re.sub(r'{% if user\.phone_number %}<p><strong>Phone:</strong> {{ user\.phone_number }}</p>{% endif %}', '', html_content)
+        # If no phone number, replace with 'Not provided'
+        html_content = re.sub(r'{{\s*user\.phone_number\s*}}', 'Not provided', html_content)
     
     html_content = re.sub(r'{{\s*message_text\s*}}', message_text, html_content)
     html_content = re.sub(r'{{\s*logo_url\s*}}', 'https://i.imgur.com/6Hf2QI2.png', html_content)
@@ -34,7 +34,7 @@ def send_message_email(user, message_text, phone_number=None):
     
     # Create email
     email = EmailMultiAlternatives(
-        subject="A customer has sent a message",
+        subject="A customer has sent a message !",
         body=plain_text,
         from_email="stopshotsportsbar@gmail.com",
         to=["stopshot.management@gmail.com"],
