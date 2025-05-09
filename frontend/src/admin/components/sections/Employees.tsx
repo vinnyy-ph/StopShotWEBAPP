@@ -17,7 +17,8 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Avatar
+  Avatar,
+  CircularProgress
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import TuneIcon from '@mui/icons-material/Tune';
@@ -30,13 +31,13 @@ import SportsBarIcon from '@mui/icons-material/SportsBar';
 
 import EmployeeDialog from '../dialogs/EmployeeDialog';
 import AddEmployeeDialog from '../dialogs/AddEmployeeDialog';
-import { mockEmployeesData } from '../dashboard';
+import { Employee } from '../dashboard';
 
 interface EmployeesProps {
-  employees: typeof mockEmployeesData;
-  onAddEmployee: (employee: any) => boolean;
-  onUpdateEmployee: (employee: any) => boolean;
-  onDeleteEmployee: (id: number) => boolean;
+  employees: Employee[];
+  onAddEmployee: (employee: any) => Promise<boolean>;
+  onUpdateEmployee: (employee: any) => Promise<boolean>;
+  onDeleteEmployee: (id: number) => Promise<boolean>;
 }
 
 const Employees: React.FC<EmployeesProps> = ({
@@ -48,14 +49,14 @@ const Employees: React.FC<EmployeesProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [employeeDialog, setEmployeeDialog] = useState(false);
   const [addEmployeeDialog, setAddEmployeeDialog] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [employeeEditMode, setEmployeeEditMode] = useState(false);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
   };
 
-  const handleOpenEmployeeDialog = (employee: any) => {
+  const handleOpenEmployeeDialog = (employee: Employee) => {
     setSelectedEmployee(employee);
     setEmployeeDialog(true);
     setEmployeeEditMode(false);
@@ -67,10 +68,52 @@ const Employees: React.FC<EmployeesProps> = ({
 
   // Filter employees based on search query
   const filteredEmployees = employees.filter(employee => 
-    employee.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    employee.position.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (employee.first_name + ' ' + employee.last_name).toLowerCase().includes(searchQuery.toLowerCase()) ||
+    employee.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
     employee.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Get employee full name
+  const getEmployeeName = (employee: Employee) => {
+    if (employee.first_name && employee.last_name) {
+      return `${employee.first_name} ${employee.last_name}`;
+    } else if (employee.first_name) {
+      return employee.first_name;
+    } else if (employee.username) {
+      return employee.username;
+    } else {
+      return 'Unnamed Employee';
+    }
+  };
+
+  // Get first letter for avatar
+  const getAvatarInitial = (employee: Employee) => {
+    if (employee.first_name) {
+      return employee.first_name.charAt(0);
+    } else if (employee.username) {
+      return employee.username.charAt(0);
+    } else {
+      return 'E';
+    }
+  };
+
+  if (!employees || employees.length === 0) {
+    return (
+      <motion.div
+        key="employees-loading"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.3 }}
+      >
+        <Paper className="content-paper">
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+            <CircularProgress />
+          </Box>
+        </Paper>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -122,7 +165,7 @@ const Employees: React.FC<EmployeesProps> = ({
               </Box>
               <Typography variant="h4" className="stats-value">{employees.length}</Typography>
               <Typography variant="body2" className="stats-trend positive">
-                +2 from last month
+                Staff management
               </Typography>
             </Paper>
           </Grid>
@@ -133,10 +176,10 @@ const Employees: React.FC<EmployeesProps> = ({
                 <CheckCircleIcon className="stats-icon" />
               </Box>
               <Typography variant="h4" className="stats-value">
-                {employees.filter(e => e.status === 'active').length}
+                {employees.filter(e => e.is_active).length}
               </Typography>
               <Typography variant="body2" className="stats-trend">
-                {Math.round((employees.filter(e => e.status === 'active').length / employees.length) * 100)}% of total
+                {Math.round((employees.filter(e => e.is_active).length / employees.length) * 100)}% of total
               </Typography>
             </Paper>
           </Grid>
@@ -147,7 +190,7 @@ const Employees: React.FC<EmployeesProps> = ({
                 <SportsBarIcon className="stats-icon" />
               </Box>
               <Typography variant="h4" className="stats-value">
-                {new Set(employees.map(e => e.position)).size}
+                {new Set(employees.map(e => e.role)).size}
               </Typography>
               <Typography variant="body2" className="stats-trend">
                 Different roles
@@ -172,25 +215,25 @@ const Employees: React.FC<EmployeesProps> = ({
             </TableHead>
             <TableBody>
               {filteredEmployees.map((employee) => (
-                <TableRow key={employee.id} className="table-row">
-                  <TableCell>{employee.id}</TableCell>
+                <TableRow key={employee.user_id} className="table-row">
+                  <TableCell>{employee.user_id}</TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       <Avatar sx={{ mr: 2, bgcolor: '#d38236' }}>
-                        {employee.name.charAt(0)}
+                        {getAvatarInitial(employee)}
                       </Avatar>
-                      {employee.name}
+                      {getEmployeeName(employee)}
                     </Box>
                   </TableCell>
-                  <TableCell>{employee.position}</TableCell>
+                  <TableCell>{employee.role}</TableCell>
                   <TableCell>{employee.email}</TableCell>
-                  <TableCell>{employee.phone}</TableCell>
-                  <TableCell>{employee.hireDate}</TableCell>
+                  <TableCell>{employee.phone_number}</TableCell>
+                  <TableCell>{employee.hire_date}</TableCell>
                   <TableCell>
                     <Chip 
-                      label={employee.status} 
+                      label={employee.is_active ? 'active' : 'inactive'} 
                       size="small"
-                      className={`status-chip ${employee.status === 'active' ? 'confirmed' : 'cancelled'}`}
+                      className={`status-chip ${employee.is_active ? 'confirmed' : 'cancelled'}`}
                     />
                   </TableCell>
                   <TableCell align="right">
@@ -204,7 +247,7 @@ const Employees: React.FC<EmployeesProps> = ({
                     <IconButton 
                       size="small" 
                       className="action-btn delete-btn"
-                      onClick={() => onDeleteEmployee(employee.id)}
+                      onClick={() => onDeleteEmployee(employee.user_id)}
                     >
                       <DeleteIcon fontSize="small" />
                     </IconButton>
@@ -267,45 +310,29 @@ const Employees: React.FC<EmployeesProps> = ({
               <Box className="schedule-header">Saturday</Box>
               <Box className="schedule-header">Sunday</Box>
 
-              {/* Alex */}
-              <Box className="schedule-employee">Alex Johnson</Box>
-              <Box className="schedule-shift am-shift">AM</Box>
-              <Box className="schedule-shift am-shift">AM</Box>
-              <Box className="schedule-shift day-off">OFF</Box>
-              <Box className="schedule-shift pm-shift">PM</Box>
-              <Box className="schedule-shift pm-shift">PM</Box>
-              <Box className="schedule-shift pm-shift">PM</Box>
-              <Box className="schedule-shift day-off">OFF</Box>
-
-              {/* Maria */}
-              <Box className="schedule-employee">Maria Garcia</Box>
-              <Box className="schedule-shift am-shift">AM</Box>
-              <Box className="schedule-shift am-shift">AM</Box>
-              <Box className="schedule-shift am-shift">AM</Box>
-              <Box className="schedule-shift am-shift">AM</Box>
-              <Box className="schedule-shift day-off">OFF</Box>
-              <Box className="schedule-shift day-off">OFF</Box>
-              <Box className="schedule-shift pm-shift">PM</Box>
-
-              {/* David */}
-              <Box className="schedule-employee">David Wilson</Box>
-              <Box className="schedule-shift day-off">OFF</Box>
-              <Box className="schedule-shift pm-shift">PM</Box>
-              <Box className="schedule-shift pm-shift">PM</Box>
-              <Box className="schedule-shift pm-shift">PM</Box>
-              <Box className="schedule-shift pm-shift">PM</Box>
-              <Box className="schedule-shift am-shift">AM</Box>
-              <Box className="schedule-shift day-off">OFF</Box>
-
-              {/* Sarah */}
-              <Box className="schedule-employee">Sarah Chen</Box>
-              <Box className="schedule-shift pm-shift">PM</Box>
-              <Box className="schedule-shift day-off">OFF</Box>
-              <Box className="schedule-shift day-off">OFF</Box>
-              <Box className="schedule-shift am-shift">AM</Box>
-              <Box className="schedule-shift am-shift">AM</Box>
-              <Box className="schedule-shift pm-shift">PM</Box>
-              <Box className="schedule-shift pm-shift">PM</Box>
+              {/* Schedule content - top 4 employees */}
+              {filteredEmployees.slice(0, 4).map((employee, index) => (
+                <React.Fragment key={employee.user_id}>
+                  <Box className="schedule-employee">{getEmployeeName(employee)}</Box>
+                  {/* Generate schedule data - for demo purposes only */}
+                  {Array(7).fill(0).map((_, dayIndex) => {
+                    // Random schedule generation based on employee id and day
+                    const scheduleType = (employee.user_id + dayIndex) % 3;
+                    return (
+                      <Box 
+                        key={dayIndex} 
+                        className={`schedule-shift ${
+                          scheduleType === 0 ? 'am-shift' : 
+                          scheduleType === 1 ? 'pm-shift' : 'day-off'
+                        }`}
+                      >
+                        {scheduleType === 0 ? 'AM' : 
+                         scheduleType === 1 ? 'PM' : 'OFF'}
+                      </Box>
+                    );
+                  })}
+                </React.Fragment>
+              ))}
             </Box>
           </Paper>
         </Box>

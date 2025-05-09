@@ -15,7 +15,8 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Rating
+  Rating,
+  Avatar
 } from '@mui/material';
 import BookOnlineIcon from '@mui/icons-material/BookOnline';
 import StarIcon from '@mui/icons-material/Star';
@@ -26,18 +27,20 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import '../../../../src/utils/chartConfig';
 import { chartOptions } from '../../../../src/utils/chartConfig';
-import { Reservation } from '../dashboard';
+import { Reservation, Employee } from '../dashboard';
 import { mockFeedbackData } from '../dashboard';
 
 interface DashboardOverviewProps {
   reservations: Reservation[];
   feedback: typeof mockFeedbackData;
+  employees: Employee[];
   onSectionChange: (section: string) => void;
 }
 
 const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   reservations,
   feedback,
+  employees,
   onSectionChange
 }) => {
   // Chart data
@@ -72,6 +75,30 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
     ],
   };
 
+  // Get employee full name
+  const getEmployeeName = (employee: Employee) => {
+    if (employee.first_name && employee.last_name) {
+      return `${employee.first_name} ${employee.last_name}`;
+    } else if (employee.first_name) {
+      return employee.first_name;
+    } else if (employee.username) {
+      return employee.username;
+    } else {
+      return 'Unnamed Employee';
+    }
+  };
+
+  // Get first letter for avatar
+  const getAvatarInitial = (employee: Employee) => {
+    if (employee.first_name) {
+      return employee.first_name.charAt(0);
+    } else if (employee.username) {
+      return employee.username.charAt(0);
+    } else {
+      return 'E';
+    }
+  };
+
   return (
     <motion.div
       key="dashboard"
@@ -88,9 +115,9 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
               <Typography className="stats-title">Total Reservations</Typography>
               <BookOnlineIcon className="stats-icon" />
             </Box>
-            <Typography variant="h4" className="stats-value">128</Typography>
+            <Typography variant="h4" className="stats-value">{reservations.length || 0}</Typography>
             <Typography variant="body2" className="stats-trend positive">
-              +12% from last week
+              Recent activity
             </Typography>
           </Paper>
         </Grid>
@@ -109,12 +136,12 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         <Grid item xs={12} sm={6} md={3}>
           <Paper className="stats-card">
             <Box className="stats-header">
-              <Typography className="stats-title">Active Customers</Typography>
+              <Typography className="stats-title">Active Employees</Typography>
               <PeopleIcon className="stats-icon" />
             </Box>
-            <Typography variant="h4" className="stats-value">427</Typography>
+            <Typography variant="h4" className="stats-value">{employees.filter(e => e.is_active).length}</Typography>
             <Typography variant="body2" className="stats-trend positive">
-              +24 new this week
+              {employees.length} total
             </Typography>
           </Paper>
         </Grid>
@@ -198,17 +225,20 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {reservations.slice(0, 5).map((row) => (
-                    <TableRow key={row.id} className="table-row">
-                      <TableCell>{row.guest_name}</TableCell>
-                      <TableCell>{row.reservation_date}</TableCell>
-                      <TableCell>{row.reservation_time}</TableCell>
-                      <TableCell>{row.number_of_guests}</TableCell>
+                  {reservations.slice(0, 5).map((reservation) => (
+                    <TableRow key={reservation.id}>
+                      <TableCell>{reservation.guest_name}</TableCell>
+                      <TableCell>{reservation.reservation_date}</TableCell>
+                      <TableCell>{reservation.reservation_time}</TableCell>
+                      <TableCell>{reservation.number_of_guests}</TableCell>
                       <TableCell>
                         <Chip 
-                          label={row.status_display || row.status} 
+                          label={reservation.status} 
                           size="small"
-                          className={`status-chip ${row.status.toLowerCase()}`}
+                          className={`status-chip ${
+                            reservation.status === 'confirmed' ? 'confirmed' : 
+                            reservation.status === 'pending' ? 'pending' : 'cancelled'
+                          }`}
                         />
                       </TableCell>
                     </TableRow>
@@ -226,26 +256,73 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
               <Typography variant="h6" className="table-title">Recent Feedback</Typography>
               <Button 
                 size="small" 
-                variant="outlined"
-                endIcon={<VisibilityIcon />}
+                variant="outlined" 
+                endIcon={<VisibilityIcon />} 
                 onClick={() => onSectionChange('feedback')}
                 className="view-all-btn"
               >
                 View All
               </Button>
             </Box>
-            <Box className="feedback-list-container">
-              {feedback.slice(0, 3).map((item) => (
-                <Box key={item.id} className="feedback-item">
-                  <Box className="feedback-header">
-                    <Typography variant="subtitle2" className="feedback-name">{item.name}</Typography>
-                    <Typography variant="caption" className="feedback-date">{item.date}</Typography>
-                  </Box>
-                  <Rating value={item.rating} readOnly size="small" />
-                  <Typography variant="body2" className="feedback-comment">
-                    {item.comment.length > 100 ? `${item.comment.substring(0, 100)}...` : item.comment}
+            <TableContainer className="table-container">
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Name</TableCell>
+                    <TableCell>Date</TableCell>
+                    <TableCell>Rating</TableCell>
+                    <TableCell>Comment</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {feedback.slice(0, 5).map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell>{item.name}</TableCell>
+                      <TableCell>{item.date}</TableCell>
+                      <TableCell>
+                        <Rating value={item.rating} readOnly size="small" />
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" className="ellipsis">
+                          {item.comment}
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Paper>
+        </Grid>
+
+        {/* Active Staff */}
+        <Grid item xs={12}>
+          <Paper className="table-paper">
+            <Box className="table-header">
+              <Typography variant="h6" className="table-title">Active Staff</Typography>
+              <Button 
+                size="small" 
+                variant="outlined" 
+                endIcon={<VisibilityIcon />} 
+                onClick={() => onSectionChange('employees')}
+                className="view-all-btn"
+              >
+                View All
+              </Button>
+            </Box>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, p: 2 }}>
+              {employees.filter(e => e.is_active).slice(0, 5).map((employee) => (
+                <Paper key={employee.user_id} sx={{ p: 2, width: 200, textAlign: 'center' }}>
+                  <Avatar sx={{ width: 56, height: 56, mx: 'auto', mb: 1, bgcolor: '#d38236' }}>
+                    {getAvatarInitial(employee)}
+                  </Avatar>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                    {getEmployeeName(employee)}
                   </Typography>
-                </Box>
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    {employee.role}
+                  </Typography>
+                </Paper>
               ))}
             </Box>
           </Paper>

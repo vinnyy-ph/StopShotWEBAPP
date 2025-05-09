@@ -24,7 +24,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import CloseIcon from '@mui/icons-material/Close';
 import { Reservation } from '../dashboard';
-import { format, parse } from 'date-fns';
+import { format, parse, isBefore, startOfDay } from 'date-fns';
 
 // Update to match backend model
 interface Room {
@@ -55,10 +55,10 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
   isLoading = false,
   mode
 }) => {
+  // Updated form data structure to match API
   const [formData, setFormData] = useState({
     guest_name: '',
     guest_email: '',
-    guest_phone: '',
     reservation_date: new Date(),
     reservation_time: new Date(),
     duration: '01:00:00', // Default 1 hour
@@ -95,7 +95,6 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
       setFormData({
         guest_name: reservation.guest_name || '',
         guest_email: reservation.guest_email || '',
-        guest_phone: reservation.guest_phone || '',
         reservation_date: new Date(reservation.reservation_date),
         reservation_time: timeDate,
         duration: reservation.duration || '01:00:00',
@@ -109,12 +108,11 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
       // Default values for new reservation
       const now = new Date();
       const startTime = new Date();
-      startTime.setHours(18, 0, 0, 0); // Default to 6:00 PM
+      startTime.setHours(16, 0, 0, 0); // Default to 4:00 PM
       
       setFormData({
         guest_name: '',
         guest_email: '',
-        guest_phone: '',
         reservation_date: now,
         reservation_time: startTime,
         duration: '01:00:00', // Default 1 hour
@@ -140,8 +138,17 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
       newErrors.guest_email = 'Invalid email format';
     }
     
-    if (!formData.guest_phone.trim()) {
-      newErrors.guest_phone = 'Phone number is required';
+    // Date in the past validation - skip for edit mode
+    if (mode === 'add' && isBefore(formData.reservation_date, startOfDay(new Date()))) {
+      newErrors.reservation_date = 'Date cannot be in the past';
+    }
+    
+    // Time range validation (4pm-1am) - skip for edit mode
+    if (mode === 'add') {
+      const hours = formData.reservation_time.getHours();
+      if (!(hours >= 16 || hours < 1)) {
+        newErrors.reservation_time = 'Time must be between 4:00 PM and 1:00 AM';
+      }
     }
     
     if (formData.number_of_guests < 1) {
@@ -190,9 +197,16 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
       const formattedTime = format(formData.reservation_time, 'HH:mm:ss');
       
       const reservationData = {
-        ...formData,
+        guest_name: formData.guest_name,
+        guest_email: formData.guest_email,
         reservation_date: formattedDate,
         reservation_time: formattedTime,
+        duration: formData.duration,
+        number_of_guests: formData.number_of_guests,
+        special_requests: formData.special_requests,
+        status: formData.status,
+        room_id: formData.room_id || null,
+        room_type: formData.room_type,
         id: mode === 'edit' && reservation ? reservation.id : undefined
       };
       
@@ -278,20 +292,6 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Phone Number"
-                name="guest_phone"
-                value={formData.guest_phone}
-                onChange={handleInputChange}
-                error={!!errors.guest_phone}
-                helperText={errors.guest_phone}
-                required
-                variant="outlined"
-              />
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
                 label="Number of Guests"
                 name="number_of_guests"
                 type="number"
@@ -319,13 +319,19 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
                 onChange={(date) => {
                   if (date) {
                     setFormData(prev => ({ ...prev, reservation_date: date }));
+                    if (errors.reservation_date) {
+                      setErrors(prev => ({ ...prev, reservation_date: '' }));
+                    }
                   }
                 }}
+                minDate={mode === 'add' ? new Date() : undefined}
                 slotProps={{
                   textField: {
                     fullWidth: true,
                     required: true,
-                    variant: "outlined"
+                    variant: "outlined",
+                    error: !!errors.reservation_date,
+                    helperText: errors.reservation_date
                   }
                 }}
               />
@@ -338,16 +344,22 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
                 onChange={(time) => {
                   if (time) {
                     setFormData(prev => ({ ...prev, reservation_time: time }));
+                    if (errors.reservation_time) {
+                      setErrors(prev => ({ ...prev, reservation_time: '' }));
+                    }
                   }
                 }}
                 slotProps={{
                   textField: {
                     fullWidth: true,
                     required: true,
-                    variant: "outlined"
+                    variant: "outlined",
+                    error: !!errors.reservation_time,
+                    helperText: errors.reservation_time
                   }
                 }}
               />
+              <FormHelperText>Business hours: 4:00 PM - 1:00 AM</FormHelperText>
             </Grid>
             
             <Grid item xs={12} sm={6}>

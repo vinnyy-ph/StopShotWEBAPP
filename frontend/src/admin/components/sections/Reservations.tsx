@@ -29,7 +29,7 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 
-import { Reservation } from '../dashboard';
+import { Reservation, getStatusDisplay } from '../dashboard';
 import ReservationDialog from '../dialogs/ReservationDialog';
 import ReservationFormDialog from '../dialogs/ReservationFormDialog';
 import AddReservationDialog from '../dialogs/AddReservationDialog';
@@ -185,7 +185,10 @@ const Reservations: React.FC<ReservationsProps> = ({
         delete dataToSubmit.room_id;
       }
       
+      // Call the parent's onAddReservation and get the response
       const response = await onAddReservation(dataToSubmit);
+      
+      // The response could be the formatted data or just a boolean
       return response;
     } catch (error) {
       console.error('Error in handleAddReservation:', error);
@@ -213,8 +216,10 @@ const Reservations: React.FC<ReservationsProps> = ({
 
   // Filter reservations based on search query
   const filteredReservations = reservations.filter(res => 
-    res.guest_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    res.reservation_date.includes(searchQuery) ||
+    (res.guest_name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+    (res.guest_email?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+    (res.reservation_date || '').includes(searchQuery) ||
+    (res.room_type?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
     (res.room?.room_name?.toLowerCase() || '').includes(searchQuery.toLowerCase())
   );
 
@@ -281,8 +286,8 @@ const Reservations: React.FC<ReservationsProps> = ({
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>ID</TableCell>
                   <TableCell>Name</TableCell>
+                  <TableCell>Email</TableCell>
                   <TableCell>Date</TableCell>
                   <TableCell>Time</TableCell>
                   <TableCell>Guests</TableCell>
@@ -292,18 +297,18 @@ const Reservations: React.FC<ReservationsProps> = ({
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredReservations.map((row) => (
-                  <TableRow key={row.id} className="table-row">
-                    <TableCell>{row.id}</TableCell>
+                {filteredReservations.map((row, index) => (
+                  <TableRow key={row.id || `temp-${index}`} className="table-row">
                     <TableCell>{row.guest_name}</TableCell>
+                    <TableCell>{row.guest_email}</TableCell>
                     <TableCell>{row.reservation_date}</TableCell>
                     <TableCell>{row.reservation_time}</TableCell>
                     <TableCell>{row.number_of_guests}</TableCell>
-                    <TableCell>{row.room?.room_name || 'Unassigned'}</TableCell>
+                    <TableCell>{row.room?.room_name || row.room_type || 'Unassigned'}</TableCell>
                     <TableCell>
                       <Chip 
-                        label={row.status_display || row.status} 
-                        className={`status-chip ${row.status.toLowerCase()}`}
+                        label={row.status_display || row.status || 'PENDING'} 
+                        className={`status-chip ${((row.status || 'PENDING')?.toLowerCase() || '')}`}
                       />
                     </TableCell>
                     <TableCell align="right" className="action-cell">

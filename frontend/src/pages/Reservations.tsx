@@ -13,7 +13,8 @@ import {
   Select,
   MenuItem,
   InputAdornment,
-  CircularProgress
+  CircularProgress,
+  TableCell
 } from '@mui/material';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -29,6 +30,7 @@ import MicIcon from '@mui/icons-material/Mic';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import EmailIcon from '@mui/icons-material/Email';
 import '../styles/pages/reservations.css';
+import { Reservation, getStatusDisplay, getRoomTypeDisplay } from '../dashboard';
 
 const API_BASE_URL = 'http://127.0.0.1:8000/api';
 
@@ -43,7 +45,11 @@ interface DayAvailability {
 interface ReservationFormData {
   guest_name: string;
   guest_email: string;
+  reservation_date: string;
+  reservation_time: string;
+  duration: string;
   number_of_guests: number;
+  room_type: string;
   special_requests: string;
 }
 
@@ -60,7 +66,11 @@ const ReservationsPage: React.FC = () => {
   const [formData, setFormData] = useState<ReservationFormData>({
     guest_name: '',
     guest_email: '',
+    reservation_date: '',
+    reservation_time: '',
+    duration: '01:00:00', // Default 1 hour
     number_of_guests: 1,
+    room_type: 'TABLE', // Default to TABLE type
     special_requests: ''
   });
   
@@ -250,6 +260,14 @@ const ReservationsPage: React.FC = () => {
     return Object.keys(errors).length === 0;
   };
 
+  const handleReservationTypeChange = (type: string) => {
+    setReservationType(type);
+    setFormData({
+      ...formData,
+      room_type: type === 'table' ? 'TABLE' : 'KARAOKE_ROOM'
+    });
+  };
+
   const handleSubmit = async () => {
     if (!validateForm()) {
       return;
@@ -275,13 +293,16 @@ const ReservationsPage: React.FC = () => {
         formattedTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
       }
       
+      // Updated to match required API format
       const reservationData = {
         guest_name: formData.guest_name,
         guest_email: formData.guest_email,
         reservation_date: reservationDate,
         reservation_time: formattedTime,
+        duration: formData.duration || '01:00:00',
         number_of_guests: formData.number_of_guests,
-        special_requests: formData.special_requests + (reservationType === 'karaoke' ? ' [KARAOKE ROOM RESERVATION]' : '')
+        room_type: formData.room_type,
+        special_requests: formData.special_requests
       };
       
       // Submit to API
@@ -403,7 +424,7 @@ const ReservationsPage: React.FC = () => {
               >
                 <Button 
                   variant={reservationType === 'table' ? 'contained' : 'text'}
-                  onClick={() => setReservationType('table')}
+                  onClick={() => handleReservationTypeChange('table')}
                   startIcon={<LocalBarIcon />}
                   sx={{ 
                     borderRadius: '50px',
@@ -419,7 +440,7 @@ const ReservationsPage: React.FC = () => {
                 </Button>
                 <Button 
                   variant={reservationType === 'karaoke' ? 'contained' : 'text'}
-                  onClick={() => setReservationType('karaoke')}
+                  onClick={() => handleReservationTypeChange('karaoke')}
                   startIcon={<MicIcon />}
                   sx={{ 
                     borderRadius: '50px',

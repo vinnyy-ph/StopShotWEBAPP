@@ -60,6 +60,12 @@ export interface Reservation {
   updated_at?: string;
 }
 
+// Import the employee service and type
+import { employeeService, Employee as EmployeeType } from '../../services/employeeService';
+
+// Replace the Employee interface with the imported type
+export type Employee = EmployeeType;
+
 // Add types for menu items (add this near the other interface definitions)
 export interface MenuItem {
   menu_id: number;
@@ -100,54 +106,6 @@ export const mockFeedbackData = [
   { id: 5, name: 'Jason M.', date: '2025-04-26', rating: 4, comment: 'Great screens, great drinks, great vibe. What more could you ask for?' },
 ];
 
-export const mockEmployeesData = [
-  { 
-    id: 1, 
-    name: 'Alex Johnson', 
-    position: 'Bar Manager', 
-    email: 'alex.johnson@stopshot.com', 
-    phone: '(555) 123-4567', 
-    hireDate: '2023-05-10',
-    status: 'active'
-  },
-  { 
-    id: 2, 
-    name: 'Maria Garcia', 
-    position: 'Head Chef', 
-    email: 'maria.garcia@stopshot.com', 
-    phone: '(555) 234-5678', 
-    hireDate: '2023-06-15',
-    status: 'active'
-  },
-  { 
-    id: 3, 
-    name: 'David Wilson', 
-    position: 'Bartender', 
-    email: 'david.wilson@stopshot.com', 
-    phone: '(555) 345-6789', 
-    hireDate: '2023-07-22',
-    status: 'active'
-  },
-  { 
-    id: 4, 
-    name: 'Sarah Chen', 
-    position: 'Server', 
-    email: 'sarah.chen@stopshot.com', 
-    phone: '(555) 456-7890', 
-    hireDate: '2023-08-05',
-    status: 'active' 
-  },
-  { 
-    id: 5, 
-    name: 'James Taylor', 
-    position: 'Bartender', 
-    email: 'james.taylor@stopshot.com', 
-    phone: '(555) 567-8901', 
-    hireDate: '2023-09-18',
-    status: 'inactive'
-  },
-];
-
 export const drawerWidth = 260;
 
 // Helper function to get display text for statuses
@@ -157,6 +115,15 @@ export const getStatusDisplay = (status: string): string => {
     case 'CONFIRMED': return 'Confirmed';
     case 'CANCELLED': return 'Cancelled';
     default: return status;
+  }
+};
+
+// Helper function to get display text for room types
+export const getRoomTypeDisplay = (roomType: string): string => {
+  switch(roomType) {
+    case 'TABLE': return 'Table';
+    case 'KARAOKE_ROOM': return 'Karaoke Room';
+    default: return roomType;
   }
 };
 
@@ -182,7 +149,9 @@ const AdminDashboard: React.FC = () => {
   const [reservationLoading, setReservationLoading] = useState<boolean>(true);
   const [reservationError, setReservationError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState([...mockFeedbackData]);
-  const [employees, setEmployees] = useState([...mockEmployeesData]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [employeesLoading, setEmployeesLoading] = useState<boolean>(true);
+  const [employeesError, setEmployeesError] = useState<string | null>(null);
 
   useEffect(() => {
     // Simulate loading data
@@ -196,6 +165,7 @@ const AdminDashboard: React.FC = () => {
   useEffect(() => {
     if (authToken) {
       fetchReservations();
+      fetchEmployees();
     }
   }, [authToken]);
 
@@ -211,6 +181,17 @@ const AdminDashboard: React.FC = () => {
       console.error('Error fetching reservations:', error);
       setReservationError('Failed to load reservations. Please try again.');
       setReservationLoading(false);
+    }
+  };
+
+  const fetchEmployees = async () => {
+    try {
+      const data = await employeeService.getAllEmployees();
+      setEmployees(data);
+      setLoading(prevLoading => ({ ...prevLoading, employees: false }));
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+      setLoading(prevLoading => ({ ...prevLoading, employees: false }));
     }
   };
 
@@ -270,8 +251,23 @@ const AdminDashboard: React.FC = () => {
   const handleAddReservation = async (newReservationData: any) => {
     try {
       const response = await axiosInstance.post('/reservations/', newReservationData);
-      setReservations([...reservations, response.data]);
-      return true;
+      
+      // Log the response data to debug
+      console.log('New reservation response:', response.data);
+      
+      // Format the received data before adding to state
+      const formattedData = {
+        ...response.data,
+        id: response.data.id, // Ensure ID is properly set
+        status_display: getStatusDisplay(response.data.status || 'PENDING'),
+        room_type: getRoomTypeDisplay(response.data.room_type)
+      };
+      
+      // Add to state
+      setReservations([...reservations, formattedData]);
+      
+      // Return the formatted data so it can be used by the child components
+      return formattedData;
     } catch (error) {
       console.error('Error creating reservation:', error);
       alert('Failed to create reservation. Please try again.');
@@ -320,27 +316,43 @@ const AdminDashboard: React.FC = () => {
   };
 
   // Handlers for Employees
-  const handleAddEmployee = (employee: any) => {
-    const newEmployee = {
-      id: employees.length + 1,
-      ...employee
-    };
-    setEmployees([...employees, newEmployee]);
-    return true;
+  const handleAddEmployee = async (employeeData: any) => {
+    try {
+      await employeeService.createEmployee(employeeData);
+      // Refresh employee list
+      fetchEmployees();
+      return true;
+    } catch (error) {
+      console.error('Error adding employee:', error);
+      return false;
+    }
   };
 
-  const handleUpdateEmployee = (employee: any) => {
-    const updatedEmployees = employees.map(emp => 
-      emp.id === employee.id ? employee : emp
-    );
-    setEmployees(updatedEmployees);
-    return true;
+  const handleUpdateEmployee = async (employeeData: any) => {
+    try {
+      // Currently only updating status is supported in the backend
+      if (employeeData.user_id) {
+        await employeeService.updateEmployeeStatus(employeeData.user_id, employeeData.is_active);
+        // Refresh employee list
+        fetchEmployees();
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error updating employee:', error);
+      return false;
+    }
   };
 
-  const handleDeleteEmployee = (id: number) => {
-    const updatedEmployees = employees.filter(emp => emp.id !== id);
-    setEmployees(updatedEmployees);
-    return true;
+  const handleDeleteEmployee = async (id: number) => {
+    try {
+      // This endpoint isn't implemented yet, so show an error message
+      console.error('Delete employee endpoint not implemented');
+      return false;
+    } catch (error) {
+      console.error('Error deleting employee:', error);
+      return false;
+    }
   };
 
   // In the AdminDashboard component, add these handlers
@@ -399,6 +411,7 @@ const AdminDashboard: React.FC = () => {
         return <DashboardOverview 
                  reservations={reservations}
                  feedback={feedback}
+                 employees={employees}
                  onSectionChange={handleSectionChange}
                />;
       case 'reservations':
@@ -440,6 +453,7 @@ const AdminDashboard: React.FC = () => {
         return <DashboardOverview 
                  reservations={reservations}
                  feedback={feedback}
+                 employees={employees}
                  onSectionChange={handleSectionChange}
                />;
     }

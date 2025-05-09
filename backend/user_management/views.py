@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from rest_framework.authtoken.models import Token
-from .serializers import CreateEmployeeSerializer, UpdateEmployeeStatusSerializer,  RequestResetSerializer, VerifyOTPSerializer, ResetPasswordSerializer
+from .serializers import CreateEmployeeSerializer, UpdateEmployeeStatusSerializer, RequestResetSerializer, VerifyOTPSerializer, ResetPasswordSerializer, EmployeeSerializer
 from .models import User
 from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
@@ -119,18 +119,55 @@ class ResetPasswordView(APIView):
 # ------------ EMPLOYEE MANAGEMENT -----------
 
 
+# Employee List
+class EmployeeListView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        """Get a list of all employees"""
+        # Check if user is admin or has manager role
+        if request.user.role not in ['ADMIN', 'BAR_MANAGER', 'HEAD_CHEF', 'OWNER']:
+            return Response({'error': 'You do not have permission to view employees.'}, 
+                           status=status.HTTP_403_FORBIDDEN)
+            
+        # Filter users by roles that are not CUSTOMER
+        employees = User.objects.exclude(role='CUSTOMER')
+        serializer = EmployeeSerializer(employees, many=True)
+        return Response(serializer.data)
+
 # Employee Creation
 class CreateEmployeeView(APIView):
     permission_classes = [IsAuthenticated]
+    
     def post(self, request):
+        """Create a new employee"""
         if request.user.role != 'ADMIN':
-            return Response({'error': 'Only admin can create employees.'}, status=403)
+            return Response({'error': 'Only admin can create employees.'}, 
+                          status=status.HTTP_403_FORBIDDEN)
 
         serializer = CreateEmployeeSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response({'message': 'Employee created successfully.'}, status=201)
-        return Response(serializer.errors, status=400)
+            employee = serializer.save()
+            
+            # Update additional fields if provided
+            if 'first_name' in request.data:
+                employee.first_name = request.data['first_name']
+            if 'last_name' in request.data:
+                employee.last_name = request.data['last_name']
+            if 'phone_num' in request.data:
+                employee.phone_num = request.data['phone_num']
+            if 'hire_date' in request.data:
+                employee.hire_date = request.data['hire_date']
+            if 'role' in request.data:
+                employee.role = request.data['role']
+                
+            employee.save()
+            
+            # Return the created employee data
+            response_serializer = EmployeeSerializer(employee)
+            return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
@@ -143,7 +180,6 @@ class UserProfileView(APIView):
             'email': user.email,
             'role': user.role
         })
-
 
 
 class UpdateEmployeeStatusView(APIView):
