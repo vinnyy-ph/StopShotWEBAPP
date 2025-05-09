@@ -16,28 +16,31 @@ const AgeVerificationPopup: React.FC = () => {
   const [open, setOpen] = useState(false);
   
   useEffect(() => {
-    // Check if user has already confirmed age
+    // Force the popup to show on every page refresh
+    // by using sessionStorage instead of localStorage
     try {
-      const ageVerified = localStorage.getItem('ageVerified');
+      const ageVerified = sessionStorage.getItem('ageVerified');
       if (!ageVerified) {
         setOpen(true);
       }
     } catch (error) {
-      // If localStorage is not available (private browsing mode)
+      // If sessionStorage is not available
       setOpen(true);
     }
   }, []);
   
   const handleConfirm = () => {
     try {
-      // Save to localStorage so the popup doesn't appear again
-      localStorage.setItem('ageVerified', 'true');
+      // Save to sessionStorage so popup doesn't appear 
+      // during the current browser session
+      sessionStorage.setItem('ageVerified', 'true');
     } catch (error) {
-      console.warn('Unable to save age verification to localStorage');
+      console.warn('Unable to save age verification to sessionStorage');
     }
     setOpen(false);
   };
   
+  // Rest of the component remains the same...
   const handleDeny = () => {
     // Redirect to an appropriate page for underage visitors
     window.location.href = 'https://www.responsibility.org/';
@@ -49,6 +52,7 @@ const AgeVerificationPopup: React.FC = () => {
       setOpen(false);
     }
   };
+  
   
   return (
     <Dialog
