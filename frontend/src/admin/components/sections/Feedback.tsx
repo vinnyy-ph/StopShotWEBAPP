@@ -1,4 +1,3 @@
-// admin/components/sections/Feedback.tsx
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
@@ -13,17 +12,30 @@ import {
   Chip,
   Button,
   CircularProgress,
-  Alert
+  Alert,
+  Menu,
+  MenuItem,
+  Fade,
+  Divider,
+  Badge,
+  alpha,
+  Tooltip
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import TuneIcon from '@mui/icons-material/Tune';
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import DeleteIcon from '@mui/icons-material/Delete';
+import FilterAltIcon from '@mui/icons-material/FilterAlt';
+import StarIcon from '@mui/icons-material/Star';
+import CloseIcon from '@mui/icons-material/Close';
 import axios from 'axios';
 
 import FeedbackResponseDialog from '../dialogs/FeedbackResponseDialog';
 import { mockFeedbackData } from '../dashboard'; // Keep for type reference
+
+// Orange accent color
+const ACCENT_COLOR = '#d38236';
 
 interface FeedbackProps {
   feedback: typeof mockFeedbackData;
@@ -47,6 +59,10 @@ const Feedback: React.FC<FeedbackProps> = ({
     totalReviews: 0,
     distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
   });
+
+  // Add state variables for filter functionality
+  const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null);
+  const [starFilter, setStarFilter] = useState<number | null>(null);
 
   // Fetch feedback data from the backend
   const fetchFeedback = async () => {
@@ -94,7 +110,6 @@ const Feedback: React.FC<FeedbackProps> = ({
   const handleDeleteFeedback = async (id: number) => {
     if (window.confirm('Are you sure you want to delete this feedback?')) {
       try {
-        // The correct way to call the delete API with the ID in the URL
         await axios.delete(`http://stopshotapp-env-2.eba-8srvpzqc.ap-southeast-2.elasticbeanstalk.com/api/feedback/${id}/`, {
           headers: {
             'Authorization': `Token ${localStorage.getItem('authToken')}`
@@ -132,6 +147,20 @@ const Feedback: React.FC<FeedbackProps> = ({
     setFeedbackResponseDialog(true);
   };
 
+  // Filter menu handlers
+  const handleFilterClick = (event: React.MouseEvent<HTMLElement>) => {
+    setFilterAnchorEl(event.currentTarget);
+  };
+
+  const handleFilterClose = () => {
+    setFilterAnchorEl(null);
+  };
+
+  const handleFilterChange = (rating: number | null) => {
+    setStarFilter(rating);
+    handleFilterClose();
+  };
+
   // Fetch feedback on component mount
   useEffect(() => {
     fetchFeedback();
@@ -143,13 +172,18 @@ const Feedback: React.FC<FeedbackProps> = ({
     return (stats.distribution[rating as keyof typeof stats.distribution] / stats.totalReviews) * 100;
   };
 
-  // Filter feedback based on search query
+  // Filter feedback based on search query and star filter
   const filteredFeedback = feedback.filter((item: any) => {
     const userName = `${item.user?.first_name || ''} ${item.user?.last_name || ''}`.trim();
-    return (
+    const matchesSearch = (
       userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (item.feedback_text || '').toLowerCase().includes(searchQuery.toLowerCase())
     );
+    
+    // Apply star rating filter if set
+    const matchesStarFilter = starFilter === null || item.experience_rating === starFilter;
+    
+    return matchesSearch && matchesStarFilter;
   });
 
   // Helper function to format date
@@ -189,7 +223,7 @@ const Feedback: React.FC<FeedbackProps> = ({
       <Paper className="content-paper">
         <Box className="content-header">
           <Typography variant="h5" className="content-title">Customer Feedback</Typography>
-          <Box className="content-actions">
+          <Box className="content-actions" sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
             <TextField
               size="small"
               placeholder="Search feedback"
@@ -204,15 +238,125 @@ const Feedback: React.FC<FeedbackProps> = ({
                 ),
               }}
             />
-            <IconButton size="small" className="filter-btn">
-              <TuneIcon />
-            </IconButton>
+            
+            {/* Star Rating Filter Button with Badge */}
+            <Tooltip title="Filter by star rating">
+              <Badge 
+                color="warning" 
+                variant="dot" 
+                invisible={starFilter === null} 
+                sx={{ 
+                  '& .MuiBadge-badge': { 
+                    backgroundColor: ACCENT_COLOR 
+                  }
+                }}
+              >
+                <IconButton 
+                  size="small" 
+                  className="filter-btn"
+                  onClick={handleFilterClick}
+                  sx={{ 
+                    border: starFilter !== null ? `1px solid ${ACCENT_COLOR}` : 'none',
+                    background: starFilter !== null ? alpha(ACCENT_COLOR, 0.1) : 'transparent'
+                  }}
+                >
+                  <TuneIcon />
+                </IconButton>
+              </Badge>
+            </Tooltip>
+            
+            {/* Filter Menu */}
+            <Menu
+              anchorEl={filterAnchorEl}
+              open={Boolean(filterAnchorEl)}
+              onClose={handleFilterClose}
+              TransitionComponent={Fade}
+              PaperProps={{
+                elevation: 3,
+                sx: {
+                  mt: 1.5,
+                  borderRadius: '12px',
+                  minWidth: 180,
+                  overflow: 'visible',
+                  bgcolor: '#1a1a1a',
+                  backgroundImage: `linear-gradient(145deg, #1e1e1e 0%, #121212 100%)`,
+                  color: '#ffffff',
+                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+                  '&:before': {
+                    content: '""',
+                    display: 'block',
+                    position: 'absolute',
+                    top: 0,
+                    right: 14,
+                    width: 10,
+                    height: 10,
+                    bgcolor: '#1a1a1a',
+                    transform: 'translateY(-50%) rotate(45deg)',
+                    zIndex: 0,
+                  },
+                },
+              }}
+            >
+              <Box sx={{ px: 2, py: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Typography variant="subtitle2" sx={{ color: '#ffffff', fontWeight: 600 }}>
+                  Filter by Rating
+                </Typography>
+                {starFilter !== null && (
+                  <IconButton size="small" onClick={() => handleFilterChange(null)} sx={{ color: 'rgba(255,255,255,0.6)', p: 0.5 }}>
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                )}
+              </Box>
+              
+              <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)', my: 0.5 }} />
+              
+              {[5, 4, 3, 2, 1].map((rating) => (
+                <MenuItem
+                  key={rating}
+                  onClick={() => handleFilterChange(rating)}
+                  sx={{
+                    py: 1,
+                    px: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    color: '#ffffff',
+                    bgcolor: starFilter === rating ? alpha(ACCENT_COLOR, 0.15) : 'transparent',
+                    '&:hover': {
+                      bgcolor: alpha(ACCENT_COLOR, 0.1),
+                    },
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Rating
+                      value={rating}
+                      readOnly
+                      size="small"
+                      precision={1}
+                      sx={{ 
+                        color: ACCENT_COLOR,
+                        '& .MuiRating-iconEmpty': {
+                          color: alpha(ACCENT_COLOR, 0.3),
+                        }
+                      }}
+                    />
+                    <Typography>
+                      {rating} {rating === 1 ? 'star' : 'stars'}
+                    </Typography>
+                    {starFilter === rating && (
+                      <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center' }}>
+                        <CheckCircleIcon fontSize="small" sx={{ color: ACCENT_COLOR }} />
+                      </Box>
+                    )}
+                  </Box>
+                </MenuItem>
+              ))}
+            </Menu>
           </Box>
         </Box>
 
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-            <CircularProgress />
+            <CircularProgress sx={{ color: ACCENT_COLOR }} />
           </Box>
         ) : error ? (
           <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>
@@ -229,7 +373,7 @@ const Feedback: React.FC<FeedbackProps> = ({
                   precision={0.1} 
                   readOnly 
                   sx={{ 
-                    '& .MuiRating-iconFilled': { color: '#f5b74e' },
+                    '& .MuiRating-iconFilled': { color: ACCENT_COLOR },
                     '& .MuiRating-iconEmpty': { color: '#666666' }
                   }}
                 />
@@ -241,58 +385,74 @@ const Feedback: React.FC<FeedbackProps> = ({
                   <Typography variant="h4" className="summary-value">{stats.totalReviews}</Typography>
                 </Box>
                 <Box className="rating-breakdown">
-                  <Box className="rating-bar">
-                    <Typography variant="caption" sx={{ color: '#e0e0e0' }}>5★</Typography>
-                    <Box className="bar-container">
-                      <Box className="bar-fill" sx={{ width: `${getPercentage(5)}%` }}></Box>
+                  {[5, 4, 3, 2, 1].map((rating) => (
+                    <Box key={rating} className="rating-bar" sx={{ cursor: 'pointer' }} onClick={() => handleFilterChange(rating)}>
+                      <Typography variant="caption" sx={{ color: '#e0e0e0' }}>{rating}★</Typography>
+                      <Box className="bar-container">
+                        <Box 
+                          className="bar-fill" 
+                          sx={{ 
+                            width: `${getPercentage(rating)}%`,
+                            bgcolor: starFilter === rating ? ACCENT_COLOR : undefined
+                          }}
+                        ></Box>
+                      </Box>
+                      <Typography variant="caption" sx={{ color: '#e0e0e0' }}>
+                        {Math.round(getPercentage(rating))}%
+                      </Typography>
                     </Box>
-                    <Typography variant="caption" sx={{ color: '#e0e0e0' }}>
-                      {Math.round(getPercentage(5))}%
-                    </Typography>
-                  </Box>
-                  <Box className="rating-bar">
-                    <Typography variant="caption" sx={{ color: '#e0e0e0' }}>4★</Typography>
-                    <Box className="bar-container">
-                      <Box className="bar-fill" sx={{ width: `${getPercentage(4)}%` }}></Box>
-                    </Box>
-                    <Typography variant="caption" sx={{ color: '#e0e0e0' }}>
-                      {Math.round(getPercentage(4))}%
-                    </Typography>
-                  </Box>
-                  <Box className="rating-bar">
-                    <Typography variant="caption" sx={{ color: '#e0e0e0' }}>3★</Typography>
-                    <Box className="bar-container">
-                      <Box className="bar-fill" sx={{ width: `${getPercentage(3)}%` }}></Box>
-                    </Box>
-                    <Typography variant="caption" sx={{ color: '#e0e0e0' }}>
-                      {Math.round(getPercentage(3))}%
-                    </Typography>
-                  </Box>
-                  <Box className="rating-bar">
-                    <Typography variant="caption" sx={{ color: '#e0e0e0' }}>2★</Typography>
-                    <Box className="bar-container">
-                      <Box className="bar-fill" sx={{ width: `${getPercentage(2)}%` }}></Box>
-                    </Box>
-                    <Typography variant="caption" sx={{ color: '#e0e0e0' }}>
-                      {Math.round(getPercentage(2))}%
-                    </Typography>
-                  </Box>
-                  <Box className="rating-bar">
-                    <Typography variant="caption" sx={{ color: '#e0e0e0' }}>1★</Typography>
-                    <Box className="bar-container">
-                      <Box className="bar-fill" sx={{ width: `${getPercentage(1)}%` }}></Box>
-                    </Box>
-                    <Typography variant="caption" sx={{ color: '#e0e0e0' }}>
-                      {Math.round(getPercentage(1))}%
-                    </Typography>
-                  </Box>
+                  ))}
                 </Box>
               </Paper>
             </Box>
+
+            {/* Active filter indicator */}
+            {starFilter !== null && (
+              <Box sx={{ display: 'flex', px: 2, mb: 2 }}>
+                <Chip 
+                  label={`${starFilter} Star Rating`} 
+                  onDelete={() => handleFilterChange(null)}
+                  deleteIcon={<CloseIcon fontSize="small" />}
+                  size="small"
+                  sx={{ 
+                    bgcolor: alpha(ACCENT_COLOR, 0.15),
+                    color: '#ffffff',
+                    borderRadius: '16px',
+                    '& .MuiChip-deleteIcon': {
+                      color: '#ffffff',
+                      '&:hover': {
+                        color: ACCENT_COLOR,
+                      }
+                    }
+                  }}
+                  icon={<StarIcon sx={{ color: ACCENT_COLOR }} fontSize="small" />}
+                />
+              </Box>
+            )}
             
             {filteredFeedback.length === 0 ? (
               <Box sx={{ textAlign: 'center', py: 5 }}>
                 <Typography variant="body1">No feedback found</Typography>
+                {(searchQuery || starFilter !== null) && (
+                  <Button 
+                    variant="outlined" 
+                    sx={{ 
+                      mt: 2, 
+                      borderColor: alpha(ACCENT_COLOR, 0.5),
+                      color: ACCENT_COLOR,
+                      '&:hover': {
+                        borderColor: ACCENT_COLOR,
+                        bgcolor: alpha(ACCENT_COLOR, 0.1)
+                      }
+                    }} 
+                    onClick={() => {
+                      setSearchQuery('');
+                      setStarFilter(null);
+                    }}
+                  >
+                    Clear Filters
+                  </Button>
+                )}
               </Box>
             ) : (
               <Box className="feedback-grid">
@@ -313,7 +473,7 @@ const Feedback: React.FC<FeedbackProps> = ({
                         readOnly 
                         size="small" 
                         sx={{ 
-                          '& .MuiRating-iconFilled': { color: '#f5b74e' },
+                          '& .MuiRating-iconFilled': { color: ACCENT_COLOR },
                           '& .MuiRating-iconEmpty': { color: '#666666' }
                         }}
                       />
@@ -326,13 +486,13 @@ const Feedback: React.FC<FeedbackProps> = ({
 
                     {item.response_text && (
                       <Box sx={{ 
-                        backgroundColor: 'rgba(211, 130, 54, 0.15)', 
+                        backgroundColor: alpha(ACCENT_COLOR, 0.15), 
                         p: 1, 
                         borderRadius: 1, 
                         mb: 2,
-                        borderLeft: '3px solid var(--accent-color)'
+                        borderLeft: `3px solid ${ACCENT_COLOR}`
                       }}>
-                        <Typography variant="caption" sx={{ display: 'block', fontWeight: 'bold', color: '#f5b74e' }}>
+                        <Typography variant="caption" sx={{ display: 'block', fontWeight: 'bold', color: ACCENT_COLOR }}>
                           Our Response:
                         </Typography>
                         <Typography variant="body2" sx={{ color: '#e0e0e0' }}>

@@ -110,7 +110,7 @@ const Sidebar: React.FC<SidebarProps> = ({ selectedSection, onSectionChange }) =
           </ListItemButton>
         </ListItem>
         
-        <ListItem disablePadding>
+        {/* <ListItem disablePadding>
           <ListItemButton 
             selected={selectedSection === 'analytics'} 
             onClick={() => onSectionChange('analytics')} 
@@ -121,7 +121,7 @@ const Sidebar: React.FC<SidebarProps> = ({ selectedSection, onSectionChange }) =
             </ListItemIcon>
             <ListItemText primary="Analytics" />
           </ListItemButton>
-        </ListItem>
+        </ListItem> */}
         
         <ListItem disablePadding>
           <ListItemButton

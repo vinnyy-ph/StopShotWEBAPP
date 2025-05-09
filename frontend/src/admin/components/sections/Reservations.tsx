@@ -16,6 +16,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TablePagination, // Add this import
   Tabs,
   Tab,
   IconButton,
@@ -105,6 +106,10 @@ const Reservations: React.FC<ReservationsProps> = ({
   const [selectedReservation, setSelectedReservation] = useState<any>(null);
   const [editMode, setEditMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Add pagination state variables
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [formDialogOpen, setFormDialogOpen] = useState(false);
@@ -303,6 +308,22 @@ const filteredReservations = getFilteredReservationsByStatus().filter(res =>
   (res.room?.room_name?.toLowerCase() || '').includes(searchQuery.toLowerCase())
 );
 
+// Get current page of data
+const currentPageReservations = filteredReservations.slice(
+  page * rowsPerPage,
+  page * rowsPerPage + rowsPerPage
+);
+
+// Add pagination handlers
+const handleChangePage = (event: unknown, newPage: number) => {
+  setPage(newPage);
+};
+
+const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+  setRowsPerPage(parseInt(event.target.value, 10));
+  setPage(0); // Reset to first page when changing rows per page
+};
+
   return (
     <motion.div
       key="reservations"
@@ -362,80 +383,119 @@ const filteredReservations = getFilteredReservationsByStatus().filter(res =>
         ) : error ? (
           <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>
         ) : (
-          <TableContainer className="table-container">
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Date</TableCell>
-                  <TableCell>Time</TableCell>
-                  <TableCell>Guests</TableCell>
-                  <TableCell>Reservation Type</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell align="right">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredReservations.map((row, index) => (
-                  <TableRow key={row.id || `temp-${index}`} className="table-row">
-                    <TableCell>{row.guest_name}</TableCell>
-                    <TableCell>{row.guest_email}</TableCell>
-                    <TableCell>{row.reservation_date}</TableCell>
-                    <TableCell>{formatTime12Hour(row.reservation_time)}</TableCell>
-                    <TableCell>{row.number_of_guests}</TableCell>
-                    <TableCell>{row.room?.room_name || row.room_type || 'Unassigned'}</TableCell>
-                    <TableCell>
-                      <Chip 
-                        label={row.status_display || row.status || 'PENDING'} 
-                        className={`status-chip ${((row.status || 'PENDING')?.toLowerCase() || '')}`}
-                      />
-                    </TableCell>
-                    <TableCell align="right" className="action-cell">
-                      <IconButton size="small" onClick={() => handleViewReservation(row)}>
-                        <VisibilityIcon fontSize="small" style={{ color: '#8eccff' }} />
-                      </IconButton>
-                      
-                      {/* Only show confirm button if not already confirmed or cancelled */}
-                      {row.status !== 'CONFIRMED' && row.status !== 'CANCELLED' && (
-                        <IconButton 
-                          size="small" 
-                          onClick={() => handleStatusChange(row.id, 'CONFIRMED')}
-                          className="confirm-button"
-                          title={!row.room ? "Room assignment required before confirmation" : "Confirm reservation"}
-                        >
-                          <CheckCircleIcon 
-                            fontSize="small" 
-                            style={{ 
-                              color: !row.room ? '#ffaa00' : '#4caf50' 
-                            }} 
-                          />
-                        </IconButton>
-                      )}
-                      
-                      {/* Only show cancel button if not already cancelled or confirmed */}
-                      {row.status !== 'CANCELLED' && row.status !== 'CONFIRMED' && (
-                        <IconButton 
-                          size="small" 
-                          onClick={() => handleStatusChange(row.id, 'CANCELLED')}
-                          className="cancel-button"
-                        >
-                          <CancelIcon fontSize="small" style={{ color: '#f44336' }} />
-                        </IconButton>
-                      )}
-                      
-                      {/* Only show delete button for pending reservations */}
-                      {row.status === 'PENDING' && (
-                        <IconButton size="small" onClick={() => onDeleteReservation(row.id)}>
-                          <DeleteIcon fontSize="small" style={{ color: '#ff7043' }} />
-                        </IconButton>
-                      )}
-                    </TableCell>
+          <>
+            <TableContainer className="table-container">
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Name</TableCell>
+                    <TableCell>Email</TableCell>
+                    <TableCell>Date</TableCell>
+                    <TableCell>Time</TableCell>
+                    <TableCell>Guests</TableCell>
+                    <TableCell>Reservation Type</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell align="right">Actions</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {currentPageReservations.map((row, index) => (
+                    <TableRow key={row.id || `temp-${index}`} className="table-row">
+                      <TableCell>{row.guest_name}</TableCell>
+                      <TableCell>{row.guest_email}</TableCell>
+                      <TableCell>{row.reservation_date}</TableCell>
+                      <TableCell>{formatTime12Hour(row.reservation_time)}</TableCell>
+                      <TableCell>{row.number_of_guests}</TableCell>
+                      <TableCell>{row.room?.room_name || row.room_type || 'Unassigned'}</TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={row.status_display || row.status || 'PENDING'} 
+                          className={`status-chip ${((row.status || 'PENDING')?.toLowerCase() || '')}`}
+                        />
+                      </TableCell>
+                      <TableCell align="right" className="action-cell">
+                        <IconButton size="small" onClick={() => handleViewReservation(row)}>
+                          <VisibilityIcon fontSize="small" style={{ color: '#8eccff' }} />
+                        </IconButton>
+                        
+                        {/* Only show confirm button if not already confirmed or cancelled */}
+                        {row.status !== 'CONFIRMED' && row.status !== 'CANCELLED' && (
+                          <IconButton 
+                            size="small" 
+                            onClick={() => handleStatusChange(row.id, 'CONFIRMED')}
+                            className="confirm-button"
+                            title={!row.room ? "Room assignment required before confirmation" : "Confirm reservation"}
+                          >
+                            <CheckCircleIcon 
+                              fontSize="small" 
+                              style={{ 
+                                color: !row.room ? '#ffaa00' : '#4caf50' 
+                              }} 
+                            />
+                          </IconButton>
+                        )}
+                        
+                        {/* Only show cancel button if not already cancelled or confirmed */}
+                        {row.status !== 'CANCELLED' && row.status !== 'CONFIRMED' && (
+                          <IconButton 
+                            size="small" 
+                            onClick={() => handleStatusChange(row.id, 'CANCELLED')}
+                            className="cancel-button"
+                          >
+                            <CancelIcon fontSize="small" style={{ color: '#f44336' }} />
+                          </IconButton>
+                        )}
+                        
+                        {/* Only show delete button for pending reservations */}
+                        {row.status === 'PENDING' && (
+                          <IconButton size="small" onClick={() => onDeleteReservation(row.id)}>
+                            <DeleteIcon fontSize="small" style={{ color: '#ff7043' }} />
+                          </IconButton>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            
+            {/* Add TablePagination component */}
+            <TablePagination
+              rowsPerPageOptions={[5, 10, 25, 50]}
+              component="div"
+              count={filteredReservations.length}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              onPageChange={handleChangePage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              sx={{
+                color: '#fff', // Set base text color to white
+                '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+                  margin: 0,
+                  color: '#fff', // Set "Rows per page" and pagination info text to white
+                },
+                '.MuiTablePagination-toolbar': {
+                  pl: 2,
+                  pr: 2,
+                },
+                '.MuiTablePagination-select': {
+                  color: '#fff', // Set dropdown text color to white
+                },
+                '.MuiTablePagination-selectIcon': {
+                  color: '#fff', // Set dropdown icon color to white
+                },
+                '.MuiTablePagination-actions': {
+                  color: '#fff', // Set pagination navigation button colors
+                },
+                '.MuiIconButton-root.Mui-disabled': {
+                  color: 'rgba(255, 255, 255, 0.3)', // Set disabled pagination button to slightly transparent white
+                },
+                '.MuiTablePagination-menuItem': {
+                  color: '#333', // Keep dropdown menu items dark (they have a light background)
+                }
+              }}
+            />
+          </>
         )}
       </Paper>
       

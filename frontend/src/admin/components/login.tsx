@@ -10,7 +10,14 @@ import {
   IconButton,
   Snackbar,
   Alert,
-  Link
+  Link,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Step,
+  Stepper,
+  StepLabel
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
@@ -19,11 +26,17 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import SportsBasketballIcon from '@mui/icons-material/SportsBasketball';
 import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
+import EmailIcon from '@mui/icons-material/Email';
+import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import '../styles/loginPage.css';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 const API_BASE_URL = 'http://stopshotapp-env-2.eba-8srvpzqc.ap-southeast-2.elasticbeanstalk.com/api';
+
+// Define reset password steps
+const steps = ['Request Reset', 'Verify Code', 'Set New Password'];
+
 const AdminLogin: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -36,6 +49,16 @@ const AdminLogin: React.FC = () => {
   const [logoPosition, setLogoPosition] = useState({ x: 0, y: 0 });
   const { setAuthToken, setUserRole } = useAuth();
   const navigate = useNavigate();
+  
+  // Password reset states
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetOTP, setResetOTP] = useState('');
+  const [resetActiveStep, setResetActiveStep] = useState(0);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -114,10 +137,218 @@ const AdminLogin: React.FC = () => {
   
   const handleForgotPassword = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (username) {
-      setMessage(`Password reset instructions sent to email associated with username: ${username}`);
-    } else {
-      setMessage('Please enter your username first');
+    // Open the reset password dialog
+    setResetDialogOpen(true);
+    setResetEmail(username); // Pre-fill with the current username/email if available
+  };
+
+  const handleCloseResetDialog = () => {
+    // Reset all states when closing the dialog
+    setResetDialogOpen(false);
+    setResetActiveStep(0);
+    setResetOTP('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setOtpSent(false);
+  };
+
+  const handleRequestReset = async () => {
+    try {
+      await axios.post(`${API_BASE_URL}/auth/request-reset/`, {
+        email: resetEmail,
+      });
+      
+      setOtpSent(true);
+      setMessage("OTP sent successfully to your email.");
+      setResetActiveStep(1); // Move to next step
+    } catch (error: any) {
+      console.error('Request reset error:', error);
+      if (error.response && error.response.data) {
+        setError(error.response.data.error || 'Failed to request password reset.');
+      } else {
+        setError('Cannot connect to server. Please try again later.');
+      }
+    }
+  };
+
+  const handleVerifyOTP = async () => {
+    try {
+      await axios.post(`${API_BASE_URL}/auth/verify-otp/`, {
+        otp: resetOTP,
+      });
+      
+      setMessage("OTP verified successfully.");
+      setResetActiveStep(2); // Move to next step
+    } catch (error: any) {
+      console.error('Verify OTP error:', error);
+      if (error.response && error.response.data) {
+        setError(error.response.data.error || 'Invalid or expired OTP.');
+      } else {
+        setError('Cannot connect to server. Please try again later.');
+      }
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (newPassword !== confirmPassword) {
+      setError("Passwords don't match.");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+
+    try {
+      await axios.post(`${API_BASE_URL}/auth/reset-password/`, {
+        email: resetEmail,
+        new_password: newPassword,
+      });
+      
+      setMessage("Password reset successfully. You can now login with your new password.");
+      handleCloseResetDialog();
+    } catch (error: any) {
+      console.error('Reset password error:', error);
+      if (error.response && error.response.data) {
+        setError(error.response.data.error || 'Failed to reset password.');
+      } else {
+        setError('Cannot connect to server. Please try again later.');
+      }
+    }
+  };
+  
+  const renderResetStep = () => {
+    switch (resetActiveStep) {
+      case 0:
+        return (
+          <Box>
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              Enter your email address to receive a password reset code.
+            </Typography>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Email Address"
+              type="email"
+              fullWidth
+              value={resetEmail}
+              onChange={(e) => setResetEmail(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <EmailIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Box>
+        );
+      case 1:
+        return (
+          <Box>
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              Enter the 6-digit code sent to your email.
+            </Typography>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Verification Code"
+              type="text"
+              fullWidth
+              value={resetOTP}
+              onChange={(e) => setResetOTP(e.target.value)}
+              inputProps={{ maxLength: 6 }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <VpnKeyIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Box>
+        );
+      case 2:
+        return (
+          <Box>
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              Create a new password.
+            </Typography>
+            <TextField
+              margin="dense"
+              label="New Password"
+              type={showNewPassword ? "text" : "password"}
+              fullWidth
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockOutlinedIcon />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      edge="end"
+                    >
+                      {showNewPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
+            />
+            <TextField
+              margin="dense"
+              label="Confirm New Password"
+              type={showNewPassword ? "text" : "password"}
+              fullWidth
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockOutlinedIcon />
+                  </InputAdornment>
+                )
+              }}
+            />
+          </Box>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const getStepButtonText = () => {
+    switch (resetActiveStep) {
+      case 0:
+        return otpSent ? "Resend Code" : "Send Code";
+      case 1:
+        return "Verify";
+      case 2:
+        return "Reset Password";
+      default:
+        return "Next";
+    }
+  };
+
+  const handleStepAction = () => {
+    switch (resetActiveStep) {
+      case 0:
+        handleRequestReset();
+        break;
+      case 1:
+        handleVerifyOTP();
+        break;
+      case 2:
+        handleResetPassword();
+        break;
+      default:
+        break;
     }
   };
   
@@ -236,14 +467,45 @@ const AdminLogin: React.FC = () => {
               >
                 Forgot Password?
               </Link>
-              
-              {/* <Typography variant="caption" className="login-hint">
-                Default credentials: admin / admin
-              </Typography> */}
             </Box>
           </Paper>
         </motion.div>
       </Container>
+      
+      {/* Password Reset Dialog */}
+      <Dialog 
+        open={resetDialogOpen} 
+        onClose={handleCloseResetDialog}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Reset Password</DialogTitle>
+        <DialogContent>
+          <Stepper activeStep={resetActiveStep} sx={{ py: 3 }}>
+            {steps.map((label) => (
+              <Step key={label}>
+                <StepLabel>{label}</StepLabel>
+              </Step>
+            ))}
+          </Stepper>
+          {renderResetStep()}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseResetDialog}>Cancel</Button>
+          <Button 
+            onClick={handleStepAction}
+            variant="contained"
+            color="primary"
+            disabled={
+              (resetActiveStep === 0 && !resetEmail) || 
+              (resetActiveStep === 1 && resetOTP.length !== 6) ||
+              (resetActiveStep === 2 && (newPassword.length < 6 || newPassword !== confirmPassword))
+            }
+          >
+            {getStepButtonText()}
+          </Button>
+        </DialogActions>
+      </Dialog>
       
       <Snackbar open={!!error} autoHideDuration={6000} onClose={handleCloseAlert}>
         <Alert severity="error" onClose={handleCloseAlert}>
