@@ -149,19 +149,47 @@ const ReservationsPage: React.FC = () => {
   const fetchMonthAvailability = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get(`${API_BASE_URL}/reservations/availability/`, { 
-        params: { 
-          year: currentYear, 
-          month: currentMonth + 1,
-          reservation_type: reservationType
-        }
+      // Create an array of all days in the current month
+      const daysToCheck = daysInMonth.map(day => {
+        const date = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        return date;
       });
       
-      setDayAvailability(response.data);
+      // For each day, get its availability summary
+      const mockAvailability: {[key: number]: DayAvailability} = {};
+      
+      // Using Promise.all would be more efficient but might cause rate limiting
+      // This is a sequential approach to avoid overloading the API
+      for (const [index, date] of daysToCheck.entries()) {
+        try {
+          // Call the documented endpoint from README
+          const response = await axios.get(`${API_BASE_URL}/availability/summary/`, { 
+            params: { 
+              date: date 
+            }
+          });
+          
+          const day = index + 1;
+          const data = response.data;
+          
+          // Map the API response to our interface
+          mockAvailability[day] = {
+            isAvailable: data.availability[reservationType === 'table' ? 'TABLE' : 'KARAOKE_ROOM'],
+            // Consider it "busy" if percentage_booked is high but not unavailable
+            isBusy: data.availability_by_type?.[reservationType === 'table' ? 'TABLE' : 'KARAOKE_ROOM']?.availability_status === 'LIMITED_AVAILABILITY',
+            // Special events aren't explicitly specified in the API, using percentage_booked as indicator
+            isSpecialEvent: false
+          };
+        } catch (err) {
+          console.error(`Error fetching availability for date ${date}:`, err);
+        }
+      }
+      
+      setDayAvailability(mockAvailability);
     } catch (error) {
       console.error('Error fetching availability:', error);
       
-      // Fallback mock data for development
+      // Using same fallback mock data as before
       const mockAvailability: {[key: number]: DayAvailability} = {};
       const busyDays = [5, 12, 19, 25];
       const specialEventDays = [8, 15, 22];
@@ -188,18 +216,39 @@ const ReservationsPage: React.FC = () => {
     try {
       const date = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
       
-      const response = await axios.get(`${API_BASE_URL}/reservations/timeslots/`, { 
+      // Using the "Get Specific Booked Time Slots" endpoint from README
+      const response = await axios.get(`${API_BASE_URL}/reservations/`, { 
         params: { 
-          date: date,
-          reservation_type: reservationType
+          reservation_date: date,
+          status: 'CONFIRMED',
+          room__room_type: reservationType === 'table' ? 'TABLE' : 'KARAOKE_ROOM'
         }
       });
       
-      setAvailableTimeSlots(response.data.available_slots);
+      // Process booked slots to determine available slots
+      const businessHours = [
+        '4:00 PM', '5:00 PM', '6:00 PM', '7:00 PM', '8:00 PM', 
+        '9:00 PM', '10:00 PM', '11:00 PM', '12:00 AM', '1:00 AM'
+      ];
+      
+      // The response contains booked slots, so we need to find available ones
+      const bookedSlots = response.data.map((slot: any) => {
+        const time = new Date(`1970-01-01T${slot.reservation_time}`);
+        const hours = time.getHours();
+        const minutes = time.getMinutes();
+        
+        let formattedHour = hours % 12;
+        if (formattedHour === 0) formattedHour = 12;
+        
+        return `${formattedHour}:${String(minutes).padStart(2, '0')} ${hours >= 12 ? 'PM' : 'AM'}`;
+      });
+      
+      const availableSlots = businessHours.filter(slot => !bookedSlots.includes(slot));
+      setAvailableTimeSlots(availableSlots);
     } catch (error) {
       console.error('Error fetching time slots:', error);
       
-      // Fallback mock data
+      // Same fallback mock data as before
       const allTimeSlots = [
         '4:00 PM', '5:00 PM', '6:00 PM', '7:00 PM', '8:00 PM', 
         '9:00 PM', '10:00 PM', '11:00 PM', '12:00 AM', '1:00 AM'
@@ -226,7 +275,7 @@ const ReservationsPage: React.FC = () => {
     setSelectedDay(day);
   };
   
-  // Validate form before submission
+  // Update validateForm function to check guest limits
   const validateForm = () => {
     const errors: {[key: string]: string} = {};
     
@@ -246,6 +295,10 @@ const ReservationsPage: React.FC = () => {
     
     if (formData.number_of_guests < 1) {
       errors.number_of_guests = 'At least 1 guest is required';
+    } else if (formData.room_type === 'TABLE' && formData.number_of_guests > 6) {
+      errors.number_of_guests = 'Tables can accommodate a maximum of 6 guests';
+    } else if (formData.room_type === 'KARAOKE_ROOM' && formData.number_of_guests > 10) {
+      errors.number_of_guests = 'Karaoke rooms can accommodate a maximum of 10 guests';
     }
     
     if (!selectedDay) {
@@ -256,18 +309,44 @@ const ReservationsPage: React.FC = () => {
       errors.time = 'Please select a time slot';
     }
     
+    // Add validation for karaoke rooms - must be at least 1 hour
+    if (formData.room_type === 'KARAOKE_ROOM') {
+      const durationParts = formData.duration.split(':');
+      const hours = parseInt(durationParts[0], 10);
+      const minutes = parseInt(durationParts[1], 10);
+      
+      if (hours < 1) {
+        errors.duration = 'Karaoke room bookings must be for at least 1 hour';
+      }
+    }
+    
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
+  // Update handleReservationTypeChange to adjust guest count if it exceeds the new limit
   const handleReservationTypeChange = (type: string) => {
     setReservationType(type);
+    
+    // Check if current guest count exceeds the limit for the new type
+    let adjustedGuestCount = formData.number_of_guests;
+    if (type === 'table' && formData.number_of_guests > 6) {
+      adjustedGuestCount = 6;
+    } else if (type === 'karaoke' && formData.number_of_guests > 10) {
+      adjustedGuestCount = 10;
+    }
+    
+    // Make sure to use the exact enum values from the backend (TABLE or KARAOKE_ROOM)
     setFormData({
       ...formData,
-      room_type: type === 'table' ? 'TABLE' : 'KARAOKE_ROOM'
+      room_type: type === 'table' ? 'TABLE' : 'KARAOKE_ROOM',
+      // Reset the duration for karaoke rooms to meet the minimum requirement
+      duration: type === 'karaoke' ? '01:00:00' : formData.duration,
+      number_of_guests: adjustedGuestCount
     });
   };
 
+  // Update handleSubmit function
   const handleSubmit = async () => {
     if (!validateForm()) {
       return;
@@ -278,7 +357,7 @@ const ReservationsPage: React.FC = () => {
       const reservationDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
       
       // Convert time format to 24-hour format that Django will accept
-      let formattedTime = timeSlot;
+      let formattedTime = '00:00:00';
       if (timeSlot) {
         const [time, period] = timeSlot.split(' ');
         let [hours, minutes] = time.split(':').map(Number);
@@ -290,10 +369,10 @@ const ReservationsPage: React.FC = () => {
           hours = 0;
         }
         
-        formattedTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        formattedTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
       }
       
-      // Updated to match required API format
+      // Format data according to API requirements in README
       const reservationData = {
         guest_name: formData.guest_name,
         guest_email: formData.guest_email,
@@ -313,7 +392,7 @@ const ReservationsPage: React.FC = () => {
     } catch (error: any) {
       console.error('Error submitting reservation:', error);
       
-      // Add this to see the specific error message from the backend
+      // Improved error handling based on backend's error format from README
       if (error.response) {
         console.log('Response data:', error.response.data);
       }
@@ -323,10 +402,18 @@ const ReservationsPage: React.FC = () => {
         const backendErrors = error.response.data;
         const formattedErrors: {[key: string]: string} = {};
         
+        // Process different error formats
         Object.keys(backendErrors).forEach(key => {
-          formattedErrors[key] = Array.isArray(backendErrors[key]) 
-            ? backendErrors[key][0] 
-            : backendErrors[key];
+          if (key === 'non_field_errors') {
+            // This could be a booking conflict error, show it in a field that makes sense
+            formattedErrors['time'] = Array.isArray(backendErrors[key]) 
+              ? backendErrors[key][0] 
+              : backendErrors[key];
+          } else {
+            formattedErrors[key] = Array.isArray(backendErrors[key]) 
+              ? backendErrors[key][0] 
+              : backendErrors[key];
+          }
         });
         
         setFormErrors(formattedErrors);
@@ -545,7 +632,10 @@ const ReservationsPage: React.FC = () => {
                           <GroupIcon sx={{ color: formErrors.number_of_guests ? '#f44336' : '#d38236' }} />
                         </InputAdornment>
                       ),
-                      inputProps: { min: 1 }
+                      inputProps: { 
+                        min: 1, 
+                        max: formData.room_type === 'TABLE' ? 6 : 10 
+                      }
                     }}
                   />
                   {formErrors.number_of_guests && <Typography className="error-text">{formErrors.number_of_guests}</Typography>}
@@ -864,17 +954,6 @@ const ReservationsPage: React.FC = () => {
                     >
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <Box sx={{ 
-                          width: '10px', 
-                          height: '10px', 
-                          backgroundColor: '#d38236',
-                          borderRadius: '50%',
-                          mr: 1
-                        }} />
-                        <Typography variant="caption" sx={{ color: '#999' }}>Special Event</Typography>
-                      </Box>
-                      
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Box sx={{ 
                           width: '16px', 
                           height: '3px', 
                           backgroundColor: 'rgba(255, 87, 34, 0.7)',
@@ -925,7 +1004,7 @@ const ReservationsPage: React.FC = () => {
                 >
                   <CheckCircleIcon sx={{ color: '#66bb6a', mr: 2 }} />
                   <Typography variant="body2" sx={{ color: '#66bb6a' }}>
-                    Thank you! Your reservation request has been submitted. We'll confirm shortly via SMS.
+                    Thank you! Your reservation request has been submitted. We'll confirm shortly via your email.
                   </Typography>
                 </Box>
               ) : (
