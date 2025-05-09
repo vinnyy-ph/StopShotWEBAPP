@@ -92,6 +92,14 @@ const EmployeeDialog: React.FC<EmployeeDialogProps> = ({
     }
   };
 
+  // Format role display (convert BAR_MANAGER to Bar Manager)
+  const formatRole = (role: string) => {
+    return role
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   if (!employee || !editedEmployee) return null;
 
   return (
@@ -137,26 +145,10 @@ const EmployeeDialog: React.FC<EmployeeDialogProps> = ({
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
-                label="Email"
-                fullWidth
-                value={editedEmployee.email || ""}
-                onChange={(e) => setEditedEmployee({...editedEmployee, email: e.target.value})}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Username"
-                fullWidth
-                value={editedEmployee.username || ""}
-                onChange={(e) => setEditedEmployee({...editedEmployee, username: e.target.value})}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
                 label="Phone Number"
                 fullWidth
                 value={editedEmployee.phone_number || ""}
-                onChange={(e) => setEditedEmployee({...editedEmployee, phone_num: e.target.value})}
+                onChange={(e) => setEditedEmployee({...editedEmployee, phone_number: e.target.value})}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -177,8 +169,6 @@ const EmployeeDialog: React.FC<EmployeeDialogProps> = ({
                 value={editedEmployee.role || ""}
                 onChange={(e) => setEditedEmployee({...editedEmployee, role: e.target.value})}
               >
-                <MenuItem value="ADMIN">Admin</MenuItem>
-                <MenuItem value="OWNER">Owner</MenuItem>
                 <MenuItem value="BAR_MANAGER">Bar Manager</MenuItem>
                 <MenuItem value="HEAD_CHEF">Head Chef</MenuItem>
                 <MenuItem value="BARTENDER">Bartender</MenuItem>
@@ -215,19 +205,7 @@ const EmployeeDialog: React.FC<EmployeeDialogProps> = ({
             </Grid>
             <Grid item xs={12} sm={6}>
               <Typography variant="subtitle2">Role</Typography>
-              <Typography variant="body1" className="detail-value">{employee.role}</Typography>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle2">Employee ID</Typography>
-              <Typography variant="body1" className="detail-value">#{employee.user_id}</Typography>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle2">Username</Typography>
-              <Typography variant="body1" className="detail-value">{employee.username}</Typography>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle2">Email</Typography>
-              <Typography variant="body1" className="detail-value">{employee.email}</Typography>
+              <Typography variant="body1" className="detail-value">{formatRole(employee.role)}</Typography>
             </Grid>
             <Grid item xs={12} sm={6}>
               <Typography variant="subtitle2">Phone</Typography>

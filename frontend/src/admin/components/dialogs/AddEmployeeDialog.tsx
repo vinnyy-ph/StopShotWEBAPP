@@ -110,7 +110,7 @@ const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = ({
       const payload = {
         first_name: newEmployee.first_name,
         last_name: newEmployee.last_name,
-        phone_num: newEmployee.phone_number, // The API expects phone_num
+        phone_num: newEmployee.phone_number || null, // Allow null for empty phone
         role: newEmployee.role,
         hire_date: newEmployee.hire_date,
         is_active: newEmployee.is_active
@@ -127,7 +127,7 @@ const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = ({
           hire_date: new Date().toISOString().split('T')[0],
           is_active: true
         });
-        onClose();
+        onClose(); // Ensure the dialog closes
       } else {
         setError('Failed to add employee. Please try again.');
       }

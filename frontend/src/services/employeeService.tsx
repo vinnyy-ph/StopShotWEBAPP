@@ -21,11 +21,22 @@ export interface Employee {
 export interface EmployeeCreate {
   first_name: string;
   last_name: string;
-  phone_num: string; // Field name expected by backend
+  phone_num: string | null; // Field name expected by backend
   role: string;
   hire_date: string;
   is_active?: boolean;
 }
+
+// Helper function to safely format phone numbers for API
+const formatPhoneNumber = (phone: string | null): string | null => {
+  if (!phone) return null;
+  
+  // Remove all non-numeric characters
+  const digitsOnly = phone.replace(/\D/g, '');
+  
+  // Ensure we're only sending digits to the API
+  return digitsOnly || null;
+};
 
 export const employeeService = {
   getAllEmployees: async (): Promise<Employee[]> => {
@@ -35,13 +46,19 @@ export const employeeService = {
   
   createEmployee: async (employeeData: EmployeeCreate): Promise<Employee> => {
     try {
-      const response = await axiosInstance.post('/auth/create-employee/', employeeData);
+      // Process phone number to be numeric only for MySQL
+      const processedData = {
+        ...employeeData,
+        phone_num: formatPhoneNumber(employeeData.phone_num || null)
+      };
+      
+      const response = await axiosInstance.post('/auth/create-employee/', processedData);
       return response.data;
     } catch (error: any) {
       console.error('Error creating employee:', error.response?.data || error.message);
       throw error;
     }
-  },
+  }, 
   
   updateEmployeeStatus: async (userId: number, isActive: boolean): Promise<any> => {
     const response = await axiosInstance.patch(`/employees/${userId}/status/`, { is_active: isActive });

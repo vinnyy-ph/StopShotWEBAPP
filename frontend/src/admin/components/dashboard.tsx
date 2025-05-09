@@ -185,13 +185,15 @@ const AdminDashboard: React.FC = () => {
   };
 
   const fetchEmployees = async () => {
+    setEmployeesLoading(true); // Use the specific employees loading state
     try {
       const data = await employeeService.getAllEmployees();
       setEmployees(data);
-      setLoading(prevLoading => ({ ...prevLoading, employees: false }));
     } catch (error) {
       console.error('Error fetching employees:', error);
-      setLoading(prevLoading => ({ ...prevLoading, employees: false }));
+      setEmployeesError('Failed to load employees. Please try again.');
+    } finally {
+      setEmployeesLoading(false); // Always set loading to false when done
     }
   };
 
@@ -319,8 +321,8 @@ const AdminDashboard: React.FC = () => {
   const handleAddEmployee = async (employeeData: any) => {
     try {
       await employeeService.createEmployee(employeeData);
-      // Refresh employee list
-      fetchEmployees();
+      // Refresh the employee list
+      await fetchEmployees();
       return true;
     } catch (error) {
       console.error('Error adding employee:', error);

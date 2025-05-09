@@ -65,12 +65,25 @@ const Employees: React.FC<EmployeesProps> = ({
   const handleCloseEmployeeDialog = () => {
     setEmployeeDialog(false);
   };
+  
+  // Format role display (convert BAR_MANAGER to Bar Manager)
+  const formatRole = (role: string) => {
+    return role
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
 
-  // Filter employees based on search query
+  // Filter employees based on search query and exclude admin/owner roles
   const filteredEmployees = employees.filter(employee => 
-    (employee.first_name + ' ' + employee.last_name).toLowerCase().includes(searchQuery.toLowerCase()) ||
-    employee.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    employee.email.toLowerCase().includes(searchQuery.toLowerCase())
+    // Exclude admin and owner roles
+    employee.role.toLowerCase() !== 'admin' && 
+    employee.role.toLowerCase() !== 'owner' &&
+    (
+      (employee.first_name + ' ' + employee.last_name).toLowerCase().includes(searchQuery.toLowerCase()) ||
+      employee.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      employee.email.toLowerCase().includes(searchQuery.toLowerCase())
+    )
   );
 
   // Get employee full name
@@ -114,6 +127,11 @@ const Employees: React.FC<EmployeesProps> = ({
       </motion.div>
     );
   }
+
+  // Filter out admin and owner from the count
+  const nonAdminEmployees = employees.filter(
+    e => e.role.toLowerCase() !== 'admin' && e.role.toLowerCase() !== 'owner'
+  );
 
   return (
     <motion.div
@@ -163,7 +181,7 @@ const Employees: React.FC<EmployeesProps> = ({
                 <Typography className="stats-title">Total Employees</Typography>
                 <WorkIcon className="stats-icon" />
               </Box>
-              <Typography variant="h4" className="stats-value">{employees.length}</Typography>
+              <Typography variant="h4" className="stats-value">{nonAdminEmployees.length}</Typography>
               <Typography variant="body2" className="stats-trend positive">
                 Staff management
               </Typography>
@@ -176,10 +194,12 @@ const Employees: React.FC<EmployeesProps> = ({
                 <CheckCircleIcon className="stats-icon" />
               </Box>
               <Typography variant="h4" className="stats-value">
-                {employees.filter(e => e.is_active).length}
+                {nonAdminEmployees.filter(e => e.is_active).length}
               </Typography>
               <Typography variant="body2" className="stats-trend">
-                {Math.round((employees.filter(e => e.is_active).length / employees.length) * 100)}% of total
+                {nonAdminEmployees.length > 0 
+                  ? Math.round((nonAdminEmployees.filter(e => e.is_active).length / nonAdminEmployees.length) * 100)
+                  : 0}% of total
               </Typography>
             </Paper>
           </Grid>
@@ -190,7 +210,7 @@ const Employees: React.FC<EmployeesProps> = ({
                 <SportsBarIcon className="stats-icon" />
               </Box>
               <Typography variant="h4" className="stats-value">
-                {new Set(employees.map(e => e.role)).size}
+                {new Set(nonAdminEmployees.map(e => e.role)).size}
               </Typography>
               <Typography variant="body2" className="stats-trend">
                 Different roles
@@ -206,7 +226,6 @@ const Employees: React.FC<EmployeesProps> = ({
                 <TableCell>ID</TableCell>
                 <TableCell>Name</TableCell>
                 <TableCell>Position</TableCell>
-                <TableCell>Email</TableCell>
                 <TableCell>Phone</TableCell>
                 <TableCell>Hire Date</TableCell>
                 <TableCell>Status</TableCell>
@@ -225,8 +244,7 @@ const Employees: React.FC<EmployeesProps> = ({
                       {getEmployeeName(employee)}
                     </Box>
                   </TableCell>
-                  <TableCell>{employee.role}</TableCell>
-                  <TableCell>{employee.email}</TableCell>
+                  <TableCell>{formatRole(employee.role)}</TableCell>
                   <TableCell>{employee.phone_number}</TableCell>
                   <TableCell>{employee.hire_date}</TableCell>
                   <TableCell>
@@ -257,85 +275,6 @@ const Employees: React.FC<EmployeesProps> = ({
             </TableBody>
           </Table>
         </TableContainer>
-
-        {/* Employee Schedule */}
-        <Box mt={4}>
-          <Typography variant="h6" className="chart-title" mb={2}>
-            Employee Schedule - Current Week
-          </Typography>
-          <Paper className="chart-paper" sx={{ p: 2 }}>
-            <Box
-              className="schedule-container"
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: 'auto repeat(7, 1fr)',
-                gap: 1,
-                overflowX: 'auto',
-                '& > .schedule-header': {
-                  backgroundColor: 'rgba(211, 130, 54, 0.2)',
-                  p: 1,
-                  borderRadius: 1,
-                  textAlign: 'center',
-                  fontWeight: 'bold',
-                },
-                '& > .schedule-employee': {
-                  p: 1,
-                  borderRadius: 1,
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                },
-                '& > .schedule-shift': {
-                  p: 1,
-                  borderRadius: 1,
-                  textAlign: 'center',
-                  fontSize: '0.75rem',
-                },
-                '& .am-shift': {
-                  backgroundColor: 'rgba(103, 58, 183, 0.3)',
-                },
-                '& .pm-shift': {
-                  backgroundColor: 'rgba(211, 130, 54, 0.3)',
-                },
-                '& .day-off': {
-                  backgroundColor: 'transparent',
-                  color: 'rgba(255, 255, 255, 0.3)',
-                }
-              }}
-            >
-              <Box className="schedule-header"></Box>
-              <Box className="schedule-header">Monday</Box>
-              <Box className="schedule-header">Tuesday</Box>
-              <Box className="schedule-header">Wednesday</Box>
-              <Box className="schedule-header">Thursday</Box>
-              <Box className="schedule-header">Friday</Box>
-              <Box className="schedule-header">Saturday</Box>
-              <Box className="schedule-header">Sunday</Box>
-
-              {/* Schedule content - top 4 employees */}
-              {filteredEmployees.slice(0, 4).map((employee, index) => (
-                <React.Fragment key={employee.user_id}>
-                  <Box className="schedule-employee">{getEmployeeName(employee)}</Box>
-                  {/* Generate schedule data - for demo purposes only */}
-                  {Array(7).fill(0).map((_, dayIndex) => {
-                    // Random schedule generation based on employee id and day
-                    const scheduleType = (employee.user_id + dayIndex) % 3;
-                    return (
-                      <Box 
-                        key={dayIndex} 
-                        className={`schedule-shift ${
-                          scheduleType === 0 ? 'am-shift' : 
-                          scheduleType === 1 ? 'pm-shift' : 'day-off'
-                        }`}
-                      >
-                        {scheduleType === 0 ? 'AM' : 
-                         scheduleType === 1 ? 'PM' : 'OFF'}
-                      </Box>
-                    );
-                  })}
-                </React.Fragment>
-              ))}
-            </Box>
-          </Paper>
-        </Box>
       </Paper>
 
       <EmployeeDialog
