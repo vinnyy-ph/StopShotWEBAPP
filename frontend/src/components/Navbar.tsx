@@ -22,8 +22,7 @@ import EventSeatIcon from '@mui/icons-material/EventSeat';
 import InfoIcon from '@mui/icons-material/Info';
 import ContactPhoneIcon from '@mui/icons-material/ContactPhone';
 import RateReviewIcon from '@mui/icons-material/RateReview';
-import SportsBasketballIcon from '@mui/icons-material/SportsBasketball';
-import CircleIcon from '@mui/icons-material/Circle';
+// import CircleIcon from '@mui/icons-material/Circle';
 import { Link } from 'react-router-dom';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
@@ -170,7 +169,7 @@ const Navbar: React.FC = () => {
                   justifyContent: 'center'
                 }}
               >
-                <CircleIcon 
+                {/* <CircleIcon 
                   sx={{ 
                     color: '#d38236',
                     fontSize: '24px',
@@ -178,8 +177,8 @@ const Navbar: React.FC = () => {
                     borderRadius: '50%',
                     boxShadow: '0 0 3px rgba(255,255,255,0.5)'
                   }} 
-                />
-                <Typography 
+                /> */}
+                {/* <Typography 
                   sx={{
                     position: 'absolute',
                     fontSize: '14px',
@@ -189,7 +188,7 @@ const Navbar: React.FC = () => {
                   }}
                 >
                   9
-                </Typography>
+                </Typography> */}
               </Box>
             </Zoom>
           </Link>

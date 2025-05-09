@@ -306,3 +306,16 @@
     font-size: 1.5rem !important;
   }
 }
+
+@keyframes neonPulse {
+  0% {
+    box-shadow: 0 0 5px rgba(211, 130, 54, 0.7), 0 0 10px rgba(211, 130, 54, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 8px rgba(211, 130, 54, 0.8), 0 0 15px rgba(211, 130, 54, 0.6);
+  }
+}
+
+.icon-circle {
+  animation: neonPulse 2s infinite alternate;
+}

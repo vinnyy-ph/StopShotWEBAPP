@@ -154,7 +154,7 @@ const AdminLogin: React.FC = () => {
                 StopShot Admin
               </Typography>
               <Typography variant="subtitle1" className="login-subtitle">
-                Game Day Management
+                Handle reservations, manage menus, and more!
               </Typography>
             </Box>
 
@@ -166,7 +166,7 @@ const AdminLogin: React.FC = () => {
               <TextField
                 required
                 fullWidth
-                label="Username"
+                label="Email"
                 variant="outlined"
                 className="login-input"
                 value={username}
@@ -237,9 +237,9 @@ const AdminLogin: React.FC = () => {
                 Forgot Password?
               </Link>
               
-              <Typography variant="caption" className="login-hint">
+              {/* <Typography variant="caption" className="login-hint">
                 Default credentials: admin / admin
-              </Typography>
+              </Typography> */}
             </Box>
           </Paper>
         </motion.div>

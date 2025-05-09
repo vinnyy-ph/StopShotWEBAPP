@@ -1,20 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
-  Box,
-  Container,
-  Grid,
-  Typography,
-  TextField,
-  Button,
-  IconButton,
-  Paper,
-  FormControl,
-  Select,
-  MenuItem,
-  InputAdornment,
-  CircularProgress,
-  TableCell
+  Box, 
+  Container, 
+  Grid, 
+  Typography, 
+  TextField, 
+  Button, 
+  IconButton, 
+  Paper, 
+  FormControl, 
+  Select, 
+  MenuItem, 
+  InputAdornment, 
+  CircularProgress, 
+  TableCell,
+  Fade,
+  Chip,
+  Tooltip,
+  Divider
 } from '@mui/material';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -29,6 +33,9 @@ import InfoIcon from '@mui/icons-material/Info';
 import MicIcon from '@mui/icons-material/Mic';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import EmailIcon from '@mui/icons-material/Email';
+import NightlifeIcon from '@mui/icons-material/Nightlife';
+import CelebrationIcon from '@mui/icons-material/Celebration';
+import { RiBilliardsFill } from "react-icons/ri";
 import '../styles/pages/reservations.css';
 import { Reservation, getStatusDisplay, getRoomTypeDisplay } from '../dashboard';
 
@@ -441,85 +448,178 @@ const ReservationsPage: React.FC = () => {
   };
 
   return (
-    <Box className="reservations-page dark-theme" sx={{ py: 6, backgroundColor: '#121212' }}>
-      <Container maxWidth="lg">
-        {/* Header */}
+    <Box className="reservations-page dark-theme" sx={{ pb: 10, pt: 6, backgroundColor: '#121212' }}>
+      {/* Neon background effect */}
+      <Box 
+        className="neon-glow-bg" 
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '100%',
+          background: 'radial-gradient(circle at top center, rgba(211, 130, 54, 0.15), transparent 70%)',
+          pointerEvents: 'none',
+          opacity: 0.6,
+          zIndex: 1
+        }}
+      />
+
+      <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 2 }}>
+        {/* Enhanced Header with Night Vibes */}
         <Box sx={{ 
           display: 'flex', 
+          flexDirection: 'column',
           alignItems: 'center', 
           justifyContent: 'center', 
-          mb: 4,
-          position: 'relative'
+          mb: 5,
+          position: 'relative',
+          textAlign: 'center'
         }}>
-          <SportsBasketballIcon 
+          <Box 
             sx={{ 
-              color: '#d38236', 
-              fontSize: 40, 
-              mr: 2,
-              animation: 'bounce 2s infinite' 
-            }} 
-          />
-          <Typography 
-            variant="h3" 
-            sx={{ 
-              color: '#fff',
-              fontWeight: 700,
-              letterSpacing: '1px',
-              textTransform: 'uppercase',
-              textShadow: '0px 2px 4px rgba(0,0,0,0.5)'
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              mb: 1
             }}
           >
-            Reserve Your Spot
+            <NightlifeIcon
+              className="neon-icon"
+              sx={{ 
+                color: '#d38236', 
+                fontSize: 30, 
+                mr: 1.5,
+                filter: 'drop-shadow(0 0 8px rgba(211, 130, 54, 0.8))',
+                animation: 'neonPulse 2s infinite alternate'
+              }} 
+            />
+            <Typography 
+              variant="h2" 
+              sx={{ 
+                color: '#fff',
+                fontWeight: 800,
+                letterSpacing: '2px',
+                textTransform: 'uppercase',
+                textShadow: '0 0 10px rgba(211, 130, 54, 0.5), 0 0 20px rgba(211, 130, 54, 0.3)',
+                fontSize: { xs: '2rem', md: '3rem' }
+              }}
+            >
+              RESERVE YOUR <span style={{ color: '#d38236' }}>NIGHT</span>
+            </Typography>
+          </Box>
+
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              color: '#aaa',
+              fontWeight: 400,
+              maxWidth: '700px',
+              mx: 'auto',
+              mb: 3,
+              fontSize: { xs: '1rem', md: '1.25rem' }
+            }}
+          >
+            Book your billiards table or private karaoke room & make your night legendary
           </Typography>
+
+          {/* Late Night Tags */}
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 1, mt: 1 }}>
+            <Chip 
+              icon={<AccessTimeIcon sx={{ color: '#333' }} />} 
+              label="4PM - 2AM DAILY" 
+              size="small"
+              sx={{ 
+                bgcolor: 'rgba(211, 130, 54, 0.9)', 
+                color: '#222',
+                fontWeight: 600,
+                '& .MuiChip-icon': { color: '#333' }
+              }}
+            />
+            <Chip 
+              icon={<CelebrationIcon sx={{ color: '#333' }} />} 
+              label="SPECIAL EVENT PACKAGES" 
+              size="small"
+              sx={{ 
+                bgcolor: 'rgba(211, 130, 54, 0.9)', 
+                color: '#222',
+                fontWeight: 600,
+                '& .MuiChip-icon': { color: '#333' }
+              }}
+            />
+          </Box>
         </Box>
 
-        {/* Main Content */}
+        {/* Main Content Container with Enhanced Styling */}
         <Paper 
-          elevation={4} 
+          elevation={6} 
           sx={{ 
             backgroundColor: '#1a1a1a', 
             color: '#fff',
-            borderRadius: '12px',
+            borderRadius: '16px',
             overflow: 'hidden',
             position: 'relative',
-            border: '1px solid #333'
+            border: '1px solid rgba(211, 130, 54, 0.2)',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.5), 0 0 30px rgba(211, 130, 54, 0.2)',
+            backgroundImage: 'linear-gradient(rgba(20, 20, 20, 0.9), rgba(26, 26, 26, 0.95))'
           }} 
           className="reservation-container"
         >
+          {/* Ambient lighting effect */}
+          <Box 
+            sx={{ 
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              background: 'radial-gradient(ellipse at center top, rgba(211, 130, 54, 0.05), transparent 70%)',
+              pointerEvents: 'none',
+              zIndex: 1
+            }}
+          />
+
           {/* Top Accent Bar */}
           <Box sx={{ 
-            height: '10px', 
-            backgroundColor: '#d38236', 
+            height: '6px', 
+            background: 'linear-gradient(90deg, rgba(211, 130, 54, 1) 0%, rgba(211, 130, 54, 0.7) 50%, rgba(211, 130, 54, 0.3) 100%)', 
             position: 'absolute', 
             top: 0, 
             left: 0, 
-            right: 0 
+            right: 0,
+            zIndex: 5
           }} />
           
-          <Box sx={{ p: { xs: 2, md: 4 }, pt: 5 }}>
-            {/* Reservation Type Selector */}
-            <Box sx={{ mb: 4, display: 'flex', justifyContent: 'center' }}>
+          <Box sx={{ p: { xs: 2, md: 4 }, pt: 6, position: 'relative', zIndex: 2 }}>
+            {/* Enhanced Reservation Type Selector */}
+            <Box sx={{ mb: 5, display: 'flex', justifyContent: 'center' }}>
               <Box 
                 className="reservation-type-selector"
                 sx={{ 
                   display: 'flex', 
                   gap: 2, 
-                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  backgroundColor: 'rgba(25,25,25,0.9)',
                   p: 0.5,
                   borderRadius: '50px',
+                  border: '1px solid rgba(211, 130, 54, 0.3)',
+                  boxShadow: '0 5px 15px rgba(0,0,0,0.3), 0 0 10px rgba(211, 130, 54, 0.1)'
                 }}
               >
                 <Button 
                   variant={reservationType === 'table' ? 'contained' : 'text'}
                   onClick={() => handleReservationTypeChange('table')}
-                  startIcon={<LocalBarIcon />}
+                  startIcon={
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <RiBilliardsFill style={{ fontSize: 20 }} />
+                    </Box>
+                  }
                   sx={{ 
                     borderRadius: '50px',
                     px: 3,
                     backgroundColor: reservationType === 'table' ? '#d38236' : 'transparent',
                     color: reservationType === 'table' ? '#fff' : '#bbb',
                     '&:hover': {
-                      backgroundColor: reservationType === 'table' ? '#b05e1d' : 'rgba(255,255,255,0.1)'
+                      backgroundColor: reservationType === 'table' ? '#b05e1d' : 'rgba(211, 130, 54, 0.1)'
                     }
                   }}
                 >
@@ -535,7 +635,7 @@ const ReservationsPage: React.FC = () => {
                     backgroundColor: reservationType === 'karaoke' ? '#d38236' : 'transparent',
                     color: reservationType === 'karaoke' ? '#fff' : '#bbb',
                     '&:hover': {
-                      backgroundColor: reservationType === 'karaoke' ? '#b05e1d' : 'rgba(255,255,255,0.1)'
+                      backgroundColor: reservationType === 'karaoke' ? '#b05e1d' : 'rgba(211, 130, 54, 0.1)'
                     }
                   }}
                 >
@@ -544,206 +644,36 @@ const ReservationsPage: React.FC = () => {
               </Box>
             </Box>
 
-            {/* Main Content Grid */}
+            <Divider sx={{ 
+              my: 3, 
+              opacity: 0.3,
+              '&::before, &::after': {
+                borderColor: 'rgba(211, 130, 54, 0.3)',
+              }
+            }}>
+              <Chip 
+                label={reservationType === 'table' ? "BILLIARDS RESERVATION" : "KARAOKE RESERVATION"} 
+                sx={{ 
+                  backgroundColor: 'rgba(211, 130, 54, 0.15)',
+                  color: '#d38236',
+                  fontWeight: 600,
+                  border: '1px solid rgba(211, 130, 54, 0.3)'
+                }}
+              />
+            </Divider>
+
+            {/* Main Content Grid - Rearranged for Better Flow */}
             <Grid container spacing={4}>
-              {/* Form Section */}
-              <Grid item xs={12} md={5}>
-                <Typography 
-                  variant="h5" 
-                  sx={{ 
-                    mb: 3, 
-                    color: '#d38236', 
-                    fontWeight: 600,
-                    display: 'flex',
-                    alignItems: 'center'
-                  }}
-                >
-                  <EventIcon sx={{ mr: 1 }} /> Booking Details
-                </Typography>
-                
-                <Box 
-                  component="form" 
-                  noValidate 
-                  autoComplete="off"
-                  sx={{
-                    '& .MuiFormControl-root': {
-                      mb: 3,
-                    },
-                    '& .MuiInputBase-root': {
-                      backgroundColor: 'rgba(255,255,255,0.05)',
-                      borderRadius: '8px',
-                      color: '#fff',
-                      '&:hover': {
-                        backgroundColor: 'rgba(255,255,255,0.08)',
-                      },
-                      '&.Mui-focused': {
-                        backgroundColor: 'rgba(255,255,255,0.1)',
-                        boxShadow: '0 0 0 2px rgba(211, 130, 54, 0.25)',
-                      }
-                    },
-                    '& .MuiInputLabel-root': {
-                      color: '#aaa'
-                    },
-                    '& .MuiOutlinedInput-notchedOutline': {
-                      borderColor: formErrors.guest_name ? '#f44336' : 'rgba(255,255,255,0.2)',
-                    },
-                    '& .MuiInputBase-input::placeholder': {
-                      color: '#777',
-                      opacity: 1
-                    },
-                    '& .error-text': {
-                      color: '#f44336',
-                      fontSize: '0.75rem',
-                      marginTop: '-12px',
-                      marginBottom: '8px'
-                    }
-                  }}
-                >
-                  <TextField
-                    variant="outlined"
-                    placeholder="Enter your name"
-                    fullWidth
-                    name="guest_name"
-                    value={formData.guest_name}
-                    onChange={handleInputChange}
-                    error={!!formErrors.guest_name}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <PersonIcon sx={{ color: formErrors.guest_name ? '#f44336' : '#d38236' }} />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                  {formErrors.guest_name && <Typography className="error-text">{formErrors.guest_name}</Typography>}
-                  
-                  <TextField
-                    variant="outlined"
-                    placeholder="How many people?"
-                    fullWidth
-                    type="number"
-                    name="number_of_guests"
-                    value={formData.number_of_guests}
-                    onChange={handleInputChange}
-                    error={!!formErrors.number_of_guests}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <GroupIcon sx={{ color: formErrors.number_of_guests ? '#f44336' : '#d38236' }} />
-                        </InputAdornment>
-                      ),
-                      inputProps: { 
-                        min: 1, 
-                        max: formData.room_type === 'TABLE' ? 6 : 10 
-                      }
-                    }}
-                  />
-                  {formErrors.number_of_guests && <Typography className="error-text">{formErrors.number_of_guests}</Typography>}
-                  
-                  <TextField
-                    variant="outlined"
-                    placeholder="Enter your email address"
-                    fullWidth
-                    type="email"
-                    name="guest_email"
-                    value={formData.guest_email}
-                    onChange={handleInputChange}
-                    error={!!formErrors.guest_email}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <EmailIcon sx={{ color: formErrors.guest_email ? '#f44336' : '#d38236' }} />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                  {formErrors.guest_email && <Typography className="error-text">{formErrors.guest_email}</Typography>}
-                  
-                  <FormControl fullWidth error={!!formErrors.time}>
-                    <Select
-                      value={timeSlot}
-                      onChange={(e) => setTimeSlot(e.target.value as string)}
-                      displayEmpty
-                      disabled={!selectedDay}
-                      renderValue={timeSlot !== '' ? undefined : () => "Select Time Slot"}
-                      sx={{
-                        '& .MuiSelect-icon': {
-                          color: formErrors.time ? '#f44336' : '#d38236'
-                        },
-                        '& .MuiOutlinedInput-notchedOutline': {
-                          borderColor: formErrors.time ? '#f44336' : 'rgba(255,255,255,0.2)',
-                        }
-                      }}
-                      startAdornment={
-                        <InputAdornment position="start">
-                          <AccessTimeIcon sx={{ color: formErrors.time ? '#f44336' : '#d38236' }} />
-                        </InputAdornment>
-                      }
-                    >
-                      {!selectedDay ? (
-                        <MenuItem disabled value="" sx={{ color: '#000' }}>
-                          Please select a day first
-                        </MenuItem>
-                      ) : availableTimeSlots.length > 0 ? (
-                        availableTimeSlots.map(time => (
-                          <MenuItem key={time} value={time} sx={{ color: '#000' }}>
-                            {time}
-                          </MenuItem>
-                        ))
-                      ) : (
-                        <MenuItem disabled value="" sx={{ color: '#000' }}>
-                          No available time slots
-                        </MenuItem>
-                      )}
-                    </Select>
-                  </FormControl>
-                  {formErrors.time && <Typography className="error-text">{formErrors.time}</Typography>}
-                  
-                  <TextField
-                    variant="outlined"
-                    placeholder="MM/DD/YYYY"
-                    fullWidth
-                    error={!!formErrors.date}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <EventIcon sx={{ color: formErrors.date ? '#f44336' : '#d38236' }} />
-                        </InputAdornment>
-                      ),
-                      readOnly: true,
-                    }}
-                    value={
-                      selectedDay 
-                        ? `${String(currentMonth + 1).padStart(2, '0')}/${
-                            selectedDay < 10 ? '0' + selectedDay : selectedDay
-                          }/${currentYear}`
-                        : ''
-                    }
-                  />
-                  {formErrors.date && <Typography className="error-text">{formErrors.date}</Typography>}
-
-                  <TextField
-                    variant="outlined"
-                    placeholder="Special requests or notes"
-                    fullWidth
-                    multiline
-                    rows={3}
-                    name="special_requests"
-                    value={formData.special_requests}
-                    onChange={handleInputChange}
-                    sx={{ mt: 1 }}
-                  />
-                </Box>
-              </Grid>
-
-              {/* Calendar Section */}
+              {/* Calendar Section - Now First for Better Mobile Experience */}
               <Grid item xs={12} md={7}>
                 <Box sx={{ 
-                  backgroundColor: '#222',
+                  backgroundColor: 'rgba(30, 30, 30, 0.6)',
                   borderRadius: '12px',
                   p: 3,
-                  border: '1px solid #333',
-                  position: 'relative'
+                  border: '1px solid rgba(211, 130, 54, 0.15)',
+                  position: 'relative',
+                  backdropFilter: 'blur(5px)',
+                  boxShadow: '0 5px 15px rgba(0,0,0,0.2)'
                 }}>
                   {isLoading && (
                     <Box sx={{
@@ -755,26 +685,44 @@ const ReservationsPage: React.FC = () => {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      backgroundColor: 'rgba(0,0,0,0.5)',
-                      zIndex: 2,
+                      backgroundColor: 'rgba(0,0,0,0.7)',
+                      zIndex: 10,
                       borderRadius: '12px',
                     }}>
                       <CircularProgress sx={{ color: '#d38236' }} />
                     </Box>
                   )}
                   
-                  <Typography 
-                    variant="h5" 
-                    sx={{ 
-                      mb: 3, 
-                      color: '#d38236', 
-                      fontWeight: 600,
-                      display: 'flex',
-                      alignItems: 'center'
-                    }}
-                  >
-                    <EventIcon sx={{ mr: 1 }} /> Select Your Day
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 3 }}>
+                    <Box 
+                      sx={{ 
+                        backgroundColor: 'rgba(211, 130, 54, 0.15)',
+                        borderRadius: '50%',
+                        p: 1,
+                        display: 'flex',
+                        mr: 2
+                      }}
+                    >
+                      <EventIcon sx={{ color: '#d38236', fontSize: 24 }} />
+                    </Box>
+                    <Box>
+                      <Typography 
+                        variant="h5" 
+                        sx={{ 
+                          color: '#d38236', 
+                          fontWeight: 700,
+                          mb: 0.5
+                        }}
+                      >
+                        Select Your Date
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#aaa' }}>
+                        {reservationType === 'table' 
+                          ? 'Billiards tables are available from 4PM to 2AM daily'
+                          : 'Karaoke rooms require minimum 1-hour bookings'}
+                      </Typography>
+                    </Box>
+                  </Box>
                   
                   <Box 
                     display="flex" 
@@ -782,7 +730,7 @@ const ReservationsPage: React.FC = () => {
                     alignItems="center" 
                     mb={3}
                     sx={{
-                      borderBottom: '1px solid #333',
+                      borderBottom: '1px solid rgba(211, 130, 54, 0.2)',
                       pb: 2
                     }}
                   >
@@ -802,7 +750,8 @@ const ReservationsPage: React.FC = () => {
                       sx={{ 
                         fontWeight: 600,
                         color: '#fff',
-                        letterSpacing: '1px'
+                        letterSpacing: '1px',
+                        textShadow: '0 0 5px rgba(0,0,0,0.5)'
                       }}
                     >
                       {months[currentMonth].toUpperCase()} {currentYear}
@@ -835,7 +784,8 @@ const ReservationsPage: React.FC = () => {
                             textAlign: 'center',
                             py: 1,
                             fontWeight: 600,
-                            color: day === 'SA' || day === 'SU' ? '#d38236' : '#999'
+                            color: day === 'SA' || day === 'SU' ? '#d38236' : '#999',
+                            borderBottom: '1px solid rgba(255,255,255,0.05)'
                           }}
                         >
                           <Typography variant="body2">{day}</Typography>
@@ -860,6 +810,7 @@ const ReservationsPage: React.FC = () => {
                         const isSpecial = isDaySpecialEvent(day);
                         const isUnavailable = isDayUnavailable(day);
                         const isPastDate = new Date(currentYear, currentMonth, day) < new Date(new Date().setHours(0,0,0,0));
+                        const isToday = new Date(currentYear, currentMonth, day).toDateString() === new Date().toDateString();
                         
                         return (
                           <Box
@@ -872,13 +823,14 @@ const ReservationsPage: React.FC = () => {
                             sx={{
                               cursor: isUnavailable || isPastDate ? 'not-allowed' : 'pointer',
                               py: 1,
-                              border: `1px solid ${selectedDay === day ? '#d38236' : '#333'}`,
+                              border: `1px solid ${selectedDay === day ? '#d38236' : isToday ? 'rgba(211, 130, 54, 0.4)' : '#333'}`,
                               borderRadius: '8px',
                               backgroundColor: 
                                 isUnavailable || isPastDate ? 'rgba(50,50,50,0.3)' :
                                 selectedDay === day ? 'rgba(211, 130, 54, 0.3)' : 
-                                isSpecial ? 'rgba(211, 130, 54, 0.1)' :
-                                'rgba(255,255,255,0.03)',
+                                isToday ? 'rgba(211, 130, 54, 0.15)' :
+                                isSpecial ? 'rgba(211, 130, 54, 0.08)' :
+                                'rgba(40,40,40,0.4)',
                               display: 'flex',
                               flexDirection: 'column',
                               alignItems: 'center',
@@ -891,16 +843,19 @@ const ReservationsPage: React.FC = () => {
                                   ? 'rgba(211, 130, 54, 0.4)' 
                                   : 'rgba(211, 130, 54, 0.15)',
                                 transform: 'translateY(-2px)',
-                                boxShadow: '0 3px 10px rgba(0,0,0,0.2)'
-                              } : {}
+                                boxShadow: '0 3px 10px rgba(0,0,0,0.2), 0 0 15px rgba(211, 130, 54, 0.1)'
+                              } : {},
+                              boxShadow: selectedDay === day ? '0 0 0 1px #d38236, 0 0 10px rgba(211, 130, 54, 0.3)' : 'none'
                             }}
                             className={`calendar-day-box ${selectedDay === day ? 'selected-day' : ''}`}
                           >
                             <Typography
                               variant="body2" 
                               sx={{ 
-                                fontWeight: selectedDay === day ? 700 : 400,
-                                color: selectedDay === day ? '#d38236' : isUnavailable || isPastDate ? '#999' : '#fff',
+                                fontWeight: selectedDay === day ? 700 : isToday ? 600 : 400,
+                                color: selectedDay === day ? '#d38236' : 
+                                       isToday ? '#d38236' :
+                                       isUnavailable || isPastDate ? '#999' : '#fff',
                                 fontSize: '1rem',
                                 textDecoration: isPastDate ? 'line-through' : 'none'
                               }}
@@ -909,47 +864,52 @@ const ReservationsPage: React.FC = () => {
                             </Typography>
                             
                             {isBusy && !isUnavailable && !isPastDate && (
-                              <Box 
-                                className="busy-indicator"
-                                sx={{
-                                  position: 'absolute',
-                                  bottom: '4px',
-                                  height: '3px',
-                                  width: '16px',
-                                  backgroundColor: 'rgba(255, 87, 34, 0.7)',
-                                  borderRadius: '2px'
-                                }}
-                              />
+                              <Tooltip title="Limited availability">
+                                <Box 
+                                  className="busy-indicator"
+                                  sx={{
+                                    position: 'absolute',
+                                    bottom: '4px',
+                                    height: '3px',
+                                    width: '16px',
+                                    backgroundColor: 'rgba(255, 87, 34, 0.7)',
+                                    borderRadius: '2px'
+                                  }}
+                                />
+                              </Tooltip>
                             )}
                             {isSpecial && !isUnavailable && !isPastDate && (
-                              <Box 
-                                className="special-indicator"
-                                sx={{
-                                  position: 'absolute',
-                                  top: '4px',
-                                  right: '4px',
-                                  height: '8px',
-                                  width: '8px',
-                                  backgroundColor: '#d38236',
-                                  borderRadius: '50%'
-                                }}
-                              />
+                              <Tooltip title="Special event">
+                                <Box 
+                                  className="special-indicator"
+                                  sx={{
+                                    position: 'absolute',
+                                    top: '4px',
+                                    right: '4px',
+                                    height: '8px',
+                                    width: '8px',
+                                    backgroundColor: '#d38236',
+                                    borderRadius: '50%',
+                                    animation: 'pulse 1.5s infinite'
+                                  }}
+                                />
+                              </Tooltip>
                             )}
                           </Box>
                         );
                       })}
                     </Box>
                     
-                    {/* Legend */}
+                    {/* Enhanced Legend */}
                     <Box 
                       sx={{ 
                         display: 'flex', 
                         justifyContent: 'space-around',
                         flexWrap: 'wrap',
-                        gap: 1,
+                        gap: { xs: 1, sm: 2 },
                         mt: 2,
                         pt: 2,
-                        borderTop: '1px solid #333'
+                        borderTop: '1px solid rgba(211, 130, 54, 0.2)'
                       }}
                     >
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -966,6 +926,17 @@ const ReservationsPage: React.FC = () => {
                         <Box sx={{ 
                           width: '10px', 
                           height: '10px', 
+                          backgroundColor: 'rgba(211, 130, 54, 0.15)',
+                          borderRadius: '50%',
+                          mr: 1
+                        }} />
+                        <Typography variant="caption" sx={{ color: '#999' }}>Today</Typography>
+                      </Box>
+                      
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Box sx={{ 
+                          width: '10px', 
+                          height: '10px', 
                           backgroundColor: 'rgba(50,50,50,0.5)',
                           borderRadius: '50%',
                           mr: 1
@@ -974,66 +945,373 @@ const ReservationsPage: React.FC = () => {
                       </Box>
                     </Box>
                   </Box>
+
+                  {/* Available Time Slots - Now Shows Up Below Calendar */}
+                  {selectedDay && (
+                    <Fade in={true} timeout={500}>
+                      <Box sx={{ mt: 3 }}>
+                        <Typography 
+                          variant="h6" 
+                          sx={{ 
+                            mb: 2, 
+                            color: '#d38236',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1
+                          }}
+                        >
+                          <AccessTimeIcon fontSize="small" /> 
+                          Available Time Slots
+                        </Typography>
+
+                        <Box 
+                          sx={{ 
+                            display: 'flex',
+                            flexWrap: 'wrap', 
+                            gap: 1,
+                            background: 'rgba(25,25,25,0.5)',
+                            p: 2,
+                            borderRadius: '8px'
+                          }}
+                        >
+                          {availableTimeSlots.length > 0 ? (
+                            availableTimeSlots.map((time) => (
+                              <Chip
+                                key={time}
+                                label={time}
+                                onClick={() => setTimeSlot(time)}
+                                sx={{
+                                  bgcolor: timeSlot === time ? '#d38236' : 'rgba(255,255,255,0.05)',
+                                  color: timeSlot === time ? '#fff' : '#ccc',
+                                  '&:hover': {
+                                    bgcolor: timeSlot === time ? '#c77730' : 'rgba(211, 130, 54, 0.15)',
+                                  },
+                                  transition: 'all 0.2s ease',
+                                  fontWeight: timeSlot === time ? 600 : 400,
+                                  border: `1px solid ${timeSlot === time ? '#d38236' : 'rgba(255,255,255,0.1)'}`,
+                                }}
+                              />
+                            ))
+                          ) : (
+                            <Typography variant="body2" sx={{ color: '#aaa', p: 1, width: '100%', textAlign: 'center' }}>
+                              No available time slots for the selected date
+                            </Typography>
+                          )}
+                        </Box>
+                        {formErrors.time && (
+                          <Typography className="error-text" sx={{ color: '#f44336', fontSize: '0.75rem', mt: 1 }}>
+                            {formErrors.time}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Fade>
+                  )}
+                </Box>
+              </Grid>
+
+              {/* Form Section with Night Mode Styling */}
+              <Grid item xs={12} md={5}>
+                <Box sx={{ 
+                  backgroundColor: 'rgba(30, 30, 30, 0.6)',
+                  borderRadius: '12px',
+                  p: 3,
+                  border: '1px solid rgba(211, 130, 54, 0.15)',
+                  backdropFilter: 'blur(5px)',
+                  height: '100%',
+                  boxShadow: '0 5px 15px rgba(0,0,0,0.2)'
+                }}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 3 }}>
+                    <Box 
+                      sx={{ 
+                        backgroundColor: 'rgba(211, 130, 54, 0.15)',
+                        borderRadius: '50%',
+                        p: 1,
+                        display: 'flex',
+                        mr: 2
+                      }}
+                    >
+                      <PersonIcon sx={{ color: '#d38236', fontSize: 24 }} />
+                    </Box>
+                    <Box>
+                      <Typography 
+                        variant="h5" 
+                        sx={{ 
+                          color: '#d38236', 
+                          fontWeight: 700,
+                          mb: 0.5
+                        }}
+                      >
+                        Your Details
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#aaa' }}>
+                        {reservationType === 'table' 
+                          ? 'Tables accommodate up to 6 people'
+                          : 'Karaoke rooms fit up to 10 people'}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  
+                  <Box 
+                    component="form" 
+                    noValidate 
+                    autoComplete="off"
+                    sx={{
+                      '& .MuiFormControl-root': {
+                        mb: 3,
+                      },
+                      '& .MuiInputBase-root': {
+                        backgroundColor: 'rgba(25,25,25,0.7)',
+                        borderRadius: '8px',
+                        color: '#fff',
+                        '&:hover': {
+                          backgroundColor: 'rgba(35,35,35,0.7)',
+                        },
+                        '&.Mui-focused': {
+                          backgroundColor: 'rgba(40,40,40,0.7)',
+                          boxShadow: '0 0 0 2px rgba(211, 130, 54, 0.3)',
+                        }
+                      },
+                      '& .MuiInputLabel-root': {
+                        color: '#aaa'
+                      },
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: formErrors.guest_name ? '#f44336' : 'rgba(211, 130, 54, 0.2)',
+                      },
+                      '& .MuiInputBase-input::placeholder': {
+                        color: '#777',
+                        opacity: 1
+                      },
+                      '& .error-text': {
+                        color: '#f44336',
+                        fontSize: '0.75rem',
+                        marginTop: '-12px',
+                        marginBottom: '8px'
+                      }
+                    }}
+                  >
+                    <TextField
+                      variant="outlined"
+                      placeholder="Enter your name"
+                      fullWidth
+                      name="guest_name"
+                      value={formData.guest_name}
+                      onChange={handleInputChange}
+                      error={!!formErrors.guest_name}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <PersonIcon sx={{ color: formErrors.guest_name ? '#f44336' : '#d38236' }} />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                    {formErrors.guest_name && <Typography className="error-text">{formErrors.guest_name}</Typography>}
+                    
+                    <TextField
+                      variant="outlined"
+                      placeholder="Enter your email address"
+                      fullWidth
+                      type="email"
+                      name="guest_email"
+                      value={formData.guest_email}
+                      onChange={handleInputChange}
+                      error={!!formErrors.guest_email}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <EmailIcon sx={{ color: formErrors.guest_email ? '#f44336' : '#d38236' }} />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                    {formErrors.guest_email && <Typography className="error-text">{formErrors.guest_email}</Typography>}
+
+                    <TextField
+                      variant="outlined"
+                      placeholder={`How many people? (Max: ${formData.room_type === 'TABLE' ? 6 : 10})`}
+                      fullWidth
+                      type="number"
+                      name="number_of_guests"
+                      value={formData.number_of_guests}
+                      onChange={handleInputChange}
+                      error={!!formErrors.number_of_guests}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <GroupIcon sx={{ color: formErrors.number_of_guests ? '#f44336' : '#d38236' }} />
+                          </InputAdornment>
+                        ),
+                        inputProps: { 
+                          min: 1, 
+                          max: formData.room_type === 'TABLE' ? 6 : 10 
+                        }
+                      }}
+                    />
+                    {formErrors.number_of_guests && <Typography className="error-text">{formErrors.number_of_guests}</Typography>}
+
+                    <TextField
+                      variant="outlined"
+                      placeholder="Your selected date"
+                      fullWidth
+                      error={!!formErrors.date}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <EventIcon sx={{ color: formErrors.date ? '#f44336' : '#d38236' }} />
+                          </InputAdornment>
+                        ),
+                        readOnly: true,
+                      }}
+                      value={
+                        selectedDay 
+                          ? `${String(currentMonth + 1).padStart(2, '0')}/${
+                              selectedDay < 10 ? '0' + selectedDay : selectedDay
+                            }/${currentYear}`
+                          : ''
+                      }
+                    />
+                    {formErrors.date && <Typography className="error-text">{formErrors.date}</Typography>}
+
+                    <TextField
+                      variant="outlined"
+                      placeholder="Optional: Special requests or notes"
+                      fullWidth
+                      multiline
+                      rows={3}
+                      name="special_requests"
+                      value={formData.special_requests}
+                      onChange={handleInputChange}
+                      sx={{ 
+                        mt: 1,
+                        '& .MuiInputBase-root': {
+                          backgroundColor: 'rgba(25,25,25,0.7)',
+                        }
+                      }}
+                    />
+                  </Box>
                 </Box>
               </Grid>
             </Grid>
 
-            {/* Footer with Submit Button */}
+            {/* Footer with Submit Button and Night Options */}
             <Box 
               sx={{ 
-                mt: 4, 
+                mt: 5, 
                 display: 'flex', 
                 justifyContent: 'center',
                 flexDirection: 'column',
                 alignItems: 'center' 
               }}
             >
+              {/* Package Promotions */}
+              {!showConfirmation && (
+                <Paper sx={{ 
+                  p: 2, 
+                  mb: 4, 
+                  width: '100%',
+                  backgroundImage: 'linear-gradient(to right, rgba(211, 130, 54, 0.15), transparent)',
+                  backgroundColor: 'rgba(30, 30, 30, 0.6)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(211, 130, 54, 0.15)'
+                }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <CelebrationIcon sx={{ color: '#d38236', mr: 1 }} />
+                    <Typography variant="subtitle1" sx={{ color: '#d38236', fontWeight: 600 }}>
+                      {reservationType === 'table' ? 'BILLIARDS PACKAGES' : 'KARAOKE PACKAGES'}
+                    </Typography>
+                  </Box>
+                  
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    {reservationType === 'table' ? (
+                      <>
+                        <Chip label="₱200/hr per table" size="small" sx={{ bgcolor: 'rgba(40,40,40,0.7)', color: '#fff' }} />
+                        <Chip label="BYOB ₱500 corkage" size="small" sx={{ bgcolor: 'rgba(40,40,40,0.7)', color: '#fff' }} />
+                        <Chip label="Happy Hour: 4PM-7PM" size="small" sx={{ bgcolor: 'rgba(40,40,40,0.7)', color: '#fff' }} />
+                      </>
+                    ) : (
+                      <>
+                        <Chip label="₱500/hr (Small Room)" size="small" sx={{ bgcolor: 'rgba(40,40,40,0.7)', color: '#fff' }} />
+                        <Chip label="₱750/hr (Large Room)" size="small" sx={{ bgcolor: 'rgba(40,40,40,0.7)', color: '#fff' }} />
+                        <Chip label="50,000+ songs" size="small" sx={{ bgcolor: 'rgba(40,40,40,0.7)', color: '#fff' }} />
+                      </>
+                    )}
+                  </Box>
+                </Paper>
+              )}
+              
               {showConfirmation ? (
-                <Box 
-                  sx={{ 
-                    backgroundColor: 'rgba(46, 125, 50, 0.1)',
-                    p: 2,
-                    borderRadius: '8px',
-                    border: '1px solid rgba(46, 125, 50, 0.3)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    maxWidth: '500px',
-                    width: '100%',
-                    mb: 2
-                  }}
-                >
-                  <CheckCircleIcon sx={{ color: '#66bb6a', mr: 2 }} />
-                  <Typography variant="body2" sx={{ color: '#66bb6a' }}>
-                    Thank you! Your reservation request has been submitted. We'll confirm shortly via your email.
-                  </Typography>
-                </Box>
+                <Fade in={showConfirmation}>
+                  <Box 
+                    sx={{ 
+                      backgroundColor: 'rgba(46, 125, 50, 0.1)',
+                      p: 3,
+                      borderRadius: '12px',
+                      border: '1px solid rgba(46, 125, 50, 0.3)',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      maxWidth: '600px',
+                      width: '100%',
+                      mb: 2,
+                      position: 'relative',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    {/* Success background effect */}
+                    <Box sx={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      background: 'radial-gradient(circle at center, rgba(46, 125, 50, 0.1), transparent 70%)',
+                      pointerEvents: 'none'
+                    }} />
+                    
+                    <CheckCircleIcon sx={{ color: '#66bb6a', mr: 2, fontSize: 30 }} />
+                    <Box>
+                      <Typography variant="h6" sx={{ color: '#66bb6a', fontWeight: 600, mb: 1 }}>
+                        Reservation Confirmed!
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#66bb6a' }}>
+                        Thank you for your reservation! We've sent a confirmation to your email. 
+                        {reservationType === 'table' 
+                          ? " Your table will be ready at your scheduled time."
+                          : " Your private karaoke room will be prepared for your arrival."
+                        }
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Fade>
               ) : (
                 <Button 
                   variant="contained" 
                   onClick={handleSubmit}
                   disabled={isLoading}
                   sx={{ 
-                    py: 1.5, 
-                    px: 6, 
+                    py: 2, 
+                    px: 8, 
                     mb: 2,
                     backgroundColor: '#d38236',
-                    color: '#fff',
-                    fontWeight: 600,
+                    color: 'white',
+                    fontWeight: 700,
                     borderRadius: '8px',
                     fontSize: '1.1rem',
+                    letterSpacing: '1px',
                     '&:hover': {
                       backgroundColor: '#b05e1d',
                       transform: 'translateY(-3px)',
-                      boxShadow: '0 6px 12px rgba(0,0,0,0.3)'
+                      boxShadow: '0 6px 15px rgba(0,0,0,0.3), 0 0 20px rgba(211, 130, 54, 0.3)'
                     },
                     transition: 'all 0.3s ease',
                     '&.Mui-disabled': {
                       backgroundColor: '#555',
                       color: '#999'
-                    }
+                    },
+                    boxShadow: '0 5px 15px rgba(0,0,0,0.3), 0 0 20px rgba(211, 130, 54, 0.2)',
+                    textTransform: 'uppercase'
                   }}
                 >
-                  {isLoading ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : 'RESERVE NOW'}
+                  {isLoading ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : 'Reserve Now'}
                 </Button>
               )}
               
@@ -1042,10 +1320,11 @@ const ReservationsPage: React.FC = () => {
                   display: 'flex', 
                   alignItems: 'center', 
                   gap: 1, 
-                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  backgroundColor: 'rgba(25,25,25,0.7)',
                   p: 1.5,
                   px: 3,
-                  borderRadius: '50px'
+                  borderRadius: '50px',
+                  border: '1px solid rgba(255,255,255,0.05)'
                 }}
               >
                 <InfoIcon sx={{ color: '#d38236', fontSize: 20 }} />
@@ -1053,7 +1332,7 @@ const ReservationsPage: React.FC = () => {
                   variant="body2" 
                   sx={{ color: '#aaa' }}
                 >
-                  Need help? Call us at (555) 123-4567 for immediate assistance.
+                  Need immediate assistance? Call us at (555) 123-4567
                 </Typography>
               </Box>
             </Box>
@@ -1063,5 +1342,34 @@ const ReservationsPage: React.FC = () => {
     </Box>
   );
 };
+
+// Add this CSS to your existing reservations.css file
+const injectCSS = document.createElement('style');
+injectCSS.innerHTML = `
+@keyframes neonPulse {
+  0% {
+    filter: drop-shadow(0 0 5px rgba(211, 130, 54, 0.7)) drop-shadow(0 0 8px rgba(211, 130, 54, 0.5));
+  }
+  100% {
+    filter: drop-shadow(0 0 7px rgba(211, 130, 54, 0.8)) drop-shadow(0 0 12px rgba(211, 130, 54, 0.6));
+  }
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(211, 130, 54, 0.6);
+    opacity: 1;
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(211, 130, 54, 0);
+    opacity: 0.8;
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(211, 130, 54, 0);
+    opacity: 1;
+  }
+}
+`;
+document.head.appendChild(injectCSS);
 
 export default ReservationsPage;
