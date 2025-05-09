@@ -1,5 +1,4 @@
-// src/pages/HomePage.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Box, 
   Typography, 
@@ -11,97 +10,214 @@ import {
   Button,
   Container,
   Chip,
-  Divider
+  Divider,
+  CircularProgress,
+  Paper,
+  Tooltip
 } from '@mui/material';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
-import SportsBasketballIcon from '@mui/icons-material/SportsBasketball';
-import SportsBaseballIcon from '@mui/icons-material/SportsBaseball';
-import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
 import LocalBarIcon from '@mui/icons-material/LocalBar';
+import { RiBilliardsFill } from "react-icons/ri";
 import MicExternalOnIcon from '@mui/icons-material/MicExternalOn';
-import EventIcon from '@mui/icons-material/Event';
+import ImageIcon from '@mui/icons-material/Image';
+import EventNoteIcon from '@mui/icons-material/EventNote';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import MusicNoteIcon from '@mui/icons-material/MusicNote';
+import SportsBarIcon from '@mui/icons-material/SportsBar';
 import '../styles/pages/homepage.css';
 
-// Hero Slideshow Data
+// Hero Slideshow Data - Enhanced descriptions
 const slides = [
   {
     image: '/hero/billiards.png',
     title: 'BILLIARDS ARENA',
-    subtitle: 'Pro tables, great drinks & epic battles with friends'
+    subtitle: 'Pro tables, dim lights & intense matches that last till 2AM'
   },
   {
     image: '/hero/karaoke.png',
     title: 'PRIVATE KARAOKE',
-    subtitle: 'Soundproof rooms with premium systems for the perfect night out'
+    subtitle: 'Soundproof rooms with premium systems for unforgettable night sessions'
   },
   {
     image: '/hero/bar.png',
     title: 'CRAFT COCKTAILS',
-    subtitle: 'Signature drinks crafted by our expert mixologists'
+    subtitle: 'Signature late-night drinks crafted by our expert mixologists'
   },
   {
     image: '/hero/outside.png',
-    title: 'OUTDOOR VIBES',
-    subtitle: 'Chill atmosphere for pre-game drinks and post-game celebrations'
+    title: 'NIGHT VIBES',
+    subtitle: 'Stylish atmosphere for pre-game drinks and after-hours celebrations'
   },
   {
     image: '/hero/show.png',
-    title: 'LIVE GAME NIGHTS',
-    subtitle: 'Watch major sporting events on our massive HD screens'
+    title: 'LIVE ENTERTAINMENT',
+    subtitle: 'Energetic performances that keep the night alive'
   },
 ];
 
-// Upcoming Events
-const upcomingEvents = [
+// Menu item interface
+interface MenuItem {
+  menu_id: number;
+  name: string;
+  description: string;
+  price: string;
+  category: string;
+  is_available: boolean;
+  created_at: string;
+  updated_at: string;
+  image_url: string | null;
+}
+
+// Feedback interface
+interface Feedback {
+  feedback_id: number;
+  user: {
+    username: string;
+    email: string;
+    first_name: string;
+    last_name: string;
+    phone_num: string | null;
+    role: string;
+  };
+  feedback_text: string;
+  response_text: string | null;
+  experience_rating: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// Weekly special events
+const weeklyEvents = [
+  { day: 'MON', name: 'POOL TOURNAMENT', time: '8PM', description: 'Weekly billiards championship with cash prizes' },
+  { day: 'WED', name: 'KARAOKE BATTLE', time: '9PM', description: 'Show off your vocal skills and win free drinks' },
+  { day: 'FRI', name: 'DJ NIGHT', time: '10PM', description: 'Guest DJs and dance floor opens up' },
+  { day: 'SAT', name: 'COCKTAIL HAPPY HOUR', time: '7PM-9PM', description: 'Buy one, get one on signature cocktails' }
+];
+
+// Gallery images for atmosphere section
+const atmosphereImages = [
   {
-    title: "NBA Finals Watch Party",
-    date: "June 15, 2025",
-    description: "Join us for the ultimate basketball showdown with special drink promos throughout the game!",
-    image: "https://placehold.co/600x400"
+    url: 'https://images.unsplash.com/photo-1566633806327-68e152aaf26d?q=80&w=2070&auto=format&fit=crop',
+    title: 'Late Night Games'
   },
   {
-    title: "Karaoke Championship",
-    date: "June 20, 2025", 
-    description: "Show off your vocal talents and compete for prizes. Entry includes one free signature cocktail!",
-    image: "https://placehold.co/600x400"
+    url: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=1974&auto=format&fit=crop',
+    title: 'Bar Experience'
   },
   {
-    title: "UFC Fight Night",
-    date: "June 25, 2025",
-    description: "Experience the intensity of UFC fights on our big screens with exclusive beer bucket deals!",
-    image: "https://placehold.co/600x400" 
+    url: 'https://images.unsplash.com/photo-1621252179027-9262f49856bc?q=80&w=1974&auto=format&fit=crop',
+    title: 'Premium Cocktails'
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?q=80&w=2038&auto=format&fit=crop',
+    title: 'Neon Atmosphere'
+  },
+];
+
+// Fallback menu items in case API fails
+const fallbackMenuItems = [
+  {
+    menu_id: 1,
+    name: 'Signature Mojito',
+    description: 'Classic mojito with a twist of exotic berries, perfect for late-night sipping',
+    price: '250.00',
+    category: 'COCKTAILS',
+    is_available: true,
+    created_at: '2022-01-01',
+    updated_at: '2022-01-01',
+    image_url: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?q=80&w=1974&auto=format&fit=crop'
+  },
+  {
+    menu_id: 2,
+    name: 'Craft Beer Flight',
+    description: 'Selection of four premium craft beers, perfect for sharing during games',
+    price: '350.00',
+    category: 'BEER',
+    is_available: true,
+    created_at: '2022-01-01',
+    updated_at: '2022-01-01',
+    image_url: 'https://images.unsplash.com/photo-1535958636474-b021ee887b13?q=80&w=2070&auto=format&fit=crop'
+  },
+  {
+    menu_id: 3,
+    name: 'Loaded Nachos',
+    description: 'Crispy tortilla chips loaded with cheese, jalapeños, and our secret house salsa',
+    price: '320.00',
+    category: 'APPETIZERS',
+    is_available: true,
+    created_at: '2022-01-01',
+    updated_at: '2022-01-01',
+    image_url: 'https://images.unsplash.com/photo-1513456852971-30c0b8199d4d?q=80&w=2070&auto=format&fit=crop'
   }
 ];
 
-// Menu highlights
-const menuHighlights = [
+// Fallback testimonials in case API fails
+const fallbackTestimonials = [
   {
-    name: "The Slam Dunk",
-    category: "Signature Cocktail",
-    price: "$12",
-    description: "Bourbon, orange bitters, maple syrup, and a flaming orange peel",
-    image: "https://placehold.co/600x400"
+    feedback_id: 1,
+    user: {
+      username: 'michael88',
+      email: 'michael@example.com',
+      first_name: 'Michael',
+      last_name: 'Rivera',
+      phone_num: null,
+      role: 'user'
+    },
+    feedback_text: 'Best place to unwind after work! The billiards tables are top-notch and the cocktails are amazing. My go-to spot in Manila!',
+    response_text: null,
+    experience_rating: 5,
+    created_at: '2023-04-15',
+    updated_at: '2023-04-15'
   },
   {
-    name: "Loaded Nachos Supreme",
-    category: "Fan Favorite",
-    price: "$14",
-    description: "Crispy tortilla chips smothered in cheese, jalapeños, guacamole, and pulled pork",
-    image: "https://placehold.co/600x400"
+    feedback_id: 2,
+    user: {
+      username: 'jennyk',
+      email: 'jenny@example.com',
+      first_name: 'Jenny',
+      last_name: 'Kim',
+      phone_num: null,
+      role: 'user'
+    },
+    feedback_text: 'Had my birthday in one of their karaoke rooms and it was fantastic! Great sound system, awesome service, and the food was delicious.',
+    response_text: null,
+    experience_rating: 5,
+    created_at: '2023-05-20',
+    updated_at: '2023-05-20'
   },
   {
-    name: "Championship Wings",
-    category: "Game Day Special",
-    price: "$16",
-    description: "Choose from 6 signature sauces - from mild to 'challenge the ref' hot",
-    image: "https://placehold.co/600x400"
+    feedback_id: 3,
+    user: {
+      username: 'davidr',
+      email: 'david@example.com',
+      first_name: 'David',
+      last_name: 'Reyes',
+      phone_num: null,
+      role: 'user'
+    },
+    feedback_text: 'Love their Monday night pool tournaments! Great atmosphere and friendly competition. The craft beer selection is impressive too.',
+    response_text: null,
+    experience_rating: 4,
+    created_at: '2023-06-10',
+    updated_at: '2023-06-10'
   }
 ];
 
 const HomePage: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
+  const [menuHighlights, setMenuHighlights] = useState<MenuItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+  const [feedbackLoading, setFeedbackLoading] = useState(true);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
+  
+  // Refs for scroll animations
+  const featuredRef = useRef<HTMLDivElement>(null);
+  const testimonialsRef = useRef<HTMLDivElement>(null);
+  const eventsRef = useRef<HTMLDivElement>(null);
 
   // Auto-slide every 5 seconds
   useEffect(() => {
@@ -112,8 +228,96 @@ const HomePage: React.FC = () => {
     // Animation trigger
     setIsVisible(true);
 
-    return () => clearInterval(slideInterval);
+    // Fetch menu items for highlights
+    fetchMenuHighlights();
+    
+    // Fetch feedback data
+    fetchFeedback();
+
+    // Add scroll animations
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+    
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('fade-in-element');
+        }
+      });
+    }, observerOptions);
+    
+    // Observe elements for animation
+    if (featuredRef.current) observer.observe(featuredRef.current);
+    if (testimonialsRef.current) observer.observe(testimonialsRef.current);
+    if (eventsRef.current) observer.observe(eventsRef.current);
+
+    return () => {
+      clearInterval(slideInterval);
+      observer.disconnect();
+    };
   }, []);
+
+  // Fetch menu items from API
+  const fetchMenuHighlights = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('http://127.0.0.1:8000/api/menus/list');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch menu items');
+      }
+      
+      const data: MenuItem[] = await response.json();
+      
+      // Select specific late-night favorites
+      const categories = ['COCKTAILS', 'BEER', 'APPETIZERS'];
+      const highlights = categories.map(category => {
+        const categoryItems = data.filter(item => 
+          item.category === category && item.is_available
+        );
+        // Return a random item from each category or the first one
+        return categoryItems.length > 0 
+          ? categoryItems[Math.floor(Math.random() * categoryItems.length)]
+          : null;
+      }).filter(item => item !== null) as MenuItem[];
+      
+      setMenuHighlights(highlights.length > 0 ? highlights : fallbackMenuItems);
+    } catch (error) {
+      console.error('Error fetching menu data:', error);
+      setError('Unable to load menu highlights. Please try again later.');
+      setMenuHighlights(fallbackMenuItems);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch feedback data
+  const fetchFeedback = async () => {
+    try {
+      setFeedbackLoading(true);
+      const response = await fetch('http://127.0.0.1:8000/api/feedback/');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch feedback');
+      }
+      
+      const data: Feedback[] = await response.json();
+      setFeedbacks(data.length > 0 ? data : fallbackTestimonials);
+    } catch (error) {
+      console.error('Error fetching feedback data:', error);
+      setFeedbackError('Unable to load customer feedback. Please try again later.');
+      setFeedbacks(fallbackTestimonials);
+    } finally {
+      setFeedbackLoading(false);
+    }
+  };
+
+  // Format price to Philippine Peso
+  const formatPrice = (price: string) => {
+    return `₱${parseFloat(price).toFixed(2)}`;
+  };
 
   // Manual controls
   const handleNext = () => {
@@ -132,14 +336,29 @@ const HomePage: React.FC = () => {
     <Box className="homepage dark-mode">
       {/* ====== HERO SLIDESHOW SECTION ====== */}
       <Box className="slideshow-container">
+        {/* Atmospheric overlay for mood */}
+        <Box 
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background: 'radial-gradient(circle at center, rgba(211, 130, 54, 0.15), transparent 80%)',
+            mixBlendMode: 'overlay',
+            zIndex: 1,
+            pointerEvents: 'none'
+          }}
+        />
+
         {slides.map((slide, index) => (
           <Box
             key={index}
             className={`slide ${index === currentSlide ? 'active' : ''}`}
             sx={{
-              backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.7)), url(${slide.image})`,
+              backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url(${slide.image})`,
               backgroundSize: 'cover',
-              backgroundPosition: 'center',
+              backgroundPosition: 'center'
             }}
           >
             <Box className="overlay">
@@ -148,8 +367,9 @@ const HomePage: React.FC = () => {
                 className="slide-title"
                 sx={{ 
                   fontWeight: 800, 
-                  textShadow: '2px 2px 8px rgba(0,0,0,0.8)',
-                  letterSpacing: '2px'
+                  textShadow: '2px 2px 8px rgba(0,0,0,0.9), 0 0 30px rgba(211, 130, 54, 0.5)',
+                  letterSpacing: '3px',
+                  fontSize: { xs: '2.5rem', md: '4.5rem' }
                 }}
               >
                 {slide.title}
@@ -159,8 +379,9 @@ const HomePage: React.FC = () => {
                 className="slide-subtitle"
                 sx={{ 
                   fontWeight: 400,
-                  textShadow: '1px 1px 4px rgba(0,0,0,0.9)',
-                  maxWidth: '800px'
+                  textShadow: '1px 1px 4px rgba(0,0,0,0.9), 0 0 20px rgba(211, 130, 54, 0.3)',
+                  maxWidth: '800px',
+                  fontSize: { xs: '1rem', md: '1.5rem' }
                 }}
               >
                 {slide.subtitle}
@@ -179,12 +400,15 @@ const HomePage: React.FC = () => {
                   '&:hover': {
                     backgroundColor: '#b05e1d',
                     transform: 'translateY(-3px)',
-                    boxShadow: '0 6px 12px rgba(0,0,0,0.3)'
+                    boxShadow: '0 6px 12px rgba(0,0,0,0.3), 0 0 20px rgba(211, 130, 54, 0.4)'
                   },
-                  transition: 'all 0.3s ease'
+                  transition: 'all 0.3s ease',
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px',
+                  borderRadius: '4px',
                 }}
               >
-                RESERVE A TABLE
+                RESERVE NOW
               </Button>
             </Box>
           </Box>
@@ -197,7 +421,7 @@ const HomePage: React.FC = () => {
             onClick={handlePrev}
             sx={{
               color: 'white',
-              backgroundColor: 'rgba(0,0,0,0.3)',
+              backgroundColor: 'rgba(0,0,0,0.5)',
               '&:hover': { backgroundColor: 'rgba(211, 130, 54, 0.8)' }
             }}
           >
@@ -213,7 +437,8 @@ const HomePage: React.FC = () => {
                 backgroundColor: index === currentSlide ? '#d38236' : 'rgba(255,255,255,0.5)',
                 width: index === currentSlide ? '14px' : '10px',
                 height: index === currentSlide ? '14px' : '10px',
-                transition: 'all 0.3s ease'
+                transition: 'all 0.3s ease',
+                cursor: 'pointer'
               }}
             />
           ))}
@@ -223,47 +448,163 @@ const HomePage: React.FC = () => {
             onClick={handleNext}
             sx={{
               color: 'white',
-              backgroundColor: 'rgba(0,0,0,0.3)',
+              backgroundColor: 'rgba(0,0,0,0.5)',
               '&:hover': { backgroundColor: 'rgba(211, 130, 54, 0.8)' }
             }}
           >
             <ArrowForwardIosIcon fontSize="small" />
           </IconButton>
         </Box>
+
+        {/* Operating Hours Banner */}
+        <Box 
+          sx={{ 
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            bgcolor: 'rgba(0,0,0,0.75)',
+            py: 1.5,
+            zIndex: 10,
+            backdropFilter: 'blur(5px)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: { xs: 2, md: 4 },
+            borderTop: '1px solid rgba(211, 130, 54, 0.3)'
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <AccessTimeIcon sx={{ color: '#d38236', mr: 1 }} />
+            <Typography variant="body2" sx={{ color: '#fff', fontWeight: 500 }}>
+              OPEN DAILY: 4PM - 2AM
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <MusicNoteIcon sx={{ color: '#d38236', mr: 1 }} />
+            <Typography variant="body2" sx={{ color: '#fff', fontWeight: 500 }}>
+              LIVE MUSIC: FRI-SAT
+            </Typography>
+          </Box>
+          <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center' }}>
+            <SportsBarIcon sx={{ color: '#d38236', mr: 1 }} />
+            <Typography variant="body2" sx={{ color: '#fff', fontWeight: 500 }}>
+              HAPPY HOUR: 4PM-7PM
+            </Typography>
+          </Box>
+        </Box>
       </Box>
 
       {/* ====== MAIN HOMEPAGE CONTENT ====== */}
       <Box className="home-content" sx={{ backgroundColor: '#121212', color: '#fff' }}>
-        {/* Sports Icon Bar */}
+        {/* Main Offerings Icon Bar with Neon Effect */}
         <Box sx={{ 
           display: 'flex', 
           justifyContent: 'center', 
           py: 4, 
-          backgroundColor: '#1a1a1a',
-          borderBottom: '1px solid #333' 
+          backgroundColor: '#151515',
+          borderBottom: '1px solid #333',
+          position: 'relative',
+          overflow: 'hidden'
         }}>
+          {/* Decorative neon glow */}
+          <Box sx={{
+            position: 'absolute',
+            width: '100%',
+            height: '100%',
+            background: 'radial-gradient(ellipse at center, rgba(211, 130, 54, 0.1) 0%, transparent 70%)',
+            top: 0,
+            left: 0,
+            pointerEvents: 'none'
+          }} />
+
           <Container>
-            <Grid container spacing={2} justifyContent="center" alignItems="center">
+            <Grid container spacing={3} justifyContent="center" alignItems="center">
               {[
-                { icon: <SportsSoccerIcon sx={{ fontSize: 36, color: '#d38236' }} />, label: "Soccer" },
-                { icon: <SportsBasketballIcon sx={{ fontSize: 36, color: '#d38236' }} />, label: "Basketball" },
-                { icon: <SportsBaseballIcon sx={{ fontSize: 36, color: '#d38236' }} />, label: "Baseball" },
-                { icon: <LocalBarIcon sx={{ fontSize: 36, color: '#d38236' }} />, label: "Premium Bar" },
-                { icon: <MicExternalOnIcon sx={{ fontSize: 36, color: '#d38236' }} />, label: "Karaoke" }
+                { 
+                  icon: <RiBilliardsFill style={{ fontSize: 45, color: '#d38236' }} />, 
+                  label: "Pro Billiards Tables", 
+                  desc: "Premium tables available hourly",
+                  action: "/reservations?type=billiards"
+                },
+                { 
+                  icon: <MicExternalOnIcon sx={{ fontSize: 45, color: '#d38236' }} />, 
+                  label: "Private Karaoke Rooms", 
+                  desc: "Soundproof party spaces",
+                  action: "/reservations?type=karaoke" 
+                },
+                { 
+                  icon: <LocalBarIcon sx={{ fontSize: 45, color: '#d38236' }} />, 
+                  label: "Late-Night Bar", 
+                  desc: "Signature cocktails & shots",
+                  action: "/menu" 
+                }
               ].map((item, index) => (
-                <Grid item xs={6} sm={4} md={2} key={index} sx={{ textAlign: 'center' }}>
-                  <Box sx={{ 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    alignItems: 'center',
-                    transition: 'transform 0.3s ease',
-                    '&:hover': { transform: 'translateY(-5px)' }
-                  }}>
-                    {item.icon}
-                    <Typography variant="subtitle2" sx={{ mt: 1, color: '#ccc', fontWeight: 500 }}>
+                <Grid item xs={12} sm={4} key={index} sx={{ textAlign: 'center' }}>
+                  <Paper
+                    elevation={6}
+                    sx={{ 
+                      py: 4,
+                      px: 2,
+                      backgroundColor: 'rgba(30,30,30,0.8)',
+                      borderRadius: 2,
+                      transition: 'all 0.3s ease',
+                      '&:hover': { 
+                        transform: 'translateY(-8px)',
+                        bgcolor: 'rgba(40,40,40,0.8)',
+                        boxShadow: '0 10px 20px rgba(0,0,0,0.3), 0 0 15px rgba(211, 130, 54, 0.2)'
+                      },
+                      border: '1px solid #333',
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      position: 'relative',
+                      overflow: 'hidden'
+                    }}
+                    onClick={() => window.location.href = item.action}
+                  >
+                    {/* Icon glow effect */}
+                    <Box sx={{
+                      width: '80px',
+                      height: '80px',
+                      borderRadius: '50%',
+                      backgroundColor: 'rgba(211, 130, 54, 0.15)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      mb: 2,
+                      boxShadow: '0 0 15px rgba(211, 130, 54, 0.3)'
+                    }}>
+                      {item.icon}
+                    </Box>
+
+                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5, color: '#fff' }}>
                       {item.label}
                     </Typography>
-                  </Box>
+                    <Typography variant="body2" sx={{ color: '#bbb' }}>
+                      {item.desc}
+                    </Typography>
+                    
+                    <Button 
+                      size="small" 
+                      sx={{ 
+                        mt: 2, 
+                        color: '#d38236', 
+                        borderBottom: '1px solid #d38236',
+                        borderRadius: 0,
+                        '&:hover': {
+                          bgcolor: 'transparent',
+                          color: '#fff',
+                          borderColor: '#fff'
+                        }
+                      }}
+                    >
+                      LEARN MORE
+                    </Button>
+                  </Paper>
                 </Grid>
               ))}
             </Grid>
@@ -271,7 +612,7 @@ const HomePage: React.FC = () => {
         </Box>
 
         {/* Introduction / Welcome Section */}
-        <Container maxWidth="lg" sx={{ py: 6 }}>
+        <Container maxWidth="lg" sx={{ pt: 8, pb: 4 }}>
           <Box className="intro-section" sx={{ 
             opacity: isVisible ? 1 : 0, 
             transform: isVisible ? 'translateY(0)' : 'translateY(20px)',
@@ -288,15 +629,15 @@ const HomePage: React.FC = () => {
                 backgroundClip: 'text',
                 color: 'transparent',
                 WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent'
+                WebkitTextFillColor: 'transparent',
+                textShadow: '0 0 20px rgba(211, 130, 54, 0.3)'
               }}
             >
-              YOUR ULTIMATE SPORTS DESTINATION
+              MANILA'S PREMIER LATE-NIGHT DESTINATION
             </Typography>
             <Typography 
               variant="h6" 
               className="section-subtitle"
-              color="text.secondary"
               sx={{ 
                 textAlign: 'center', 
                 maxWidth: '800px', 
@@ -306,19 +647,128 @@ const HomePage: React.FC = () => {
                 fontWeight: 400
               }}
             >
-              Live games. Cold drinks. Epic moments. Where fans become family.
+              Where nights come alive with great drinks, billiards battles, and karaoke sessions until 2AM.
             </Typography>
             <Box sx={{ 
               width: '60px', 
               height: '4px', 
-              backgroundColor: '#d38236', 
+              background: 'linear-gradient(to right, #d38236, #ffc259)',
               mx: 'auto',
-              mb: 4
+              mb: 6
             }}/>
           </Box>
 
-          {/* Featured Menu Items */}
-          <Box sx={{ mt: 8, mb: 10 }}>
+          {/* Weekly Schedule - New Section */}
+          <Box ref={eventsRef} sx={{ 
+            mb: 8,
+            opacity: 1, // Changed from 0 to ensure visibility
+            transform: 'translateY(0)', // Changed to ensure visibility
+            transition: 'opacity 0.8s ease, transform 0.8s ease',
+            className: 'fade-in-element' // Added class for visibility
+          }}>
+            <Typography 
+              variant="h4" 
+              component="h2" 
+              sx={{ 
+                textAlign: 'center', 
+                fontWeight: 600,
+                color: '#fff',
+                mb: 4,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 1
+              }}
+            >
+              <EventNoteIcon sx={{ color: '#d38236' }} /> 
+              WEEKLY <span style={{ color: '#d38236', marginLeft: '0.5rem' }}>EVENTS</span>
+            </Typography>
+
+            <Grid container spacing={2}>
+              {weeklyEvents.map((event, index) => (
+                <Grid item xs={12} sm={6} md={3} key={index}>
+                  <Card sx={{ 
+                    bgcolor: '#1a1a1a', 
+                    borderRadius: 2,
+                    height: '100%',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      transform: 'translateY(-8px)',
+                      boxShadow: `0 10px 20px rgba(0,0,0,0.3), 0 0 15px rgba(211, 130, 54, 0.2)`
+                    },
+                    border: '1px solid #333',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}>
+                    {/* Decorative corner accent */}
+                    <Box sx={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '30px',
+                      height: '30px',
+                      borderLeft: '3px solid #d38236',
+                      borderTop: '3px solid #d38236',
+                      opacity: 0.7
+                    }} />
+                    
+                    <CardContent>
+                      <Box sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        textAlign: 'center'
+                      }}>
+                        <Chip
+                          label={event.day}
+                          sx={{
+                            bgcolor: '#d38236',
+                            color: '#fff',
+                            fontWeight: 700,
+                            fontSize: '1rem',
+                            mb: 2
+                          }}
+                        />
+                        
+                        <Typography variant="h5" sx={{ 
+                          color: '#fff', 
+                          fontWeight: 700,
+                          mb: 1
+                        }}>
+                          {event.name}
+                        </Typography>
+                        
+                        <Typography variant="body1" sx={{ 
+                          color: '#d38236', 
+                          fontWeight: 600,
+                          mb: 2
+                        }}>
+                          {event.time}
+                        </Typography>
+                        
+                        <Typography variant="body2" sx={{ color: '#bbb' }}>
+                          {event.description}
+                        </Typography>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
+
+          {/* Featured Menu Items - Now uses API data */}
+          <Box 
+            ref={featuredRef} 
+            sx={{ 
+              mt: 8, 
+              mb: 10,
+              opacity: 1, // Changed from 0 to ensure visibility
+              transform: 'translateY(0)', // Changed to ensure visibility
+              transition: 'opacity 0.8s ease, transform 0.8s ease',
+              className: 'fade-in-element' // Added class for visibility
+            }}
+          >
             <Typography 
               variant="h4" 
               component="h2" 
@@ -327,62 +777,108 @@ const HomePage: React.FC = () => {
                 textAlign: 'center', 
                 fontWeight: 600,
                 color: '#fff',
-                mb: 4
+                mb: 1
               }}
             >
-              GAME DAY <span style={{ color: '#d38236' }}>FAVORITES</span>
+              LATE-NIGHT <span style={{ color: '#d38236' }}>FAVORITES</span>
             </Typography>
-            <Grid container spacing={4}>
-              {menuHighlights.map((item, index) => (
-                <Grid item xs={12} md={4} key={index}>
-                  <Card sx={{ 
-                    height: '100%', 
-                    display: 'flex', 
-                    flexDirection: 'column',
-                    backgroundColor: '#1E1E1E',
-                    borderRadius: 2,
-                    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                    '&:hover': {
-                      transform: 'translateY(-8px)',
-                      boxShadow: '0 10px 30px rgba(211, 130, 54, 0.2)'
-                    }
-                  }}>
-                    <CardMedia
-                      component="img"
-                      height="200"
-                      image={item.image || `https://placehold.co/600x400`}
-                      alt={item.name}
-                      sx={{ objectFit: 'cover' }}
-                    />
-                    <CardContent sx={{ flexGrow: 1, p: 3 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <Box>
-                          <Chip 
-                            label={item.category} 
-                            size="small" 
-                            sx={{ 
-                              backgroundColor: '#d38236', 
-                              color: '#fff', 
-                              mb: 1,
-                              fontSize: '0.7rem'
-                            }}
-                          />
-                          <Typography variant="h5" component="h3" sx={{ color: '#fff', fontWeight: 600 }}>
-                            {item.name}
+            
+            <Typography 
+              variant="subtitle1" 
+              sx={{ 
+                textAlign: 'center',
+                color: '#aaa',
+                mb: 5
+              }}
+            >
+              Perfect pairings for billiards battles & karaoke sessions
+            </Typography>
+            
+            {loading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                <CircularProgress sx={{ color: '#d38236' }} />
+              </Box>
+            ) : error ? (
+              <Typography color="error" align="center">{error}</Typography>
+            ) : (
+              <Grid container spacing={4}>
+                {menuHighlights.map((item, index) => (
+                  <Grid item xs={12} md={4} key={index}>
+                    <Card sx={{ 
+                      height: '100%', 
+                      display: 'flex', 
+                      flexDirection: 'column',
+                      backgroundColor: '#1a1a1a',
+                      borderRadius: 2,
+                      transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                      '&:hover': {
+                        transform: 'translateY(-8px)',
+                        boxShadow: '0 10px 30px rgba(0,0,0,0.3), 0 0 20px rgba(211, 130, 54, 0.3)'
+                      },
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      position: 'relative',
+                      overflow: 'hidden'
+                    }}>
+                      {/* Spotlight effect on hover */}
+                      <Box 
+                        sx={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          background: 'radial-gradient(circle at 50% 0%, rgba(211, 130, 54, 0.15), transparent 70%)',
+                          opacity: 0,
+                          transition: 'opacity 0.3s ease',
+                          '.MuiCard-root:hover &': { opacity: 1 }
+                        }}
+                      />
+                      
+                      <CardMedia
+                        component="img"
+                        height="260"
+                        image={item.image_url || `https://placehold.co/600x400?text=${encodeURIComponent(item.name)}`}
+                        alt={item.name}
+                        sx={{ 
+                          objectFit: 'cover',
+                          borderBottom: '3px solid #d38236'
+                        }}
+                      />
+                      <CardContent sx={{ flexGrow: 1, p: 3 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <Box>
+                            <Chip 
+                              label={item.category} 
+                              size="small" 
+                              sx={{ 
+                                backgroundColor: '#d38236', 
+                                color: '#fff', 
+                                mb: 1,
+                                fontSize: '0.7rem',
+                                fontWeight: 600
+                              }}
+                            />
+                            <Typography variant="h5" component="h3" sx={{ color: '#fff', fontWeight: 600 }}>
+                              {item.name}
+                            </Typography>
+                          </Box>
+                          <Typography variant="h6" sx={{ 
+                            color: '#d38236', 
+                            fontWeight: 700,
+                            textShadow: '0 0 10px rgba(211, 130, 54, 0.3)'
+                          }}>
+                            {formatPrice(item.price)}
                           </Typography>
                         </Box>
-                        <Typography variant="h6" sx={{ color: '#d38236', fontWeight: 700 }}>
-                          {item.price}
+                        <Typography variant="body2" sx={{ mt: 2, color: '#bbb' }}>
+                          {item.description || 'A delicious option perfect for your late-night cravings'}
                         </Typography>
-                      </Box>
-                      <Typography variant="body2" color="text.secondary" sx={{ mt: 2, color: '#bbb' }}>
-                        {item.description}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            )}
             <Box sx={{ textAlign: 'center', mt: 4 }}>
               <Button 
                 variant="outlined" 
@@ -393,13 +889,20 @@ const HomePage: React.FC = () => {
                   borderColor: '#d38236', 
                   color: '#d38236',
                   borderWidth: 2,
+                  px: 4,
                   '&:hover': {
                     borderColor: '#d38236',
-                    backgroundColor: 'rgba(211, 130, 54, 0.1)'
-                  }
+                    backgroundColor: 'rgba(211, 130, 54, 0.1)',
+                    transform: 'translateY(-3px)',
+                    boxShadow: '0 6px 12px rgba(0,0,0,0.2)'
+                  },
+                  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                  textTransform: 'none',
+                  fontSize: '1rem',
+                  fontWeight: 600
                 }}
               >
-                VIEW FULL MENU
+                View Full Menu
               </Button>
             </Box>
           </Box>
@@ -413,8 +916,8 @@ const HomePage: React.FC = () => {
             }
           }}>
             <Chip 
-              icon={<EventIcon />} 
-              label="UPCOMING EVENTS" 
+              icon={<ImageIcon />} 
+              label="THE VIBE" 
               sx={{ 
                 backgroundColor: '#d38236', 
                 color: 'white',
@@ -424,63 +927,26 @@ const HomePage: React.FC = () => {
             />
           </Divider>
 
-          {/* Events & Promotions Section */}
-          <Box className="events-promos-section" sx={{ mb: 8 }}>
-            <Grid container spacing={3}>
-              {upcomingEvents.map((event, index) => (
-                <Grid item xs={12} md={4} key={index}>
-                  <Card sx={{ 
-                    backgroundColor: '#222', 
-                    height: '100%',
-                    borderRadius: 2,
-                    overflow: 'hidden',
-                    transition: 'transform 0.3s ease',
-                    '&:hover': {
-                      transform: 'translateY(-5px)'
-                    }
-                  }}>
-                    <CardMedia
-                      component="img"
-                      height="180"
-                      image={event.image || `https://source.unsplash.com/400x200/?${event.title.toLowerCase().replace(' ','-')}`}
-                      alt={event.title}
-                    />
-                    <CardContent sx={{ p: 3 }}>
-                      <Typography 
-                        gutterBottom 
-                        variant="h6" 
-                        component="h3"
-                        sx={{ color: 'white', fontWeight: 600 }}
-                      >
-                        {event.title}
-                      </Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                        <EventIcon sx={{ color: '#d38236', mr: 1, fontSize: 18 }} />
-                        <Typography variant="subtitle2" sx={{ color: '#d38236' }}>
-                          {event.date}
-                        </Typography>
-                      </Box>
-                      <Typography variant="body2" sx={{ color: '#bbb' }}>
-                        {event.description}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
-          </Box>
-
-          {/* Testimonials / Reviews Section */}
-          <Box className="reviews-section" sx={{ 
-            py: 6, 
-            px: 3, 
-            backgroundColor: 'rgba(211, 130, 54, 0.1)', 
-            borderRadius: 2,
-            backgroundImage: 'linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url(/backgrounds/fans.jpg)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            mb: 8
-          }}>
+          {/* Testimonials / Reviews Section - Dynamic Marquee */}
+          <Box 
+            ref={testimonialsRef}
+            className="reviews-section fade-in-element" // Added class for visibility
+            sx={{ 
+              py: 6, 
+              px: 3, 
+              backgroundColor: 'rgba(26, 26, 26, 0.7)',
+              borderRadius: 2,
+              backgroundImage: 'linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url(/backgrounds/night-bar.jpg)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              mb: 8,
+              boxShadow: '0px 5px 20px rgba(0,0,0,0.5)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              opacity: 1, // Changed from 0 to ensure visibility
+              transform: 'translateY(0)', // Changed to ensure visibility
+              transition: 'opacity 0.8s ease, transform 0.8s ease'
+            }}
+          >
             <Typography 
               variant="h5" 
               className="section-title"
@@ -488,89 +954,256 @@ const HomePage: React.FC = () => {
                 textAlign: 'center',
                 color: 'white',
                 fontWeight: 600,
-                mb: 4
+                mb: 4,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 1
               }}
             >
-              WHAT OUR FANS SAY
+              <FormatQuoteIcon sx={{ color: '#d38236' }} />
+              WHAT OUR NIGHT OWLS SAY
             </Typography>
-            <Grid container spacing={4} justifyContent="center">
-              {[
-                {
-                  text: "The atmosphere during the playoffs is electric! Best screens in the city and the wing specials are incredible.",
-                  author: "Mike R., Regular since 2021"
+            
+            {feedbackLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                <CircularProgress sx={{ color: '#d38236' }} />
+              </Box>
+            ) : feedbackError ? (
+              <Typography color="error" align="center">{feedbackError}</Typography>
+            ) : (
+              <Box sx={{ 
+                position: 'relative',
+                overflow: 'hidden',
+                '&::before, &::after': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  width: '100px',
+                  height: '100%',
+                  zIndex: 2,
                 },
-                {
-                  text: "My go-to spot for watching UFC fights. Great crowd, amazing cocktails, and the staff really know their sports.",
-                  author: "Sarah K., Fight Night Fan"
+                '&::before': {
+                  left: 0,
+                  background: 'linear-gradient(to right, rgba(0,0,0,0.9), transparent)',
                 },
-                {
-                  text: "The private karaoke rooms are perfect for birthdays. We had a blast singing and the drink service was on point!",
-                  author: "David L., Celebration Expert"
+                '&::after': {
+                  right: 0,
+                  background: 'linear-gradient(to left, rgba(0,0,0,0.9), transparent)',
                 }
-              ].map((review, idx) => (
-                <Grid item xs={12} md={4} key={idx}>
-                  <Box sx={{ 
-                    bgcolor: 'rgba(0,0,0,0.5)',
-                    p: 3,
-                    borderRadius: 2,
-                    height: '100%',
-                    backdropFilter: 'blur(4px)',
-                    border: '1px solid rgba(255,255,255,0.1)',
+              }}>
+                <Box 
+                  sx={{ 
                     display: 'flex',
-                    flexDirection: 'column'
-                  }}>
-                    <Typography 
-                      variant="body1" 
-                      className="review-text"
+                    width: 'max-content', // This ensures all cards can be seen
+                    gap: 3,
+                    py: 2,
+                    '@keyframes marquee': {
+                      '0%': { transform: 'translateX(0)' },
+                      '100%': { transform: `translateX(-${feedbacks.length * 370}px)` }
+                    },
+                    animation: feedbacks.length > 2 ? 'marquee 45s linear infinite' : 'none',
+                    '&:hover': {
+                      animationPlayState: 'paused'
+                    }
+                  }}
+                >
+                  {/* Display all testimonials twice to create seamless loop */}
+                  {[...feedbacks, ...feedbacks].map((feedback, index) => (
+                    <Box 
+                      key={`${feedback.feedback_id}-${index}`}
                       sx={{ 
-                        fontStyle: 'italic',
-                        color: '#eee',
-                        flexGrow: 1
+                        bgcolor: 'rgba(26, 26, 26, 0.75)',
+                        p: 3,
+                        borderRadius: '12px',
+                        backdropFilter: 'blur(10px)',
+                        border: '1px solid rgba(211, 130, 54, 0.3)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        width: '340px',
+                        // height: '220px',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          transform: 'translateY(-5px)',
+                          boxShadow: '0 10px 20px rgba(0,0,0,0.3), 0 0 15px rgba(211, 130, 54, 0.3)',
+                          borderColor: 'rgba(211, 130, 54, 0.6)'
+                        },
+                        position: 'relative'
                       }}
                     >
-                      "{review.text}"
-                    </Typography>
-                    <Typography 
-                      variant="subtitle2" 
-                      className="review-author"
-                      sx={{ 
-                        color: '#d38236',
-                        mt: 2,
-                        fontWeight: 500
-                      }}
-                    >
-                      {review.author}
-                    </Typography>
-                  </Box>
-                </Grid>
-              ))}
-            </Grid>
+                      <Box sx={{ display: 'flex', mb: 2, alignItems: 'center' }}>
+                        {Array(feedback.experience_rating).fill(0).map((_, i) => (
+                          <Box 
+                            key={i}
+                            component="span" 
+                            sx={{ 
+                              color: '#d38236', 
+                              fontSize: '20px', 
+                              mr: 0.5,
+                              filter: 'drop-shadow(0 0 2px rgba(211, 130, 54, 0.5))'
+                            }}
+                          >
+                            ★
+                          </Box>
+                        ))}
+                      </Box>
+                      <Typography 
+                        variant="body1" 
+                        className="review-text"
+                        sx={{ 
+                          fontStyle: 'italic',
+                          color: '#eee',
+                          flexGrow: 1,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 4,
+                          WebkitBoxOrient: 'vertical',
+                          position: 'relative',
+                          pl: 2
+                        }}
+                      >
+                        {/* <FormatQuoteIcon sx={{ 
+                          position: 'absolute',
+                          top: -10,
+                          left: -10,
+                          color: 'rgba(211, 130, 54, 0.2)',
+                          fontSize: '2rem'
+                        }} /> */}
+                        "{feedback.feedback_text}"
+                      </Typography>
+                      <Typography 
+                        variant="subtitle2" 
+                        className="review-author"
+                        sx={{ 
+                          color: '#d38236',
+                          mt: 2,
+                          fontWeight: 600,
+                          position: 'relative',
+                          zIndex: 1
+                        }}
+                      >
+                        {feedback.user.first_name} {feedback.user.last_name}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+                
+                <Typography 
+                  variant="body2" 
+                  align="center" 
+                  sx={{ 
+                    mt: 2, 
+                    color: 'rgba(255,255,255,0.7)',
+                    fontStyle: 'italic'
+                  }}
+                >
+                  Hover to pause • {feedbacks.length} reviews from our night crowd
+                </Typography>
+              </Box>
+            )}
           </Box>
 
           {/* Call-to-Action Section */}
-          <Box className="reservation-cta-section" sx={{ textAlign: 'center', py: 8 }}>
+          <Box className="reservation-cta-section" sx={{ 
+            textAlign: 'center', 
+            py: 8,
+            position: 'relative',
+            overflow: 'hidden',
+            borderRadius: 2,
+            border: '1px solid rgba(255,255,255,0.1)',
+            backgroundColor: 'rgba(26, 26, 26, 0.7)',
+            backgroundImage: 'linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url(/backgrounds/billiards-dark.jpg)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.3)'
+          }}>
+            {/* Decorative overlay */}
+            <Box sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'radial-gradient(ellipse at center, rgba(211, 130, 54, 0.2), transparent 70%)',
+              pointerEvents: 'none'
+            }} />
+            
             <Typography 
               variant="h3" 
               className="section-title"
               sx={{ 
                 fontWeight: 700,
                 mb: 2,
-                color: 'white'
+                color: 'white',
+                textShadow: '0 2px 10px rgba(0,0,0,0.8)',
+                position: 'relative',
+                zIndex: 1
               }}
             >
-              DON'T MISS THE ACTION
+              MAKE YOUR NIGHT <span style={{ color: '#d38236' }}>LEGENDARY</span>
             </Typography>
             <Typography 
               variant="h6" 
               sx={{ 
-                color: '#aaa',
+                color: '#ccc',
                 maxWidth: '800px',
                 mx: 'auto',
-                mb: 4
+                mb: 4,
+                position: 'relative',
+                zIndex: 1
               }}
             >
-              Reserve your spot for the big game, private karaoke room, or just a night out with friends.
+              Reserve your billiards table, private karaoke room, or VIP area for an unforgettable night out
             </Typography>
+            
+            <Grid container spacing={2} justifyContent="center" sx={{ maxWidth: '800px', mx: 'auto', mb: 4 }}>
+              <Grid item xs={12} sm={6}>
+                <Paper sx={{
+                  p: 2,
+                  bgcolor: 'rgba(0,0,0,0.5)',
+                  border: '1px solid rgba(211, 130, 54, 0.3)',
+                  borderRadius: 2,
+                  display: 'flex',
+                  alignItems: 'center'
+                }}>
+                  <Box sx={{ mr: 2 }}>
+                    <RiBilliardsFill style={{ fontSize: 40, color: '#d38236' }} />
+                  </Box>
+                  <Box>
+                    <Typography variant="body1" sx={{ color: '#fff', fontWeight: 600 }}>
+                      Billiards Tables
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#aaa' }}>
+                      ₱200/hr • Available from 4PM
+                    </Typography>
+                  </Box>
+                </Paper>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Paper sx={{
+                  p: 2,
+                  bgcolor: 'rgba(0,0,0,0.5)',
+                  border: '1px solid rgba(211, 130, 54, 0.3)',
+                  borderRadius: 2,
+                  display: 'flex',
+                  alignItems: 'center'
+                }}>
+                  <Box sx={{ mr: 2 }}>
+                    <MicExternalOnIcon sx={{ fontSize: 40, color: '#d38236' }} />
+                  </Box>
+                  <Box>
+                    <Typography variant="body1" sx={{ color: '#fff', fontWeight: 600 }}>
+                      Karaoke Rooms
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#aaa' }}>
+                      ₱500/hr • Fits up to 10 people
+                    </Typography>
+                  </Box>
+                </Paper>
+              </Grid>
+            </Grid>
+            
             <Button 
               variant="contained"
               size="large"
@@ -579,14 +1212,18 @@ const HomePage: React.FC = () => {
                 backgroundColor: '#d38236',
                 color: 'white',
                 fontWeight: 'bold',
-                padding: '14px 40px',
+                padding: '16px 40px',
                 fontSize: '1.2rem',
                 '&:hover': {
                   backgroundColor: '#b05e1d',
                   transform: 'translateY(-3px)',
-                  boxShadow: '0 8px 16px rgba(211, 130, 54, 0.3)'
+                  boxShadow: '0 8px 16px rgba(0,0,0,0.3), 0 0 20px rgba(211, 130, 54, 0.5)'
                 },
-                transition: 'all 0.3s ease'
+                transition: 'all 0.3s ease',
+                position: 'relative',
+                zIndex: 1,
+                letterSpacing: '1px',
+                textTransform: 'uppercase'
               }}
             >
               RESERVE NOW
@@ -597,5 +1234,27 @@ const HomePage: React.FC = () => {
     </Box>
   );
 };
+
+// Add this component at the bottom for the FormatQuoteIcon
+const FormatQuoteIcon = (props: any) => (
+  <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" fill="currentColor" {...props}>
+    <path d="M0 0h24v24H0V0z" fill="none"/><path d="M18.62 18h-5.24l2-4h-2V6h7v7.24L18.62 18zm-2-2h.76L19 12.76V8h-3v4h2l-1.38 4zm-8 2H3.38l2-4h-2V6h7v7.24L8.62 18zm-2-2h.76L9 12.76V8H6v4h2L6.62 16z"/>
+  </svg>
+);
+
+// Add this CSS to your homepage.css file
+const injectCSS = document.createElement('style');
+injectCSS.innerHTML = `
+.fade-in-element {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+`;
+document.head.appendChild(injectCSS);
 
 export default HomePage;

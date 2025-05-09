@@ -404,3 +404,118 @@
       height: 250px;
     }
   }
+  
+/* Enhanced animations */
+@keyframes neonPulse {
+  0% {
+    text-shadow: 0 0 10px rgba(211, 130, 54, 0.7),
+                 0 0 20px rgba(211, 130, 54, 0.5),
+                 0 0 30px rgba(211, 130, 54, 0.3);
+  }
+  100% {
+    text-shadow: 0 0 15px rgba(211, 130, 54, 0.8),
+                 0 0 25px rgba(211, 130, 54, 0.6),
+                 0 0 35px rgba(211, 130, 54, 0.4);
+  }
+}
+
+/* Late night styling enhancements */
+.highlight-text {
+  color: #d38236;
+  position: relative;
+  animation: neonPulse 2s infinite alternate;
+}
+
+.feature-card {
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.feature-card:hover .feature-icon-container {
+  transform: scale(1.1);
+}
+
+.feature-icon-container {
+  transition: transform 0.3s ease;
+}
+
+.hero-section {
+  background: linear-gradient(to right, rgba(0,0,0,0.9), rgba(0,0,0,0.7)), url('/backgrounds/sports-pattern-dark.jpg');
+  background-size: cover;
+  padding: 100px 0 60px;
+  position: relative;
+}
+
+.testimonials-section {
+  background-attachment: fixed;
+}
+
+.testimonial-text {
+  position: relative;
+  line-height: 1.8;
+}
+
+.atmosphere-image {
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.atmosphere-image::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,0.3));
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.atmosphere-image:hover::after {
+  opacity: 0.7;
+}
+
+/* Enhanced CTA button */
+.cta-button {
+  background-color: #d38236 !important;
+  font-weight: 700 !important;
+  padding: 12px 36px !important;
+  font-size: 1.1rem !important;
+  text-transform: uppercase !important;
+  border-radius: 4px !important;
+  box-shadow: 0 4px 14px rgba(211, 130, 54, 0.4) !important;
+  transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+  letter-spacing: 1px;
+}
+
+.cta-button:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(211, 130, 54, 0.5) !important;
+}
+
+/* Night mode specific enhancements */
+.story-image-grid {
+  position: relative;
+  height: 480px;
+}
+
+.story-image {
+  filter: contrast(1.1) brightness(1.05);
+  transition: all 0.5s ease;
+}
+
+.story-image:hover {
+  transform: scale(1.03);
+}
+
+.first-letter {
+  font-size: 4rem;
+  font-weight: 700;
+  float: left;
+  line-height: 0.8;
+  margin-right: 8px;
+  color: #d38236;
+  text-shadow: 0 0 10px rgba(211, 130, 54, 0.3);
+}

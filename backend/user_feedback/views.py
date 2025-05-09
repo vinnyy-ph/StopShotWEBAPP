@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
-from .serializers import UserFeedbackSerializer
+from .serializers import UserFeedbackSerializer, UserFeedbackWriteSerializer
 from .models import UserFeedback
 from .utils import send_feedback_email, send_response_email
 from user_management.models import User 
@@ -40,12 +40,20 @@ class UserFeedbackView(APIView):
 
         request.data['user'] = user.user_id
 
-        serializer = UserFeedbackSerializer(data=request.data)
+        serializer = UserFeedbackWriteSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             send_feedback_email(user, serializer.data['feedback_text'])
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, feedback_id):
+        try:
+            feedback = UserFeedback.objects.get(feedback_id=feedback_id)
+            feedback.delete()
+            return Response({"message": "Feedback deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+        except UserFeedback.DoesNotExist:
+            return Response({"error": "Feedback not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
 class FeedbackResponseView(APIView):
@@ -67,3 +75,25 @@ class FeedbackResponseView(APIView):
         send_response_email(feedback.user, feedback.feedback_text, response_text)
 
         return Response({"message": "Response sent successfully."}, status=status.HTTP_200_OK)
+    
+class PublicFeedbackView(APIView):
+    def get(self, request):
+        feedbacks = UserFeedback.objects.all().order_by('-created_at')[:10]  # Get recent feedback
+        
+        # Create a serializer that includes user details
+        result = []
+        for feedback in feedbacks:
+            user = feedback.user
+            result.append({
+                "feedback_id": feedback.feedback_id,
+                "feedback_text": feedback.feedback_text,
+                "experience_rating": feedback.experience_rating,
+                "created_at": feedback.created_at,
+                "user": {
+                    "id": user.user_id,
+                    "name": f"{user.first_name} {user.last_name}".strip() or "Guest User", 
+                    "initial": user.first_name[0] if user.first_name else user.email[0].upper()
+                }
+            })
+        
+        return Response(result)

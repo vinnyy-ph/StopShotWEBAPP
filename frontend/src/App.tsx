@@ -13,6 +13,7 @@ import Chatbot from './components/Chatbot';
 import './index.css';
 import AdminLogin from './admin/components/login';
 import AdminDashboard from './admin/components/dashboard';
+import { AuthProvider } from './context/AuthContext';
 
 // Component wrappers
 const Menu = () => <div><MenuPage /></div>;
@@ -26,7 +27,7 @@ const App: React.FC = () => {
   const isAdminRoute = location.pathname.startsWith('/admin');
 
   return (
-    <>
+    <AuthProvider>
       {!isAdminRoute && <Navbar />}
       <Routes>
         <Route path="/" element={<Home />} />
@@ -40,7 +41,7 @@ const App: React.FC = () => {
       </Routes>
       {!isAdminRoute && <Footer />}
       {!isAdminRoute && <Chatbot />}
-    </>
+    </AuthProvider>
   );
 };
 

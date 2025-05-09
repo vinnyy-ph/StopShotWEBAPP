@@ -593,8 +593,8 @@
 }
 
 .dialog-btn.confirm-btn {
-  background-color: var(--accent-color) !important;
-  color: white !important;
+  /* background-color: var(--accent-color) !important; */
+  /* color: white !important; */
 }
 
 /* Feedback section */
@@ -826,7 +826,7 @@
 /* Profile and notification menus */
 .profile-menu .MuiPaper-root,
 .notification-menu .MuiPaper-root {
-  background-color: var(--bg-card) !important;
+  /* background-color: var(--bg-card) !important; */
   color: var(--text-primary) !important;
   border: 1px solid var(--border-color);
   border-radius: 8px !important;
@@ -892,5 +892,67 @@
   
   .feedback-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Employee schedule styling */
+.schedule-container {
+  min-width: 650px;
+  position: relative;
+}
+
+.schedule-header {
+  color: var(--text-primary) !important;
+  font-weight: 600 !important;
+}
+
+.schedule-employee {
+  color: var(--text-primary) !important;
+  font-weight: 500 !important;
+}
+
+.schedule-shift {
+  color: var(--text-primary) !important;
+  transition: all 0.2s ease;
+}
+
+.schedule-shift:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.am-shift {
+  background: linear-gradient(to top right, rgba(103, 58, 183, 0.2), rgba(103, 58, 183, 0.4)) !important;
+  border: 1px solid rgba(103, 58, 183, 0.5) !important;
+}
+
+.pm-shift {
+  background: linear-gradient(to top right, rgba(211, 130, 54, 0.2), rgba(211, 130, 54, 0.4)) !important;
+  border: 1px solid rgba(211, 130, 54, 0.5) !important;
+}
+
+.day-off {
+  border: 1px dashed var(--border-color) !important;
+}
+
+/* Employee position tag */
+.position-tag {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: var(--text-secondary) !important;
+  border-radius: 4px !important;
+  padding: 2px 6px !important;
+  font-size: 0.7rem !important;
+  margin-left: 8px !important;
+}
+
+/* Employee card for smaller screens */
+@media (max-width: 960px) {
+  .employee-grid {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .employee-card {
+    margin-bottom: 1rem;
   }
 }

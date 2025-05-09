@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework.authtoken',
+    'corsheaders',
     'user_management',
     'reservations',
     'django_filters',
@@ -52,6 +53,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -59,6 +61,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'stopshot_backend.middleware.AuthWarningMiddleware',  # Add warning header when DEBUG_NO_AUTH is enabled
 ]
 
 ROOT_URLCONF = 'stopshot_backend.urls'
@@ -159,6 +162,10 @@ REST_FRAMEWORK = {
   'DEFAULT_AUTHENTICATION_CLASSES': (   
     'rest_framework.authentication.TokenAuthentication',
   ),
+  # Conditionally apply authentication based on DEBUG_NO_AUTH setting
+  'DEFAULT_PERMISSION_CLASSES': (
+      'rest_framework.permissions.AllowAny' if DEBUG_NO_AUTH else 'rest_framework.permissions.IsAuthenticated',
+  ),
 }
 
 
@@ -169,3 +176,29 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'stopshotsportsbar@gmail.com')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'xqxaxbkxhnfvrqsz')
+# CORS settings
+CORS_ALLOW_ALL_ORIGINS = True  # For development only, be more restrictive in production
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+CORS_ALLOW_METHODS = [
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+]
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
