@@ -13,7 +13,7 @@ class RoomSerializer(serializers.ModelSerializer):
 class BasicUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email']
+        fields = ['user_id', 'username', 'email']
 
 class CreateReservationSerializer(serializers.ModelSerializer):
     duration = serializers.DurationField(required=False) 
