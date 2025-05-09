@@ -26,6 +26,7 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import SportsBarIcon from '@mui/icons-material/SportsBar';
 import '../styles/pages/homepage.css';
+import AgeVerificationPopup from '../components/AgeVerificationPopup';
 
 // Hero Slideshow Data - Enhanced descriptions
 const slides = [
@@ -333,6 +334,7 @@ const HomePage: React.FC = () => {
   };
 
   return (
+    <Box className="home-page">
     <Box className="homepage dark-mode">
       {/* ====== HERO SLIDESHOW SECTION ====== */}
       <Box className="slideshow-container">
@@ -1232,6 +1234,8 @@ const HomePage: React.FC = () => {
         </Container>
       </Box>
     </Box>
+   <AgeVerificationPopup />
+</Box>
   );
 };
 
