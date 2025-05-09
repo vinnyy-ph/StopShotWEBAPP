@@ -34,7 +34,7 @@ class LoginView(APIView):
             return Response({
                 'token': token.key,
                 'user': {
-                    'id': user.id,
+                    'id': user.user_id,
                     'email': user.email,
                     'username': user.username,
                     'role': user.role
@@ -138,7 +138,7 @@ class UserProfileView(APIView):
     def get(self, request):
         user = request.user
         return Response({
-            'id': user.id,
+            'id': user.user_id,
             'username': user.username,
             'email': user.email,
             'role': user.role
@@ -155,7 +155,7 @@ class UpdateEmployeeStatusView(APIView):
 
     def patch(self, request, user_id):
         try:
-            user = User.objects.get(id=user_id, role='EMPLOYEE')
+            user = User.objects.get(user_id=user_id, role='EMPLOYEE')
         except User.DoesNotExist:
             return Response({'error': 'Employee not found'}, status=status.HTTP_404_NOT_FOUND)
 

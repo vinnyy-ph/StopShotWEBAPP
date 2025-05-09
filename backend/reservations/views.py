@@ -7,7 +7,9 @@ from .serializers import (
     CreateReservationSerializer,
     ViewReservationSerializer,
     AdminReservationUpdateSerializer,
-    PublicBookingSlotSerializer
+    PublicBookingSlotSerializer,
+    DetailRoomSerializer,
+    RoomSerializer
 )
 from .permissions import IsOwnerOrAdmin
 
@@ -86,6 +88,15 @@ class ReservationViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         """ Apply different permissions based on action. """
+        query_params = self.request.query_params
+        
+        is_public_slot_query = (
+            self.action == 'list' and 
+            query_params.get('status') == 'CONFIRMED' and 
+            query_params.get('reservation_date') and 
+            query_params.get('room__room_type')
+        )
+        
         if self.action == 'create':
             permission_classes = [permissions.AllowAny]
         elif is_public_slot_query:
@@ -102,4 +113,80 @@ class ReservationViewSet(viewsets.ModelViewSet):
             serializer.save(user=self.request.user, status='PENDING')
         else:
             serializer.save(user=None, status='PENDING')
+
+class DailyAvailabilitySummaryView(APIView):
+    """
+    API endpoint that provides a summary of availability for a given day.
+    """
+    permission_classes = [permissions.AllowAny]
+    
+    def get(self, request):
+        # Get date parameter, default to today
+        date_str = request.query_params.get('date')
+        try:
+            if date_str:
+                target_date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+            else:
+                target_date = timezone.now().date()
+        except ValueError:
+            return Response(
+                {"error": "Invalid date format. Use YYYY-MM-DD."},
+                status=drf_status.HTTP_400_BAD_REQUEST
+            )
+            
+        # Get room type parameter, default to all
+        room_type = request.query_params.get('room_type')
+        
+        # Query all confirmed reservations for the date
+        reservations = Reservation.objects.filter(
+            reservation_date=target_date,
+            status='CONFIRMED'
+        )
+        
+        # Filter by room type if specified
+        if room_type:
+            if room_type not in dict(ROOM_TYPE_CHOICES):
+                return Response(
+                    {"error": f"Invalid room type. Choose from {dict(ROOM_TYPE_CHOICES).keys()}"},
+                    status=drf_status.HTTP_400_BAD_REQUEST
+                )
+            reservations = reservations.filter(room_type=room_type)
+            
+        # Calculate availability summary
+        summary = {
+            "date": target_date.isoformat(),
+            "total_confirmed_reservations": reservations.count(),
+            "availability": {
+                "TABLE": not reservations.filter(room_type=TABLE).exists(),
+                "KARAOKE_ROOM": not reservations.filter(room_type=KARAOKE_ROOM).exists()
+            }
+        }
+        
+        return Response(summary)
+
+class RoomViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for rooms.
+    - Admins can manage rooms (create, update, delete)
+    - Users can view available rooms
+    """
+    queryset = Room.objects.all()
+    
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['room_type', 'room_can_be_booked', 'max_number_of_people']
+    search_fields = ['room_name', 'room_description']
+    ordering_fields = ['id', 'room_name', 'max_number_of_people']
+    ordering = ['id']
+    
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update', 'retrieve']:
+            return DetailRoomSerializer
+        return RoomSerializer
+    
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+        else:
+            permission_classes = [permissions.AllowAny]
+        return [permission() for permission in permission_classes]
 

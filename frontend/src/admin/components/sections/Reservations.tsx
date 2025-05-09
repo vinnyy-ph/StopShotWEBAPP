@@ -34,6 +34,16 @@ import ReservationDialog from '../dialogs/ReservationDialog';
 import ReservationFormDialog from '../dialogs/ReservationFormDialog';
 import AddReservationDialog from '../dialogs/AddReservationDialog';
 
+// Define the Room interface based on the backend model
+interface Room {
+  id: number;
+  room_name: string;
+  room_description?: string;
+  room_can_be_booked: boolean;
+  max_number_of_people: number;
+  room_type: string;
+}
+
 // Create axios instance with authorization header
 const axiosInstance = axios.create({
   baseURL: 'http://127.0.0.1:8000/api',
@@ -297,7 +307,7 @@ const Reservations: React.FC<ReservationsProps> = ({
                       />
                     </TableCell>
                     <TableCell align="right" className="action-cell">
-                      <IconButton size="small" onClick={() => handleOpenReservationDialog(row)}>
+                      <IconButton size="small" onClick={() => handleViewReservation(row)}>
                         <VisibilityIcon fontSize="small" />
                       </IconButton>
                       <IconButton 
@@ -332,10 +342,8 @@ const Reservations: React.FC<ReservationsProps> = ({
       <ReservationDialog
         open={reservationDialog}
         reservation={selectedReservation}
-        editMode={editMode}
         onClose={handleCloseReservationDialog}
-        onUpdate={onUpdateReservation}
-        setEditMode={setEditMode}
+        onEdit={() => setEditMode(true)}
       />
 
       {/* Add Reservation Dialog */}

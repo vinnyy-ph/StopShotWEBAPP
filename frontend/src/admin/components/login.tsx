@@ -74,10 +74,10 @@ const AdminLogin: React.FC = () => {
     if (isLocked) return;
     
     try {
-      // If your backend expects email but you want to keep the username field
-      // Either change this to match what the backend expects
+      // The backend authenticates with either username or email
       const response = await axios.post(`${API_BASE_URL}/auth/login/`, {
-        email: username, // Send as email instead of username
+        username: username,
+        email: username, // Also send as email since backend checks both
         password
       });
       
