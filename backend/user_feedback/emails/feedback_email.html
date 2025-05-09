@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>User Feedback</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1e1e1e;
+            border: 1px solid #333333;
+        }
+        .header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 2px solid #ff9800;
+            background-color: #252525;
+        }
+        .logo {
+            max-width: 150px;
+            height: auto;
+        }
+        .content {
+            padding: 20px;
+            background-color: #1e1e1e;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .feedback-box {
+            background-color: #252525;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            color: #e0e0e0;
+        }
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 12px;
+            color: #aaaaaa;
+            border-top: 1px solid #333333;
+            padding-top: 15px;
+        }
+        h1, h2 {
+            color: #ff9800;
+        }
+        .highlight {
+            color: #ff9800;
+            font-weight: bold;
+        }
+        a {
+            color: #64b5f6;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="{{ logo_url }}" alt="StopShot Sports Bar" class="logo">
+            <h1>New User Feedback</h1>
+        </div>
+        <div class="content">
+            <p style="color: white;">You've received new feedback from <span class="highlight">{{ user.email }}</span>.</p>
+            
+            <h2>Feedback:</h2>
+            <div class="feedback-box">
+                {{ feedback_text }}
+            </div>
+            
+            <p style="color: white;">Please review and respond at your earliest convenience.</p>
+        </div>
+        <div class="footer">
+            <p>2025 StopShot Sports Bar. All rights reserved.</p>
+            <p>This email was sent automatically from our feedback system.</p>
+        </div>
+    </div>
+</body>
+</html>
