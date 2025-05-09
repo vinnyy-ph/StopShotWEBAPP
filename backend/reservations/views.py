@@ -15,6 +15,8 @@ import datetime
 from django.utils import timezone
 from django.db.models import Q
 from django.contrib.auth import get_user_model
+from django.core.mail import send_mail
+from django.conf import settings
 
 VENUE_TOTAL_OPERATING_HOURS_PER_BUSINESS_DAY = datetime.timedelta(hours=9)
 
@@ -110,6 +112,7 @@ class ReservationViewSet(viewsets.ModelViewSet):
         Get or create a user based on guest_email and guest_name.
         Associate this user with the reservation.
         Room is NOT assigned here. Admin will assign it later.
+        Send an email notification to management.
         """
         guest_email = serializer.validated_data.get('guest_email')
         guest_name = serializer.validated_data.get('guest_name', '') # Default to empty string if not provided
@@ -136,6 +139,37 @@ class ReservationViewSet(viewsets.ModelViewSet):
             user = self.request.user
 
         serializer.save(user=user)
+        reservation = serializer.instance # Get the created reservation instance
+
+        # Send email notification to management
+        try:
+            subject = f"New Reservation Created - ID: {reservation.id}"
+            message_body = f"""
+A new reservation has been created with the following details:
+
+Guest Name: {reservation.guest_name}
+Guest Email: {reservation.guest_email}
+Reservation Date: {reservation.reservation_date.strftime('%Y-%m-%d')}
+Reservation Time: {reservation.reservation_time.strftime('%H:%M:%S')}
+Room Type: {reservation.get_room_type_display()}
+Number of Guests: {reservation.number_of_guests}
+Duration: {str(reservation.duration)}
+Special Requests: {reservation.special_requests or 'None'}
+
+Status: {reservation.get_status_display()}
+Created At: {reservation.created_at.strftime('%Y-%m-%d %H:%M:%S')}
+"""
+            send_mail(
+                subject,
+                message_body,
+                settings.EMAIL_HOST_USER,
+                ['stopshot.management@gmail.com'],
+                fail_silently=False,
+            )
+            print(f"Management notification email sent for new reservation {reservation.id}")
+        except Exception as e:
+            print(f"Error sending management notification email for new reservation {reservation.id}: {e}")
+        
 
 class DailyAvailabilitySummaryView(APIView):
     """
