@@ -311,10 +311,22 @@ const AdminDashboard: React.FC = () => {
     return false;
   };
 
-  // Handlers for Feedback
-  const handleDeleteFeedback = (id: number) => {
-    const updatedFeedback = feedback.filter(item => item.id !== id);
-    setFeedback(updatedFeedback);
+  // Update the handleDeleteFeedback function
+  const handleDeleteFeedback = async (id: number) => {
+    try {
+      // The actual delete functionality is now handled in the Feedback component
+      // This is kept for backwards compatibility
+      const updatedFeedback = feedback.filter(item => {
+        // Handle both legacy mockData format and new API format
+        const itemId = item.id || item.feedback_id;
+        return itemId !== id;
+      });
+      setFeedback(updatedFeedback);
+      return true;
+    } catch (error) {
+      console.error('Error handling feedback deletion:', error);
+      return false;
+    }
   };
 
   // Handlers for Employees

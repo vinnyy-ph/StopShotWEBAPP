@@ -36,6 +36,7 @@ import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import '../styles/pages/feedback.css';
+import axios from 'axios';
 
 // Testimonial data for the marquee
 const testimonials = [
@@ -117,6 +118,25 @@ const FeedbackPage: React.FC = () => {
   const [animationDirection, setAnimationDirection] = useState<'left' | 'right'>('left');
   const testimonialRef = useRef<HTMLDivElement>(null);
 
+  // Add state for form fields
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    feedback_text: '',
+  });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Handle form input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  };
+
   // Auto-rotate testimonials
   useEffect(() => {
     if (isPaused || isHovered) return;
@@ -143,10 +163,56 @@ const FeedbackPage: React.FC = () => {
     );
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // Form submission logic would go here
+    
+    // Extract first and last name from full name
+    const nameParts = formData.fullName.trim().split(' ');
+    const first_name = nameParts[0] || '';
+    const last_name = nameParts.slice(1).join(' ') || '';
+    
+    // Prepare data according to backend API requirements
+    const feedbackData = {
+      email: formData.email,
+      first_name: first_name,
+      last_name: last_name,
+      feedback_text: formData.feedback_text,
+      experience_rating: rating || 3, // Default to 3 if not selected
+    };
+    
+    // Show loading state
+    setIsSubmitting(true);
+    
+    // Immediately show success message (optimistic UI)
     setOpenSnackbar(true);
+    
+    try {
+      // Send feedback to backend API with timeout
+      await axios.post('http://127.0.0.1:8000/api/feedback/', feedbackData, {
+        timeout: 8000 // 8 second timeout
+      });
+      
+      // Reset form
+      setFormData({
+        fullName: '',
+        email: '',
+        phone: '',
+        feedback_text: '',
+      });
+      setRating(null);
+      setServiceRating(null);
+      setFoodRating(null);
+      setCleanlinessRating(null);
+      setValueRating(null);
+      setVisitFrequency('');
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      // If there's an error, show an error message
+      setOpenSnackbar(false);
+      // You could add additional error handling here
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCloseSnackbar = (event?: React.SyntheticEvent | Event, reason?: string) => {
@@ -613,7 +679,9 @@ const getLabelText = (value: number) => {
                       required
                       fullWidth
                       label="Full Name"
-                      name="name"
+                      name="fullName"
+                      value={formData.fullName}
+                      onChange={handleInputChange}
                       variant="outlined"
                       className="dark-input"
                       InputProps={{
@@ -652,6 +720,8 @@ const getLabelText = (value: number) => {
                       label="Email Address"
                       name="email"
                       type="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
                       variant="outlined"
                       className="dark-input"
                       InputProps={{
@@ -688,6 +758,8 @@ const getLabelText = (value: number) => {
                       fullWidth
                       label="Phone Number"
                       name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
                       variant="outlined"
                       className="dark-input"
                       InputProps={{
@@ -847,242 +919,6 @@ const getLabelText = (value: number) => {
                 </Paper>
               </Grid>
 
-              {/* Improved Specific Feedback Areas */}
-              <Grid item xs={12}>
-                <Typography 
-                  variant="h6" 
-                  gutterBottom 
-                  sx={{ 
-                    color: '#d38236',
-                    fontWeight: 600,
-                    mb: 2,
-                    display: 'flex',
-                    alignItems: 'center'
-                  }}
-                >
-                  <StarIcon sx={{ mr: 1 }} /> Specific Feedback Areas
-                </Typography>
-                <Paper sx={{ 
-                  backgroundColor: 'rgba(0,0,0,0.2)', 
-                  p: 3, 
-                  borderRadius: '8px', 
-                  mb: 2,
-                  border: '1px solid rgba(255,255,255,0.05)'
-                }}>
-                  <Typography variant="body2" sx={{ color: '#aaa', mb: 3, fontStyle: 'italic' }}>
-                    Please rate the following aspects of your experience to help us improve:
-                  </Typography>
-                  
-                  <Grid container spacing={3}>
-                    <Grid item xs={12} md={6}>
-                      <Box 
-                        className="rating-item"
-                        sx={{ 
-                          p: 2,
-                          borderRadius: '8px',
-                          backgroundColor: 'rgba(255,255,255,0.03)',
-                          transition: 'all 0.2s ease',
-                          '&:hover': {
-                            backgroundColor: 'rgba(255,255,255,0.05)',
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
-                          }
-                        }}
-                      >
-                        <Box 
-                          sx={{ 
-                            display: 'flex', 
-                            justifyContent: 'space-between', 
-                            alignItems: 'center',
-                            mb: 1
-                          }}
-                        >
-                          <Typography sx={{ color: '#fff', fontWeight: 500 }}>
-                            {specificRatingAreas.service}
-                          </Typography>
-                        </Box>
-                        <Box sx={{ textAlign: 'center', pt: 1, pb: 1 }}>
-                          <Rating 
-                            name="service_rating" 
-                            value={serviceRating} 
-                            onChange={(event, newValue) => {
-                              setServiceRating(newValue);
-                            }}
-                            sx={{ 
-                              color: '#d38236',
-                              '& .MuiRating-iconEmpty': {
-                                color: 'rgba(211, 130, 54, 0.3)'
-                              }
-                            }}
-                          />
-                          {serviceRating ? (
-                            <Box sx={{ mt: 0.5 }}>
-                              <Typography variant="caption" sx={{ color: '#bbb' }}>
-                                {ratingLabels[serviceRating as keyof typeof ratingLabels]}
-                              </Typography>
-                            </Box>
-                          ) : null}
-                        </Box>
-                      </Box>
-                      
-                      <Box 
-                        className="rating-item"
-                        sx={{ 
-                          p: 2,
-                          borderRadius: '8px',
-                          backgroundColor: 'rgba(255,255,255,0.03)',
-                          mt: 2,
-                          transition: 'all 0.2s ease',
-                          '&:hover': {
-                            backgroundColor: 'rgba(255,255,255,0.05)',
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
-                          }
-                        }}
-                      >
-                        <Box 
-                          sx={{ 
-                            display: 'flex', 
-                            justifyContent: 'space-between', 
-                            alignItems: 'center',
-                            mb: 1
-                          }}
-                        >
-                          <Typography sx={{ color: '#fff', fontWeight: 500 }}>
-                            {specificRatingAreas.food}
-                          </Typography>
-                        </Box>
-                        <Box sx={{ textAlign: 'center', pt: 1, pb: 1 }}>
-                          <Rating 
-                            name="food_rating" 
-                            value={foodRating} 
-                            onChange={(event, newValue) => {
-                              setFoodRating(newValue);
-                            }}
-                            sx={{ 
-                              color: '#d38236',
-                              '& .MuiRating-iconEmpty': {
-                                color: 'rgba(211, 130, 54, 0.3)'
-                              }
-                            }}
-                          />
-                          {foodRating ? (
-                            <Box sx={{ mt: 0.5 }}>
-                              <Typography variant="caption" sx={{ color: '#bbb' }}>
-                                {ratingLabels[foodRating as keyof typeof ratingLabels]}
-                              </Typography>
-                            </Box>
-                          ) : null}
-                        </Box>
-                      </Box>
-                    </Grid>
-                    
-                    <Grid item xs={12} md={6}>
-                      <Box 
-                        className="rating-item"
-                        sx={{ 
-                          p: 2,
-                          borderRadius: '8px',
-                          backgroundColor: 'rgba(255,255,255,0.03)',
-                          transition: 'all 0.2s ease',
-                          '&:hover': {
-                            backgroundColor: 'rgba(255,255,255,0.05)',
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
-                          }
-                        }}
-                      >
-                        <Box 
-                          sx={{ 
-                            display: 'flex', 
-                            justifyContent: 'space-between', 
-                            alignItems: 'center',
-                            mb: 1
-                          }}
-                        >
-                          <Typography sx={{ color: '#fff', fontWeight: 500 }}>
-                            {specificRatingAreas.cleanliness}
-                          </Typography>
-                        </Box>
-                        <Box sx={{ textAlign: 'center', pt: 1, pb: 1 }}>
-                          <Rating 
-                            name="cleanliness_rating" 
-                            value={cleanlinessRating} 
-                            onChange={(event, newValue) => {
-                              setCleanlinessRating(newValue);
-                            }}
-                            sx={{ 
-                              color: '#d38236',
-                              '& .MuiRating-iconEmpty': {
-                                color: 'rgba(211, 130, 54, 0.3)'
-                              }
-                            }}
-                          />
-                          {cleanlinessRating ? (
-                            <Box sx={{ mt: 0.5 }}>
-                              <Typography variant="caption" sx={{ color: '#bbb' }}>
-                                {ratingLabels[cleanlinessRating as keyof typeof ratingLabels]}
-                              </Typography>
-                            </Box>
-                          ) : null}
-                        </Box>
-                      </Box>
-                      
-                      <Box 
-                        className="rating-item"
-                        sx={{ 
-                          p: 2,
-                          borderRadius: '8px',
-                          backgroundColor: 'rgba(255,255,255,0.03)',
-                          mt: 2,
-                          transition: 'all 0.2s ease',
-                          '&:hover': {
-                            backgroundColor: 'rgba(255,255,255,0.05)',
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
-                          }
-                        }}
-                      >
-                        <Box 
-                          sx={{ 
-                            display: 'flex', 
-                            justifyContent: 'space-between', 
-                            alignItems: 'center',
-                            mb: 1
-                          }}
-                        >
-                          <Typography sx={{ color: '#fff', fontWeight: 500 }}>
-                            {specificRatingAreas.value}
-                          </Typography>
-                        </Box>
-                        <Box sx={{ textAlign: 'center', pt: 1, pb: 1 }}>
-                          <Rating 
-                            name="value_rating" 
-                            value={valueRating} 
-                            onChange={(event, newValue) => {
-                              setValueRating(newValue);
-                            }}
-                            sx={{ 
-                              color: '#d38236',
-                              '& .MuiRating-iconEmpty': {
-                                color: 'rgba(211, 130, 54, 0.3)'
-                              }
-                            }}
-                          />
-                          {valueRating ? (
-                            <Box sx={{ mt: 0.5 }}>
-                              <Typography variant="caption" sx={{ color: '#bbb' }}>
-                                {ratingLabels[valueRating as keyof typeof ratingLabels]}
-                              </Typography>
-                            </Box>
-                          ) : null}
-                        </Box>
-                      </Box>
-                    </Grid>
-                  </Grid>
-                </Paper>
-              </Grid>
-
               {/* Comments */}
               <Grid item xs={12}>
                 <Typography 
@@ -1100,7 +936,9 @@ const getLabelText = (value: number) => {
                   multiline
                   rows={4}
                   label="Please share any additional feedback or suggestions"
-                  name="comments"
+                  name="feedback_text"
+                  value={formData.feedback_text}
+                  onChange={handleInputChange}
                   variant="outlined"
                   className="dark-input message-input"
                   sx={{
@@ -1162,7 +1000,8 @@ const getLabelText = (value: number) => {
                   type="submit"
                   fullWidth
                   variant="contained"
-                  endIcon={<SendIcon />}
+                  endIcon={isSubmitting ? null : <SendIcon />}
+                  disabled={isSubmitting}
                   className="submit-button"
                   sx={{ 
                     py: 1.5, 
@@ -1178,7 +1017,7 @@ const getLabelText = (value: number) => {
                     transition: 'all 0.3s ease'
                   }}
                 >
-                  Submit Feedback
+                  {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
                 </Button>
               </Grid>
             </Grid>
