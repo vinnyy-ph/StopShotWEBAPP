@@ -3,9 +3,11 @@
 
 # Database SETUP
 1. Start with Setting up Database with XAMPP
-2. Install Xamp
+2. Install Xampp
 3. Go to MySQL Admin
 4. Create a new database and name it 'stopshop_db'
+
+Note: XAMPP's MySQL must be compatible with your python's virtual environment Django. For example, XAMPP 8.0.30 must require Django 5.0
 
 
 # Backend SETUP

@@ -7,7 +7,7 @@ class UserFeedback(models.Model):
     user = models.ForeignKey('user_management.User', on_delete=models.CASCADE)
     feedback_text = models.TextField(blank=True, null=True)
     response_text = models.TextField(blank=True, null=True)
-    experience_rating = models.IntegerField(choices=[(i, str(i)) for i in range(1, 6)], default=3)  # 1 to 5 scale
+    experience_rating = models.IntegerField(choices=[(i, str(i)) for i in range(1, 6)], default=5)  # 1 to 5 scale
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
