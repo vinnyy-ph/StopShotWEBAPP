@@ -27,26 +27,30 @@ class UserMessageView(APIView):
 
         username = email.split('@')[0]
 
-
+        # Remove phone_number from User creation
         user, created = User.objects.get_or_create(
             email=email,
             defaults={
                 'username': username,
                 'first_name': first_name,
                 'last_name': last_name,
-                'phone_number': phone_number,  # Optional phone number
                 'role': 'CUSTOMER',
                 'is_active': True
             }
         )
 
+        # Create a custom data dictionary for the UserMessage
+        message_data = {
+            'user': user.user_id,
+            'phone_number': phone_number,  # Store phone_number in UserMessage model
+            'message_text': message_text
+        }
 
-        request.data['user'] = user.user_id
-
-        serializer = UserMessageSerializer(data=request.data)
+        serializer = UserMessageSerializer(data=message_data)
         if serializer.is_valid():
-            serializer.save()
-
-            send_message_email(user, message_text)
+            message = serializer.save()
+            
+            # Pass the phone number to send_message_email
+            send_message_email(user, message_text, phone_number)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

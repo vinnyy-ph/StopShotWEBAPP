@@ -1,13 +1,45 @@
-from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives
+from django.utils.html import strip_tags
+import os
+import re
 
-def send_message_email(user, message_text):
+# Get the current directory
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+def send_message_email(user, message_text, phone_number=None):
+    # Use absolute path to the template
+    template_path = os.path.join(BASE_DIR, 'emails', 'message_email.html')
     
-    first_name = user.first_name if user.first_name else ""
-    last_name = user.last_name if user.last_name else ""
-    full_name = f"{first_name} {last_name}". strip()
-    send_mail(
-        subject="New User Message",
-        message=f"New message received from {user.email}.\n\nFull Name: {full_name}\n\nMessage: {message_text}",
+    # Render template directly from file
+    with open(template_path, 'r') as template_file:
+        template_content = template_file.read()
+    
+    # Replace template variables with proper regex to handle spaces in braces
+    html_content = re.sub(r'{{\s*user\.first_name\s*}}', user.first_name or '', template_content)
+    html_content = re.sub(r'{{\s*user\.last_name\s*}}', user.last_name or '', html_content)
+    html_content = re.sub(r'{{\s*user\.email\s*}}', user.email, html_content)
+    
+    # Use phone_number from parameter instead of from user object
+    if phone_number:
+        html_content = re.sub(r'{{\s*user\.phone_number\s*}}', phone_number, html_content)
+    else:
+        # Remove the phone number line from the template if no phone number
+        html_content = re.sub(r'{% if user\.phone_number %}<p><strong>Phone:</strong> {{ user\.phone_number }}</p>{% endif %}', '', html_content)
+    
+    html_content = re.sub(r'{{\s*message_text\s*}}', message_text, html_content)
+    html_content = re.sub(r'{{\s*logo_url\s*}}', 'https://i.imgur.com/6Hf2QI2.png', html_content)
+    
+    # Plain text fallback
+    plain_text = strip_tags(html_content)
+    
+    # Create email
+    email = EmailMultiAlternatives(
+        subject="A customer has sent a message",
+        body=plain_text,
         from_email="stopshotsportsbar@gmail.com",
-        recipient_list=["stopshot.management@gmail.com"], 
+        to=["stopshot.management@gmail.com"],
     )
+    
+    # Attach HTML content
+    email.attach_alternative(html_content, "text/html")
+    email.send()

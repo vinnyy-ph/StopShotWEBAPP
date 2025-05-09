@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>A customer has sent a message !</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1e1e1e;
+            border: 1px solid #333333;
+        }
+        .header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 2px solid #d38236;
+            background-color: #252525;
+        }
+        .logo {
+            max-width: 150px;
+            height: auto;
+        }
+        .content {
+            padding: 20px;
+            background-color: #1e1e1e;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .message-box {
+            background-color: #252525;
+            border-left: 4px solid #d38236;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            color: #e0e0e0;
+        }
+        .user-info {
+            background-color: #252525;
+            border-left: 4px solid #d38236;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            color: #e0e0e0;
+        }
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 12px;
+            color: #aaaaaa;
+            border-top: 1px solid #333333;
+            padding-top: 15px;
+        }
+        h1, h2 {
+            color: #d38236;
+        }
+        .highlight {
+            color: #d38236;
+            font-weight: bold;
+        }
+        a {
+            color: #64b5f6;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="{{ logo_url }}" alt="StopShot Sports Bar" class="logo">
+            <h1>A customer has sent a message !</h1>
+        </div>
+        <div class="content">
+            <p style="color: white;">You've received a new message from <span class="highlight">{{ user.email }}</span>.</p>
+            
+            <h2>User Information:</h2>
+            <div class="user-info">
+                <p><strong>Full Name:</strong> {{ user.first_name }} {{ user.last_name }}</p>
+                <p><strong>Email:</strong> {{ user.email }}</p>
+                {% if user.phone_number %}<p><strong>Phone:</strong> {{ user.phone_number }}</p>{% endif %}
+            </div>
+            
+            <h2>Message:</h2>
+            <div class="message-box">
+                {{ message_text }}
+            </div>
+            
+            <p style="color: white;">Please respond to this customer at your earliest convenience.</p>
+        </div>
+        <div class="footer">
+            <p>2025 StopShot Sports Bar. All rights reserved.</p>
+            <p>This email was sent automatically from our contact form system.</p>
+        </div>
+    </div>
+</body>
+</html>

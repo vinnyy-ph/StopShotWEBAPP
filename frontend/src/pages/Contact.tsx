@@ -34,12 +34,45 @@ import '../styles/pages/contactpage.css';
 const ContactPage: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const [open, setOpen] = useState(false);
-
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isError, setIsError] = useState(false);
+  
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setSubmitted(true);
-    setOpen(true);
-    // Form submission logic would go here
+    const formData = new FormData(event.currentTarget);
+    
+    // Create payload matching backend requirements
+    const payload = {
+      email: formData.get('email'),
+      first_name: formData.get('first_name'),
+      last_name: formData.get('last_name'),
+      phone_number: formData.get('phone_number'),
+      message_text: formData.get('message_text')
+    };
+    
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/message/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Something went wrong');
+      }
+      
+      setSubmitted(true);
+      setOpen(true);
+      setIsError(false);
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      setErrorMessage(error.message || 'Failed to send message. Please try again.');
+      setIsError(true);
+      setOpen(true);
+    }
   };
 
   const handleClose = () => {
@@ -476,7 +509,7 @@ const ContactPage: React.FC = () => {
                           required
                           fullWidth
                           label="First Name"
-                          name="firstName"
+                          name="first_name" // Updated to match backend
                           variant="outlined"
                           InputProps={{
                             startAdornment: (
@@ -493,7 +526,7 @@ const ContactPage: React.FC = () => {
                           required
                           fullWidth
                           label="Last Name"
-                          name="lastName"
+                          name="last_name" // Updated to match backend
                           variant="outlined"
                           InputProps={{
                             startAdornment: (
@@ -510,7 +543,7 @@ const ContactPage: React.FC = () => {
                           required
                           fullWidth
                           label="Email Address"
-                          name="email"
+                          name="email" // Already matches the backend
                           type="email"
                           variant="outlined"
                           InputProps={{
@@ -527,7 +560,7 @@ const ContactPage: React.FC = () => {
                         <TextField
                           fullWidth
                           label="Phone Number"
-                          name="phone"
+                          name="phone_number" // Updated to match backend
                           variant="outlined"
                           InputProps={{
                             startAdornment: (
@@ -539,9 +572,9 @@ const ContactPage: React.FC = () => {
                           className="form-input"
                         />
                       </Grid>
+                      {/* The Subject field is not in the backend API but we'll keep the UI intact */}
                       <Grid item xs={12}>
                         <TextField
-                          required
                           fullWidth
                           label="Subject"
                           name="subject"
@@ -561,7 +594,7 @@ const ContactPage: React.FC = () => {
                           required
                           fullWidth
                           label="Message"
-                          name="message"
+                          name="message_text" // Updated to match backend
                           multiline
                           rows={4}
                           variant="outlined"
@@ -665,8 +698,15 @@ const ContactPage: React.FC = () => {
       
       {/* Snackbar notification */}
       <Snackbar open={open} autoHideDuration={6000} onClose={handleClose}>
-        <Alert onClose={handleClose} severity="success" sx={{ width: '100%', backgroundColor: '#2e7d32' }}>
-          Message sent! We will get back to you soon.
+        <Alert 
+          onClose={handleClose} 
+          severity={isError ? "error" : "success"} 
+          sx={{ 
+            width: '100%', 
+            backgroundColor: isError ? '#d32f2f' : '#2e7d32' 
+          }}
+        >
+          {isError ? errorMessage : "Message sent! We will get back to you soon."}
         </Alert>
       </Snackbar>
     </Box>
