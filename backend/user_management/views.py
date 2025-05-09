@@ -10,7 +10,8 @@ from .serializers import (
     VerifyOTPSerializer, 
     ResetPasswordSerializer, 
     EmployeeSerializer, 
-    UpdateEmployeeSerializer  
+    UpdateEmployeeSerializer,
+    CustomerSerializer  # Add this import
 )
 from .models import User
 from django.contrib.auth import authenticate
@@ -266,3 +267,24 @@ class DeleteEmployeeView(APIView):
             
         except User.DoesNotExist:
             return Response({'error': 'Employee not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+# ------------ CUSTOMER MANAGEMENT -----------
+
+# ------------ CUSTOMER MANAGEMENT -----------
+
+class CustomerListView(APIView):
+    # Removed permission_classes for development
+    # permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        """Get a list of all customers"""
+        # Removed permission check for development
+        # if request.user.role not in ['ADMIN', 'BAR_MANAGER', 'OWNER']:
+        #     return Response({'error': 'You do not have permission to view customers.'}, 
+        #                   status=status.HTTP_403_FORBIDDEN)
+            
+        # Filter users with role='CUSTOMER'
+        customers = User.objects.filter(role='CUSTOMER')
+        serializer = CustomerSerializer(customers, many=True)
+        return Response(serializer.data)

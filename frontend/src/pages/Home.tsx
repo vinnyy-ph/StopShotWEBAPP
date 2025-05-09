@@ -1,4 +1,3 @@
-// src/pages/HomePage.tsx
 import React, { useState, useEffect } from 'react';
 import { 
   Box, 
@@ -11,14 +10,15 @@ import {
   Button,
   Container,
   Chip,
-  Divider
+  Divider,
+  CircularProgress
 } from '@mui/material';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import LocalBarIcon from '@mui/icons-material/LocalBar';
 import { RiBilliardsFill } from "react-icons/ri";
 import MicExternalOnIcon from '@mui/icons-material/MicExternalOn';
-import EventIcon from '@mui/icons-material/Event';
+import ImageIcon from '@mui/icons-material/Image';
 import '../styles/pages/homepage.css';
 
 // Hero Slideshow Data
@@ -45,61 +45,50 @@ const slides = [
   },
   {
     image: '/hero/show.png',
-    title: 'LIVE GAME NIGHTS',
-    subtitle: 'Watch major sporting events on our massive HD screens'
+    title: 'LIVE SHOWS',
+    subtitle: 'Watch fun shows and live events'
   },
 ];
 
-// Upcoming Events
-const upcomingEvents = [
-  {
-    title: "NBA Finals Watch Party",
-    date: "June 15, 2025",
-    description: "Join us for the ultimate basketball showdown with special drink promos throughout the game!",
-    image: "https://placehold.co/600x400"
-  },
-  {
-    title: "Karaoke Championship",
-    date: "June 20, 2025", 
-    description: "Show off your vocal talents and compete for prizes. Entry includes one free signature cocktail!",
-    image: "https://placehold.co/600x400"
-  },
-  {
-    title: "UFC Fight Night",
-    date: "June 25, 2025",
-    description: "Experience the intensity of UFC fights on our big screens with exclusive beer bucket deals!",
-    image: "https://placehold.co/600x400" 
-  }
-];
+// Menu item interface
+interface MenuItem {
+  menu_id: number;
+  name: string;
+  description: string;
+  price: string;
+  category: string;
+  is_available: boolean;
+  created_at: string;
+  updated_at: string;
+  image_url: string | null;
+}
 
-// Menu highlights
-const menuHighlights = [
+// Gallery images for atmosphere section
+const atmosphereImages = [
   {
-    name: "The Slam Dunk",
-    category: "Signature Cocktail",
-    price: "$12",
-    description: "Bourbon, orange bitters, maple syrup, and a flaming orange peel",
-    image: "https://placehold.co/600x400"
+    url: 'https://images.unsplash.com/photo-1566633806327-68e152aaf26d?q=80&w=2070&auto=format&fit=crop',
+    title: 'Game Night'
   },
   {
-    name: "Loaded Nachos Supreme",
-    category: "Fan Favorite",
-    price: "$14",
-    description: "Crispy tortilla chips smothered in cheese, jalapeños, guacamole, and pulled pork",
-    image: "https://placehold.co/600x400"
+    url: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=1974&auto=format&fit=crop',
+    title: 'Bar Experience'
   },
   {
-    name: "Championship Wings",
-    category: "Game Day Special",
-    price: "$16",
-    description: "Choose from 6 signature sauces - from mild to 'challenge the ref' hot",
-    image: "https://placehold.co/600x400"
-  }
+    url: 'https://images.unsplash.com/photo-1621252179027-9262f49856bc?q=80&w=1974&auto=format&fit=crop',
+    title: 'Premium Cocktails'
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?q=80&w=2038&auto=format&fit=crop',
+    title: 'Chill Space'
+  },
 ];
 
 const HomePage: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
+  const [menuHighlights, setMenuHighlights] = useState<MenuItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Auto-slide every 5 seconds
   useEffect(() => {
@@ -110,8 +99,49 @@ const HomePage: React.FC = () => {
     // Animation trigger
     setIsVisible(true);
 
+    // Fetch menu items for highlights
+    fetchMenuHighlights();
+
     return () => clearInterval(slideInterval);
   }, []);
+
+  // Fetch menu items from API
+  const fetchMenuHighlights = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('http://127.0.0.1:8000/api/menus/list');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch menu items');
+      }
+      
+      const data: MenuItem[] = await response.json();
+      
+      // Select a few featured items from different categories
+      const categories = ['APPETIZERS', 'BEER', 'COCKTAILS'];
+      const highlights = categories.map(category => {
+        const categoryItems = data.filter(item => 
+          item.category === category && item.is_available
+        );
+        // Return a random item from each category or the first one
+        return categoryItems.length > 0 
+          ? categoryItems[Math.floor(Math.random() * categoryItems.length)]
+          : null;
+      }).filter(item => item !== null) as MenuItem[];
+      
+      setMenuHighlights(highlights);
+    } catch (error) {
+      console.error('Error fetching menu data:', error);
+      setError('Unable to load menu highlights. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Format price to Philippine Peso
+  const formatPrice = (price: string) => {
+    return `₱${parseFloat(price).toFixed(2)}`;
+  };
 
   // Manual controls
   const handleNext = () => {
@@ -313,7 +343,7 @@ const HomePage: React.FC = () => {
             }}/>
           </Box>
 
-          {/* Featured Menu Items */}
+          {/* Featured Menu Items - Now uses API data */}
           <Box sx={{ mt: 8, mb: 10 }}>
             <Typography 
               variant="h4" 
@@ -328,57 +358,66 @@ const HomePage: React.FC = () => {
             >
               GAME DAY <span style={{ color: '#d38236' }}>FAVORITES</span>
             </Typography>
-            <Grid container spacing={4}>
-              {menuHighlights.map((item, index) => (
-                <Grid item xs={12} md={4} key={index}>
-                  <Card sx={{ 
-                    height: '100%', 
-                    display: 'flex', 
-                    flexDirection: 'column',
-                    backgroundColor: '#1E1E1E',
-                    borderRadius: 2,
-                    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                    '&:hover': {
-                      transform: 'translateY(-8px)',
-                      boxShadow: '0 10px 30px rgba(211, 130, 54, 0.2)'
-                    }
-                  }}>
-                    <CardMedia
-                      component="img"
-                      height="200"
-                      image={item.image || `https://placehold.co/600x400`}
-                      alt={item.name}
-                      sx={{ objectFit: 'cover' }}
-                    />
-                    <CardContent sx={{ flexGrow: 1, p: 3 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <Box>
-                          <Chip 
-                            label={item.category} 
-                            size="small" 
-                            sx={{ 
-                              backgroundColor: '#d38236', 
-                              color: '#fff', 
-                              mb: 1,
-                              fontSize: '0.7rem'
-                            }}
-                          />
-                          <Typography variant="h5" component="h3" sx={{ color: '#fff', fontWeight: 600 }}>
-                            {item.name}
+            
+            {loading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                <CircularProgress sx={{ color: '#d38236' }} />
+              </Box>
+            ) : error ? (
+              <Typography color="error" align="center">{error}</Typography>
+            ) : (
+              <Grid container spacing={4}>
+                {menuHighlights.map((item, index) => (
+                  <Grid item xs={12} md={4} key={index}>
+                    <Card sx={{ 
+                      height: '100%', 
+                      display: 'flex', 
+                      flexDirection: 'column',
+                      backgroundColor: '#1E1E1E',
+                      borderRadius: 2,
+                      transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                      '&:hover': {
+                        transform: 'translateY(-8px)',
+                        boxShadow: '0 10px 30px rgba(211, 130, 54, 0.2)'
+                      }
+                    }}>
+                      <CardMedia
+                        component="img"
+                        height="260"
+                        image={item.image_url || `https://placehold.co/600x400`}
+                        alt={item.name}
+                        sx={{ objectFit: 'cover' }}
+                      />
+                      <CardContent sx={{ flexGrow: 1, p: 3 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <Box>
+                            <Chip 
+                              label={item.category} 
+                              size="small" 
+                              sx={{ 
+                                backgroundColor: '#d38236', 
+                                color: '#fff', 
+                                mb: 1,
+                                fontSize: '0.7rem'
+                              }}
+                            />
+                            <Typography variant="h5" component="h3" sx={{ color: '#fff', fontWeight: 600 }}>
+                              {item.name}
+                            </Typography>
+                          </Box>
+                          <Typography variant="h6" sx={{ color: '#d38236', fontWeight: 700 }}>
+                            {formatPrice(item.price)}
                           </Typography>
                         </Box>
-                        <Typography variant="h6" sx={{ color: '#d38236', fontWeight: 700 }}>
-                          {item.price}
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 2, color: '#bbb' }}>
+                          {item.description || 'A delicious dish prepared by our expert chefs'}
                         </Typography>
-                      </Box>
-                      <Typography variant="body2" color="text.secondary" sx={{ mt: 2, color: '#bbb' }}>
-                        {item.description}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            )}
             <Box sx={{ textAlign: 'center', mt: 4 }}>
               <Button 
                 variant="outlined" 
@@ -409,8 +448,8 @@ const HomePage: React.FC = () => {
             }
           }}>
             <Chip 
-              icon={<EventIcon />} 
-              label="UPCOMING EVENTS" 
+              icon={<ImageIcon />} 
+              label="THE VIBE" 
               sx={{ 
                 backgroundColor: '#d38236', 
                 color: 'white',
@@ -420,47 +459,68 @@ const HomePage: React.FC = () => {
             />
           </Divider>
 
-          {/* Events & Promotions Section */}
-          <Box className="events-promos-section" sx={{ mb: 8 }}>
-            <Grid container spacing={3}>
-              {upcomingEvents.map((event, index) => (
-                <Grid item xs={12} md={4} key={index}>
-                  <Card sx={{ 
-                    backgroundColor: '#222', 
-                    height: '100%',
-                    borderRadius: 2,
-                    overflow: 'hidden',
-                    transition: 'transform 0.3s ease',
-                    '&:hover': {
-                      transform: 'translateY(-5px)'
-                    }
-                  }}>
-                    <CardMedia
+          {/* Gallery Section - Replacing Events Section */}
+          <Box sx={{ mb: 8 }}>
+            <Typography 
+              variant="h5" 
+              sx={{ 
+                textAlign: 'center',
+                mb: 4,
+                color: 'white',
+                fontWeight: 600
+              }}
+            >
+              EXPERIENCE THE ATMOSPHERE
+            </Typography>
+            
+            <Grid container spacing={2}>
+              {atmosphereImages.map((image, index) => (
+                <Grid item xs={12} sm={6} md={3} key={index}>
+                  <Box
+                    sx={{
+                      position: 'relative',
+                      height: index % 2 === 0 ? 280 : 350,
+                      borderRadius: 2,
+                      overflow: 'hidden',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        transform: 'scale(1.03)',
+                        boxShadow: '0 12px 24px rgba(0,0,0,0.4)',
+                        '& .overlay-text': {
+                          opacity: 1,
+                        }
+                      }
+                    }}
+                  >
+                    <Box
                       component="img"
-                      height="180"
-                      image={event.image || `https://source.unsplash.com/400x200/?${event.title.toLowerCase().replace(' ','-')}`}
-                      alt={event.title}
+                      src={image.url}
+                      alt={image.title}
+                      sx={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                      }}
                     />
-                    <CardContent sx={{ p: 3 }}>
-                      <Typography 
-                        gutterBottom 
-                        variant="h6" 
-                        component="h3"
-                        sx={{ color: 'white', fontWeight: 600 }}
-                      >
-                        {event.title}
+                    <Box
+                      className="overlay-text"
+                      sx={{
+                        position: 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        backgroundColor: 'rgba(0,0,0,0.7)',
+                        padding: 2,
+                        transition: 'opacity 0.3s ease',
+                        opacity: 0,
+                      }}
+                    >
+                      <Typography variant="body1" sx={{ color: 'white', fontWeight: 500 }}>
+                        {image.title}
                       </Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                        <EventIcon sx={{ color: '#d38236', mr: 1, fontSize: 18 }} />
-                        <Typography variant="subtitle2" sx={{ color: '#d38236' }}>
-                          {event.date}
-                        </Typography>
-                      </Box>
-                      <Typography variant="body2" sx={{ color: '#bbb' }}>
-                        {event.description}
-                      </Typography>
-                    </CardContent>
-                  </Card>
+                    </Box>
+                  </Box>
                 </Grid>
               ))}
             </Grid>

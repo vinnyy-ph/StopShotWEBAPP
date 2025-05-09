@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Box, 
   Typography, 
@@ -9,165 +9,212 @@ import {
   Container,
   Tab, 
   Tabs,
-  Chip, 
   Divider,
-  IconButton,
-  Badge
+  CircularProgress
 } from '@mui/material';
 import SportsBasketballIcon from '@mui/icons-material/SportsBasketball';
 import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
-import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import SportsBarIcon from '@mui/icons-material/SportsBar';
 import LunchDiningIcon from '@mui/icons-material/LunchDining';
 import TapasIcon from '@mui/icons-material/Tapas';
 import LocalBarIcon from '@mui/icons-material/LocalBar';
-import StarIcon from '@mui/icons-material/Star';
+import LocalDiningIcon from '@mui/icons-material/LocalDining';
+import SetMealIcon from '@mui/icons-material/SetMeal';
+import RamenDiningIcon from '@mui/icons-material/RamenDining';
+import BrunchDiningIcon from '@mui/icons-material/BrunchDining';
+import EggIcon from '@mui/icons-material/Egg';
+import RiceBowlIcon from '@mui/icons-material/RiceBowl';
+import BakeryDiningIcon from '@mui/icons-material/BakeryDining';
+import LocalPizzaIcon from '@mui/icons-material/LocalPizza';
+import IcecreamIcon from '@mui/icons-material/Icecream';
+import EmojiFoodBeverageIcon from '@mui/icons-material/EmojiFoodBeverage';
+import LocalCafeIcon from '@mui/icons-material/LocalCafe';
+import GrassIcon from '@mui/icons-material/Grass';
+import CelebrationIcon from '@mui/icons-material/Celebration';
 import '../styles/pages/menupage.css';
 
-// Enhanced menu data structure
-const menuData = [
-  {
-    category: 'Appetizers',
-    icon: <TapasIcon />,
-    description: 'Perfect for sharing while watching the game',
-    items: [
-      {
-        name: 'Loaded Nachos Supreme',
-        description: 'Crispy tortilla chips smothered in cheese, jalapeños, guacamole, and pulled pork',
-        price: '$14',
-        image: 'https://placehold.co/300x200',
-        popular: true,
-        spicy: true
-      },
-      {
-        name: 'Championship Wings',
-        description: 'Choose from 6 signature sauces - from mild to "challenge the ref" hot',
-        price: '$16',
-        image: 'https://placehold.co/300x200',
-        popular: true,
-        spicy: true
-      },
-      {
-        name: 'MVP Quesadillas',
-        description: 'Grilled tortillas stuffed with cheese, chicken, peppers and our signature sauce',
-        price: '$12',
-        image: 'https://placehold.co/300x200'
-      },
-      {
-        name: 'Slam Dunk Sliders',
-        description: 'Three mini burgers with different toppings - bacon, cheese, and BBQ',
-        price: '$13.50',
-        image: 'https://placehold.co/300x200',
-        popular: true
-      },
-    ]
-  },
-  {
-    category: 'Main Event',
-    icon: <LunchDiningIcon />,
-    description: 'Heavy hitters that satisfy those game day cravings',
-    items: [
-      {
-        name: 'Overtime Burger',
-        description: 'Double beef patty, bacon, cheese, caramelized onions, and secret sauce on a brioche bun',
-        price: '$17.99',
-        image: 'https://placehold.co/300x200',
-        popular: true
-      },
-      {
-        name: 'Three-Point Chicken Sandwich',
-        description: 'Crispy fried chicken breast with spicy mayo, pickles, and slaw',
-        price: '$15.99',
-        image: 'https://placehold.co/300x200'
-      },
-      {
-        name: 'Grand Slam Ribs',
-        description: 'Fall-off-the-bone BBQ ribs served with fries and homemade coleslaw',
-        price: '$22.99',
-        image: 'https://placehold.co/300x200',
-        popular: true
-      },
-      {
-        name: 'Power Forward Pizza',
-        description: 'Hand-stretched dough topped with premium ingredients and melted cheese',
-        price: '$18.99',
-        image: 'https://placehold.co/300x200'
-      }
-    ]
-  },
-  {
-    category: 'Signature Cocktails',
-    icon: <LocalBarIcon />,
-    description: 'Championship-worthy mixed drinks',
-    items: [
-      {
-        name: 'The Slam Dunk',
-        description: 'Bourbon, orange bitters, maple syrup, and a flaming orange peel',
-        price: '$12',
-        image: 'https://placehold.co/300x200',
-        popular: true
-      },
-      {
-        name: 'Touchdown Tequila',
-        description: 'Premium tequila, lime, agave, and a splash of jalapeño for the brave',
-        price: '$14',
-        image: 'https://placehold.co/300x200',
-        spicy: true
-      },
-      {
-        name: 'Buzzer Beater',
-        description: 'Vodka, fresh berries, lemon, and topped with champagne',
-        price: '$13',
-        image: 'https://placehold.co/300x200'
-      },
-      {
-        name: 'The MVP Mojito',
-        description: 'White rum, fresh mint, lime, sugar, and a splash of soda',
-        price: '$11',
-        image: 'https://placehold.co/300x200'
-      }
-    ]
-  },
-  {
-    category: 'Draft Beers',
-    icon: <SportsBarIcon />,
-    description: 'Cold brews for the best plays',
-    items: [
-      {
-        name: 'Local Champion IPA',
-        description: 'Hoppy, citrusy brew with a smooth finish from our neighborhood brewery',
-        price: '$7',
-        image: 'https://placehold.co/300x200',
-        popular: true
-      },
-      {
-        name: 'Extra Time Lager',
-        description: 'Crisp, refreshing beer that goes into overtime with flavor',
-        price: '$6',
-        image: 'https://placehold.co/300x200'
-      },
-      {
-        name: 'Underdog Amber Ale',
-        description: 'Malty, medium-bodied brew with caramel undertones',
-        price: '$7',
-        image: 'https://placehold.co/300x200'
-      },
-      {
-        name: 'Seasonal Draft Special',
-        description: 'Ask your server about our rotating tap selection',
-        price: '$8',
-        image: 'https://placehold.co/300x200'
-      }
-    ]
-  }
-];
+// Menu item type
+interface MenuItem {
+  menu_id: number;
+  name: string;
+  description: string;
+  price: string;
+  category: string;
+  is_available: boolean;
+  created_at: string;
+  updated_at: string;
+  image_url: string | null;
+}
+
+// Category with its items
+interface MenuCategory {
+  category: string;
+  icon: JSX.Element;
+  description: string;
+  items: MenuItem[];
+}
 
 const MenuPage: React.FC = () => {
   const [currentTab, setCurrentTab] = useState(0);
+  const [menuCategories, setMenuCategories] = useState<MenuCategory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchMenuItems();
+  }, []);
+
+  const fetchMenuItems = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('http://127.0.0.1:8000/api/menus/list');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch menu items');
+      }
+      
+      const data: MenuItem[] = await response.json();
+      
+      // Group menu items by category
+      const categorizedMenu = processCategorizedData(data);
+      setMenuCategories(categorizedMenu);
+      
+    } catch (error) {
+      console.error('Error fetching menu data:', error);
+      setError('Unable to load menu. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Function to get icon based on category
+  const getCategoryIcon = (category: string): JSX.Element => {
+    switch (category) {
+      case 'APPETIZERS':
+        return <TapasIcon />;
+      case 'BEEF':
+        return <LocalDiningIcon />;
+      case 'SEAFOOD':
+        return <SetMealIcon />;
+      case 'PORK':
+        return <LunchDiningIcon />;
+      case 'CHICKEN':
+        return <BrunchDiningIcon />;
+      case 'SOUP':
+        return <RamenDiningIcon />;
+      case 'VEGGIES':
+        return <GrassIcon />;
+      case 'RICE':
+        return <RiceBowlIcon />;
+      case 'SIZZLERS':
+        return <LocalDiningIcon />;
+      case 'BURGER':
+        return <LunchDiningIcon />;
+      case 'SILOG MEALS':
+        return <EggIcon />;
+      case 'BEER':
+        return <SportsBarIcon />;
+      case 'SOFTDRINKS':
+        return <LocalCafeIcon />;
+      case 'COCKTAILS':
+        return <LocalBarIcon />;
+      case 'TOWER':
+        return <CelebrationIcon />;
+      case 'DESSERT':
+        return <IcecreamIcon />;
+      case 'PIZZA':
+        return <LocalPizzaIcon />;
+      case 'PASTA':
+        return <BakeryDiningIcon />;
+      default:
+        return <EmojiFoodBeverageIcon />;
+    }
+  };
+
+  // Function to get category description
+  const getCategoryDescription = (category: string): string => {
+    switch (category) {
+      case 'APPETIZERS':
+        return 'Perfect for sharing while watching the game';
+      case 'BEEF':
+        return 'Premium beef selections for the true meat lover';
+      case 'SEAFOOD':
+        return 'Fresh catches from the ocean to your table';
+      case 'PORK':
+        return 'Savory pork dishes to satisfy your cravings';
+      case 'CHICKEN':
+        return 'Delicious chicken dishes prepared to perfection';
+      case 'SOUP':
+        return 'Comforting broths to warm your soul';
+      case 'VEGGIES':
+        return 'Fresh vegetables for a healthy choice';
+      case 'RICE':
+        return 'Satisfying rice dishes for your meal';
+      case 'SIZZLERS':
+        return 'Hot plates that sizzle with flavor';
+      case 'BURGER':
+        return 'Juicy burgers that hit the spot';
+      case 'SILOG MEALS':
+        return 'Filipino breakfast classics served all day';
+      case 'BEER':
+        return 'Cold brews for the best plays';
+      case 'SOFTDRINKS':
+        return 'Refreshing beverages to quench your thirst';
+      case 'COCKTAILS':
+        return 'Expertly crafted cocktails for every taste';
+      case 'TOWER':
+        return 'Impressive drink towers perfect for sharing';
+      case 'DESSERT':
+        return 'Sweet endings to your perfect meal';
+      case 'PIZZA':
+        return 'Handcrafted pizzas with premium toppings';
+      case 'PASTA':
+        return 'Italian-inspired pasta dishes';
+      default:
+        return 'Delicious options to enjoy';
+    }
+  };
+
+  // Process and categorize the data
+  const processCategorizedData = (data: MenuItem[]): MenuCategory[] => {
+    // Get unique categories
+    const categories = [...new Set(data.map(item => item.category))];
+    
+    // Create category objects with their items
+    return categories.map(category => {
+      return {
+        category,
+        icon: getCategoryIcon(category),
+        description: getCategoryDescription(category),
+        items: data.filter(item => item.category === category && item.is_available)
+      };
+    });
+  };
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setCurrentTab(newValue);
   };
+
+  // Format price to Philippine Peso
+  const formatPrice = (price: string) => {
+    return `₱${parseFloat(price).toFixed(2)}`;
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#121212' }}>
+        <CircularProgress sx={{ color: '#d38236' }} />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#121212', color: 'white' }}>
+        <Typography variant="h5">{error}</Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box className="menu-page" sx={{ backgroundColor: '#121212', pt: 2, pb: 8 }}>
@@ -175,7 +222,7 @@ const MenuPage: React.FC = () => {
       <Box 
         className="menu-hero" 
         sx={{ 
-          backgroundImage: 'linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.9)), url(https://placehold.co/1200x400)',
+          backgroundImage: 'linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.9)), url(https://plus.unsplash.com/premium_photo-1701766169067-412484e22158?q=80&w=2664&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           py: 6,
@@ -251,7 +298,7 @@ const MenuPage: React.FC = () => {
               }
             }}
           >
-            {menuData.map((category, index) => (
+            {menuCategories.map((category, index) => (
               <Tab 
                 key={index} 
                 label={
@@ -278,7 +325,7 @@ const MenuPage: React.FC = () => {
 
       {/* Current Category Section */}
       <Container maxWidth="lg">
-        {menuData.map((category, categoryIndex) => (
+        {menuCategories.map((category, categoryIndex) => (
           <Box 
             key={category.category} 
             className="menu-category-section"
@@ -338,8 +385,8 @@ const MenuPage: React.FC = () => {
 
             {/* Menu Items Grid */}
             <Grid container spacing={3}>
-              {category.items.map((item, index) => (
-                <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
+              {category.items.map((item) => (
+                <Grid item xs={12} sm={6} md={4} lg={3} key={item.menu_id}>
                   <Card 
                     className="menu-card"
                     sx={{
@@ -355,34 +402,14 @@ const MenuPage: React.FC = () => {
                       }
                     }}
                   >
-                    {/* Badges for popular/spicy items */}
-                    <Box sx={{ position: 'absolute', top: 10, right: 10, display: 'flex', gap: 1 }}>
-                      {item.popular && (
-                        <Chip 
-                          icon={<StarIcon fontSize="small" />} 
-                          label="Fan Favorite" 
-                          size="small"
-                          sx={{ 
-                            backgroundColor: 'rgba(211, 130, 54, 0.9)',
-                            color: 'white',
-                            fontWeight: 'bold'
-                          }}
-                        />
-                      )}
-                      {item.spicy && (
-                        <IconButton size="small" sx={{ backgroundColor: 'rgba(255,59,48,0.9)', p: 0.5 }}>
-                          <LocalFireDepartmentIcon fontSize="small" sx={{ color: 'white' }} />
-                        </IconButton>
-                      )}
-                    </Box>
-                    
                     <CardMedia
                       component="img"
-                      image={item.image}
+                      image={item.image_url || 'https://placehold.co/300x200'}
                       alt={item.name}
                       className="menu-card-image"
                       sx={{ 
-                        height: 180,
+                        height: 260,
+                        width: "100%",
                         objectFit: 'cover'
                       }}
                     />
@@ -408,7 +435,7 @@ const MenuPage: React.FC = () => {
                             fontSize: '1.2rem'
                           }}
                         >
-                          {item.price}
+                          {formatPrice(item.price)}
                         </Typography>
                       </Box>
                       <Typography 
@@ -420,7 +447,7 @@ const MenuPage: React.FC = () => {
                           lineHeight: 1.5
                         }}
                       >
-                        {item.description}
+                        {item.description || 'A delicious dish prepared by our expert chefs'}
                       </Typography>
                     </CardContent>
                   </Card>
@@ -431,35 +458,9 @@ const MenuPage: React.FC = () => {
         ))}
       </Container>
       
-      {/* Legend Section */}
       <Container maxWidth="lg">
         <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)', my: 4 }} />
-        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 4, flexWrap: 'wrap' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Chip 
-              icon={<StarIcon fontSize="small" />} 
-              label="Fan Favorite" 
-              size="small"
-              sx={{ 
-                backgroundColor: 'rgba(211, 130, 54, 0.9)',
-                color: 'white'
-              }}
-            />
-            <Typography variant="body2" sx={{ ml: 1, color: '#aaa' }}>
-              Most popular choices
-            </Typography>
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <IconButton size="small" sx={{ backgroundColor: 'rgba(255,59,48,0.9)', p: 0.5, mr: 1 }}>
-              <LocalFireDepartmentIcon fontSize="small" sx={{ color: 'white' }} />
-            </IconButton>
-            <Typography variant="body2" sx={{ color: '#aaa' }}>
-              Spicy options
-            </Typography>
-          </Box>
-        </Box>
       </Container>
-      
     </Box>
   );
 };

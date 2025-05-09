@@ -11,7 +11,8 @@ from .views import (
     CreateEmployeeView,
     EmployeeListView,
     UpdateEmployeeView,
-    DeleteEmployeeView
+    DeleteEmployeeView,
+    CustomerListView  
 )
 from rest_framework.authtoken.views import obtain_auth_token
  
@@ -32,4 +33,5 @@ urlpatterns = [
     path('employees/<int:user_id>/delete/', DeleteEmployeeView.as_view(), name='delete-employee'),  # Delete employee endpoint
     path('api-token-auth/', obtain_auth_token, name='api_token_auth'),  # Token authentication endpoint
     path('auth/profile/', UserProfileView.as_view()),
+    path('customers/', CustomerListView.as_view(), name='customer-list'),
 ]

@@ -115,3 +115,9 @@ class EmployeeSerializer(serializers.ModelSerializer):
     def get_phone_number(self, obj):
         """Get phone number from phone_num field"""
         return str(obj.phone_num) if obj.phone_num else ''
+
+class CustomerSerializer(serializers.ModelSerializer):
+    """Serializer for listing customers"""
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'first_name', 'last_name', 'phone_num', 'role']
