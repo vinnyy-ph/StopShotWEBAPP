@@ -223,7 +223,7 @@ class _ReservationFormPageState extends State<ReservationFormPage> {
         'number_of_guests': int.parse(_numberOfGuestsController.text),
         'special_requests': _specialRequestsController.text,
         'status': _selectedStatus,
-        'room_type': _selectedRoomType == 'KARAOKE_ROOM' ? 'Karaoke Room' : 'Table',
+        'room_type': _selectedRoomType, // Use the raw enum value as expected by the API
       };
       
       // Add room_id if selected
@@ -913,5 +913,17 @@ class _ReservationFormPageState extends State<ReservationFormPage> {
         ),
       ),
     );
+  }
+
+  // Add this helper method to the _ReservationFormPageState class
+  String _getRoomTypeDisplayName(String roomTypeValue) {
+    switch (roomTypeValue) {
+      case 'TABLE':
+        return 'Table';
+      case 'KARAOKE_ROOM':
+        return 'Karaoke Room';
+      default:
+        return roomTypeValue;
+    }
   }
 }

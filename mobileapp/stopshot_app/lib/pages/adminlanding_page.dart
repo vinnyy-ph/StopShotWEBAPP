@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'reservation_page.dart';
 import '../services/reservation_service.dart';
 import '../models/reservation_model.dart';
+import 'feedback_page.dart';
 
 class AdminLandingPage extends StatefulWidget {
   @override
@@ -45,23 +46,92 @@ class _AdminLandingPageState extends State<AdminLandingPage> {
         "date": '${res.reservationDate.year}-${res.reservationDate.month.toString().padLeft(2, '0')}-${res.reservationDate.day.toString().padLeft(2, '0')}',
       }).toList();
       
-      // For other metrics, use dummy data for now
-      // In a real app, you would fetch these from appropriate API endpoints
+      // Include feedback count in metrics for the dashboard
+      int feedbackCount = await _fetchFeedbackCount();
+      
+      // Get recent feedback
+      List<dynamic> recentFeedback = await _fetchRecentFeedback();
+      
       return {
         "metrics": {
           "total_reservations": allReservations.length,
           "pending_reservations": pendingReservations.length,
           "confirmed_reservations": confirmedReservations.length,
           "canceled_reservations": cancelledReservations.length,
-          "employees": 12,
-          "menu_items": 42,
-          "feedback": 18,
+          "feedback": feedbackCount,
           "revenue_today": "\$2,450"
         },
         "recent_reservations": recentReservationsFormatted,
+        "recent_feedback": recentFeedback,
       };
     } catch (e) {
       throw Exception('Failed to load dashboard data: $e');
+    }
+  }
+  
+  // New method to fetch feedback count
+  Future<int> _fetchFeedbackCount() async {
+    try {
+      final storage = FlutterSecureStorage();
+      final token = await storage.read(key: 'auth_token');
+      
+      if (token == null) {
+        return 0; // Return 0 if not authenticated
+      }
+      
+      final response = await http.get(
+        Uri.parse('http://stopshotapp-env-2.eba-8srvpzqc.ap-southeast-2.elasticbeanstalk.com/api/feedback/'),
+        headers: {
+          'Authorization': 'Token $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        List<dynamic> feedbackList = json.decode(response.body);
+        return feedbackList.length;
+      } else {
+        print('Error fetching feedback count: ${response.statusCode}');
+        return 0;
+      }
+    } catch (e) {
+      print('Error fetching feedback count: $e');
+      return 0;
+    }
+  }
+
+  // Method to fetch recent feedback
+  Future<List<dynamic>> _fetchRecentFeedback() async {
+    try {
+      final storage = FlutterSecureStorage();
+      final token = await storage.read(key: 'auth_token');
+      
+      if (token == null) {
+        return []; // Return empty list if not authenticated
+      }
+      
+      final response = await http.get(
+        Uri.parse('http://stopshotapp-env-2.eba-8srvpzqc.ap-southeast-2.elasticbeanstalk.com/api/feedback/'),
+        headers: {
+          'Authorization': 'Token $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        List<dynamic> feedbackList = json.decode(response.body);
+        // Sort by creation date (newest first) and take top 3
+        feedbackList.sort((a, b) => 
+          DateTime.parse(b['created_at']).compareTo(DateTime.parse(a['created_at']))
+        );
+        return feedbackList.take(3).toList();
+      } else {
+        print('Error fetching recent feedback: ${response.statusCode}');
+        return [];
+      }
+    } catch (e) {
+      print('Error fetching recent feedback: $e');
+      return [];
     }
   }
 
@@ -74,6 +144,8 @@ class _AdminLandingPageState extends State<AdminLandingPage> {
         page = ReservationPage();
         break;
       case 'feedback':
+        page = FeedbackPage();
+        break;
       case 'menu':
       case 'employees':
         // Placeholder for future implementation
@@ -98,11 +170,11 @@ class _AdminLandingPageState extends State<AdminLandingPage> {
     Navigator.push(context, MaterialPageRoute(builder: (context) => page));
   }
 
-  // Build metric boxes for the dashboard
+  // Build metric boxes for the dashboard - fix overflow issues
   Widget _buildMetricBox(String title, String value, IconData icon) {
     return Container(
       width: 160,
-      height: 90,
+      height: 100, // Increased height to prevent overflow
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Color(0xFF262626),
@@ -123,12 +195,15 @@ class _AdminLandingPageState extends State<AdminLandingPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFFAAAAAA),
+              Flexible(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFFAAAAAA),
+                  ),
+                  overflow: TextOverflow.ellipsis, // Handle text overflow
                 ),
               ),
               Icon(
@@ -349,8 +424,148 @@ class _AdminLandingPageState extends State<AdminLandingPage> {
     );
   }
 
+  Widget _buildRecentFeedbackCard(List<dynamic> feedbacks) {
+    return Card(
+      color: Color(0xFF262626),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Recent Feedback',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => _navigateToSection('feedback'),
+                  child: Text(
+                    'View All',
+                    style: TextStyle(
+                      color: Color(0xFFD38236),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 12),
+            feedbacks.isEmpty
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        'No recent feedback found',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    ),
+                  )
+                : Column(
+                    children: feedbacks.map((feedback) {
+                      return Container(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              color: Color(0xFF363636),
+                              width: 1,
+                            ),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    CircleAvatar(
+                                      backgroundColor: Color(0xFFD38236),
+                                      child: Text(
+                                        feedback['user']['first_name'] != null && 
+                                        feedback['user']['first_name'].isNotEmpty
+                                            ? feedback['user']['first_name'][0].toUpperCase()
+                                            : feedback['user']['username'][0].toUpperCase(),
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 12),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '${feedback['user']['first_name'] ?? ''} ${feedback['user']['last_name'] ?? ''}'.trim(),
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        Text(
+                                          _formatDate(feedback['created_at']),
+                                          style: TextStyle(
+                                            color: Color(0xFFAAAAAA),
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                Row(
+                                  children: List.generate(
+                                    5,
+                                    (index) => Icon(
+                                      index < feedback['experience_rating'] ? Icons.star : Icons.star_border,
+                                      color: Color(0xFFD38236),
+                                      size: 14,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              feedback['feedback_text'] ?? '',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 14,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Helper method to format date
+  String _formatDate(String dateString) {
+    final date = DateTime.parse(dateString).toLocal();
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final isMobile = screenSize.width < 600;
+    
     return Scaffold(
       backgroundColor: Color(0xFF151515),
       appBar: AppBar(
@@ -360,39 +575,41 @@ class _AdminLandingPageState extends State<AdminLandingPage> {
               'assets/logo/logo.png',
               height: 36,
             ),
-            SizedBox(width: 12),
-            Text(
-              'StopShot Admin',
-              style: TextStyle(color: Colors.white),
-            ),
           ],
         ),
         backgroundColor: Color(0xFF1E1E1E),
         elevation: 0,
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh),
+            icon: Icon(Icons.refresh, color: Colors.white,),
             onPressed: () {
               setState(() {
                 _dashboardData = fetchDashboardData();
               });
             },
           ),
-          IconButton(
-            icon: Icon(Icons.notifications_outlined),
-            onPressed: () {
-              // Handle notifications
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.account_circle_outlined),
-            onPressed: () {
-              // Handle profile
-            },
-          ),
-          TextButton.icon(
+          // IconButton(
+          //   icon: Icon(Icons.notifications_outlined),
+          //   onPressed: () {
+          //     // Handle notifications
+          //   },
+          // ),
+          // IconButton(
+          //   icon: Icon(Icons.account_circle_outlined),
+          //   onPressed: () {
+          //     // Handle profile
+          //   },
+          // ),
+          // Convert logout to icon-only on mobile
+          isMobile ? IconButton(
+            icon: Icon(Icons.exit_to_app, color: Colors.white70),
             onPressed: () async {
-              // Clear token on logout
+              final storage = FlutterSecureStorage();
+              await storage.delete(key: 'auth_token');
+              Navigator.pop(context);
+            },
+          ) : TextButton.icon(
+            onPressed: () async {
               final storage = FlutterSecureStorage();
               await storage.delete(key: 'auth_token');
               Navigator.pop(context);
@@ -447,6 +664,7 @@ class _AdminLandingPageState extends State<AdminLandingPage> {
           final data = snapshot.data!;
           final metrics = data['metrics'];
           final recentReservations = data['recent_reservations'];
+          final recentFeedback = data['recent_feedback'];
           
           return SingleChildScrollView(
             padding: EdgeInsets.all(16),
@@ -457,7 +675,7 @@ class _AdminLandingPageState extends State<AdminLandingPage> {
                 Text(
                   'Dashboard',
                   style: TextStyle(
-                    fontSize: 28,
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
@@ -466,7 +684,7 @@ class _AdminLandingPageState extends State<AdminLandingPage> {
                 Text(
                   'Welcome back, Admin',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 14,
                     color: Color(0xFFAAAAAA),
                   ),
                 ),
@@ -476,83 +694,174 @@ class _AdminLandingPageState extends State<AdminLandingPage> {
                 Text(
                   'Key Metrics',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                 ),
                 SizedBox(height: 16),
                 
-                // Metrics grid
-                Wrap(
-                  spacing: 16,
-                  runSpacing: 16,
+                // Metrics cards - redesigned for mobile
+                Column(
                   children: [
-                    _buildMetricBox('Reservations', '${metrics["total_reservations"]}', Icons.book_online),
-                    _buildMetricBox('Pending', '${metrics["pending_reservations"]}', Icons.pending_actions),
-                    _buildMetricBox('Confirmed', '${metrics["confirmed_reservations"]}', Icons.check_circle),
-                    _buildMetricBox('Canceled', '${metrics["canceled_reservations"]}', Icons.cancel),
+                    // Row 1: Reservations + Feedback
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildMetricBox('All Reservations', '${metrics["total_reservations"]}', Icons.book_online),
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: _buildMetricBox('Feedback', '${metrics["feedback"]}', Icons.feedback),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 12),
+                    
+                    // Row 2: Status metrics - Pending, Confirmed, Canceled
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildStatusMetricBox('Pending', '${metrics["pending_reservations"]}', Icons.pending_actions, Colors.orange),
+                        ),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: _buildStatusMetricBox('Confirmed', '${metrics["confirmed_reservations"]}', Icons.check_circle, Colors.green),
+                        ),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: _buildStatusMetricBox('Canceled', '${metrics["canceled_reservations"]}', Icons.cancel, Colors.red),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
                 
-                SizedBox(height: 32),
+                SizedBox(height: 30),
                 
-                // Quick access section
+                // Quick actions section - replacing the Management grid
                 Text(
-                  'Management',
+                  'Quick Actions',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                 ),
                 SizedBox(height: 16),
                 
-                // Management cards in a grid
-                GridView.count(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
+                // Quick action buttons
+                Row(
                   children: [
-                    _buildFeatureCard(
-                      'Reservations',
-                      'Manage customer bookings and tables',
-                      Icons.book_online,
-                      'reservations',
+                    Expanded(
+                      child: _buildActionButton(
+                        'Reservations',
+                        Icons.book_online,
+                        () => _navigateToSection('reservations'),
+                      ),
                     ),
-                    _buildFeatureCard(
-                      'Menu',
-                      'Manage food items and categories',
-                      Icons.restaurant_menu,
-                      'menu',
-                    ),
-                    _buildFeatureCard(
-                      'Feedback',
-                      'Review customer comments and ratings',
-                      Icons.feedback,
-                      'feedback',
-                    ),
-                    _buildFeatureCard(
-                      'Employees',
-                      'Manage staff and schedules',
-                      Icons.people,
-                      'employees',
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: _buildActionButton(
+                        'Feedback',
+                        Icons.feedback,
+                        () => _navigateToSection('feedback'),
+                      ),
                     ),
                   ],
                 ),
                 
-                SizedBox(height: 32),
+                SizedBox(height: 30),
                 
                 // Recent reservations
                 _buildRecentReservationsCard(recentReservations),
+                
+                SizedBox(height: 24),
+
+                // Recent feedback
+                _buildRecentFeedbackCard(recentFeedback),
                 
                 SizedBox(height: 24),
               ],
             ),
           );
         },
+      ),
+    );
+  }
+
+  // Fix the status metric box that also has overflow
+  Widget _buildStatusMetricBox(String title, String value, IconData icon, Color color) {
+    return Container(
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Color(0xFF262626),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 20),
+          SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+            overflow: TextOverflow.ellipsis, // Handle potential overflow
+          ),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 12,
+              color: Color(0xFFAAAAAA),
+            ),
+            overflow: TextOverflow.ellipsis, // Handle potential overflow
+          ),
+        ],
+      ),
+    );
+  }
+
+  // New action button widget
+  Widget _buildActionButton(String title, IconData icon, VoidCallback onPressed) {
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Color(0xFF262626),
+        padding: EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: Color(0xFF363636), width: 1),
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            color: Color(0xFFD38236),
+            size: 24,
+          ),
+          SizedBox(height: 8),
+          Text(
+            title,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+            ),
+          ),
+        ],
       ),
     );
   }
