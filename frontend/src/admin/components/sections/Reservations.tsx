@@ -336,7 +336,7 @@ const filteredReservations = getFilteredReservationsByStatus().filter(res =>
             <Button 
               variant="contained" 
               startIcon={<AddIcon />} 
-              className="add-button"
+              className="add-btn"
               onClick={() => setAddReservationDialog(true)}
             >
               Add New

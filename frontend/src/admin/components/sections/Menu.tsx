@@ -149,14 +149,14 @@ const StyledSearchField = styled(TextField)(({ theme }) => ({
 }));
 
 const StyledAddButton = styled(Button)(({ theme }) => ({
-  backgroundColor: '#1976d2',
+  backgroundColor: '#d38236',
   color: 'white',
   textTransform: 'none',
   borderRadius: 4,
   boxShadow: 'none',
   '&:hover': {
-    backgroundColor: '#1565c0',
-    boxShadow: 'none',
+    backgroundColor: '#c06e29',
+    boxShadow: '0 2px 8px rgba(211, 130, 54, 0.4)',
   }
 }));
 
