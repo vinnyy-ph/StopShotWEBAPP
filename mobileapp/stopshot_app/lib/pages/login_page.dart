@@ -95,6 +95,24 @@ class _LoginScreenState extends State<LoginScreen> {
                         );
                       }
                     },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color.fromARGB(
+                        255,
+                        208,
+                        131,
+                        53,
+                      ), // Change this color to any you want
+                      foregroundColor:
+                          Colors.white, // Change the text color if needed
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      textStyle: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                     child: Text('Login'),
                   ),
                 ),
