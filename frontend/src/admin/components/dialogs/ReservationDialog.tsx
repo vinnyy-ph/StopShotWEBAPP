@@ -52,12 +52,15 @@ const ReservationDialog: React.FC<ReservationDialogProps> = ({
   // Format the time
   const formatTime = (timeString: string) => {
     try {
+      if (!timeString) return '';
+      
+      // Handle HH:MM:SS format
       if (timeString.includes(':')) {
         const [hours, minutes] = timeString.split(':');
         const hourNum = parseInt(hours, 10);
         const ampm = hourNum >= 12 ? 'PM' : 'AM';
         const hour12 = hourNum % 12 || 12;
-        return `${hour12}:${minutes} ${ampm}`;
+        return `${hour12}:${minutes.substring(0, 2)} ${ampm}`;
       }
       return timeString;
     } catch (e) {
@@ -149,13 +152,13 @@ const ReservationDialog: React.FC<ReservationDialogProps> = ({
                 </Box>
               </Box>
               
-              <Box mb={2} display="flex" alignItems="center">
+              {/* <Box mb={2} display="flex" alignItems="center">
                 <PhoneIcon sx={{ mr: 1, color: '#d38236' }} />
                 <Box>
                   <Typography variant="subtitle2" color="text.secondary">Phone</Typography>
                   <Typography variant="body1">{reservation.guest_phone || 'Not provided'}</Typography>
                 </Box>
-              </Box>
+              </Box> */}
               
               <Box mb={2} display="flex" alignItems="center">
                 <GroupIcon sx={{ mr: 1, color: '#d38236' }} />
@@ -186,7 +189,7 @@ const ReservationDialog: React.FC<ReservationDialogProps> = ({
               <Box mb={2} display="flex" alignItems="center">
                 <ChairIcon sx={{ mr: 1, color: '#d38236' }} />
                 <Box>
-                  <Typography variant="subtitle2" color="text.secondary">Table Type</Typography>
+                  <Typography variant="subtitle2" color="text.secondary">Reservation Type</Typography>
                   <Typography variant="body1">
                     {reservation.room?.room_name || 'Unassigned'}
                   </Typography>
@@ -235,19 +238,23 @@ const ReservationDialog: React.FC<ReservationDialogProps> = ({
         }}
       >
         <Button onClick={onClose} color="inherit">Close</Button>
-        <Button 
-          onClick={onEdit} 
-          variant="contained" 
-          startIcon={<EditIcon />}
-          sx={{
-            bgcolor: '#d38236',
-            '&:hover': {
-              bgcolor: '#b05e1d'
-            }
-          }}
-        >
-          Edit Reservation
-        </Button>
+        
+        {/* Only show edit button if not confirmed or cancelled */}
+        {reservation.status !== 'CONFIRMED' && reservation.status !== 'CANCELLED' && (
+          <Button 
+            onClick={onEdit} 
+            variant="contained" 
+            startIcon={<EditIcon />}
+            sx={{
+              bgcolor: '#d38236',
+              '&:hover': {
+                bgcolor: '#b05e1d'
+              }
+            }}
+          >
+            Edit Reservation
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );

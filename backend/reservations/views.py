@@ -12,13 +12,14 @@ from .serializers import (
     RoomSerializer
 )
 from .permissions import IsOwnerOrAdmin
+from django.core.mail import EmailMultiAlternatives
+from django.utils.html import strip_tags
 
 from rest_framework.views import APIView
 import datetime
 from django.utils import timezone
 from django.db.models import Q
 from django.contrib.auth import get_user_model
-from django.core.mail import send_mail
 from django.conf import settings
 
 VENUE_TOTAL_OPERATING_HOURS_PER_BUSINESS_DAY = datetime.timedelta(hours=9)
@@ -154,10 +155,12 @@ class ReservationViewSet(viewsets.ModelViewSet):
         serializer.save(user=user)
         reservation = serializer.instance # Get the created reservation instance
 
-        # Send email notification to management
+        # Send email notification to management with styled HTML
         try:
             subject = f"New Reservation Created - ID: {reservation.id}"
-            message_body = f"""
+            
+            # Plain text version as fallback
+            plain_text = f"""
 A new reservation has been created with the following details:
 
 Guest Name: {reservation.guest_name}
@@ -172,13 +175,154 @@ Special Requests: {reservation.special_requests or 'None'}
 Status: {reservation.get_status_display()}
 Created At: {reservation.created_at.strftime('%Y-%m-%d %H:%M:%S')}
 """
-            send_mail(
-                subject,
-                message_body,
-                settings.EMAIL_HOST_USER,
-                ['stopshot.management@gmail.com'],
-                fail_silently=False,
+
+            # Create HTML content with styling
+            html_content = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <title>New Reservation Notification</title>
+                <style>
+                    body {{
+                        background-color: #121212;
+                        color: #e0e0e0;
+                        font-family: 'Arial', sans-serif;
+                        margin: 0;
+                        padding: 0;
+                    }}
+                    .container {{
+                        max-width: 600px;
+                        margin: 0 auto;
+                        padding: 20px;
+                        background-color: #1e1e1e;
+                        border: 1px solid #333333;
+                    }}
+                    .header {{
+                        text-align: center;
+                        padding: 20px 0;
+                        border-bottom: 2px solid #ff9800;
+                        background-color: #252525;
+                    }}
+                    .logo {{
+                        max-width: 150px;
+                        height: auto;
+                        background-color: #252525;
+                        padding: 10px;
+                        border-radius: 5px;
+                    }}
+                    .content {{
+                        padding: 20px;
+                        background-color: #1e1e1e;
+                        border-radius: 8px;
+                        margin-top: 20px;
+                    }}
+                    .content p {{
+                        color: #e0e0e0 !important;
+                    }}
+                    .box {{
+                        background-color: #252525;
+                        border-left: 4px solid #ff9800;
+                        padding: 15px;
+                        margin: 15px 0;
+                        border-radius: 4px;
+                        color: #e0e0e0;
+                    }}
+                    .footer {{
+                        margin-top: 30px;
+                        text-align: center;
+                        font-size: 12px;
+                        color: #aaaaaa;
+                        border-top: 1px solid #333333;
+                        padding-top: 15px;
+                    }}
+                    h1, h2 {{
+                        color: #ff9800;
+                    }}
+                    .highlight {{
+                        color: #ff9800;
+                        font-weight: bold;
+                    }}
+                    .cta-button {{
+                        display: inline-block;
+                        background-color: #ff9800;
+                        color: #ffffff !important;
+                        padding: 10px 20px;
+                        text-decoration: none;
+                        border-radius: 4px;
+                        font-weight: bold;
+                        margin-top: 20px;
+                    }}
+                    a {{
+                        color: #64b5f6;
+                        text-decoration: none;
+                    }}
+                    .label {{
+                        font-weight: bold;
+                        min-width: 150px;
+                        display: inline-block;
+                    }}
+                    .value {{
+                        color: #e0e0e0;
+                    }}
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <img src="https://i.imgur.com/6Hf2QI2.png" alt="StopShot Sports Bar" class="logo">
+                        <h1>New Reservation Alert</h1>
+                    </div>
+                    <div class="content">
+                        <p style="color: #e0e0e0;">A new reservation has been created with ID: <span class="highlight">#{reservation.id}</span></p>
+                        
+                        <h2>Customer Information</h2>
+                        <div class="box">
+                            <p><span class="label">Guest Name:</span> <span class="value">{reservation.guest_name}</span></p>
+                            <p><span class="label">Guest Email:</span> <span class="value">{reservation.guest_email}</span></p>
+                        </div>
+                        
+                        <h2>Reservation Details</h2>
+                        <div class="box">
+                            <p><span class="label">Date:</span> <span class="value">{reservation.reservation_date.strftime('%A, %B %d, %Y')}</span></p>
+                            <p><span class="label">Time:</span> <span class="value">{reservation.reservation_time.strftime('%I:%M %p')}</span></p>
+                            <p><span class="label">Room Type:</span> <span class="value">{reservation.get_room_type_display()}</span></p>
+                            <p><span class="label">Number of Guests:</span> <span class="value">{reservation.number_of_guests}</span></p>
+                            <p><span class="label">Duration:</span> <span class="value">{str(reservation.duration)}</span></p>
+                            <p><span class="label">Special Requests:</span> <span class="value">{reservation.special_requests or 'None'}</span></p>
+                        </div>
+                        
+                        <h2>Status Information</h2>
+                        <div class="box">
+                            <p><span class="label">Status:</span> <span class="highlight">{reservation.get_status_display()}</span></p>
+                            <p><span class="label">Created At:</span> <span class="value">{reservation.created_at.strftime('%Y-%m-%d %H:%M:%S')}</span></p>
+                        </div>
+                        
+                        <center>
+                            <a href="https://stopshotsportsbar.com/admin/reservations" class="cta-button">MANAGE RESERVATIONS</a>
+                        </center>
+                    </div>
+                    <div class="footer">
+                        <p>2025 StopShot Sports Bar. All rights reserved.</p>
+                        <p>This is an automated message from the reservation system.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """
+            
+            # Create email with both HTML and plain text versions
+            email = EmailMultiAlternatives(
+                subject=subject,
+                body=strip_tags(plain_text),
+                from_email=settings.EMAIL_HOST_USER,
+                to=['stopshot.management@gmail.com'],
             )
+            
+            # Attach HTML content
+            email.attach_alternative(html_content, "text/html")
+            email.send()
+            
             print(f"Management notification email sent for new reservation {reservation.id}")
         except Exception as e:
             print(f"Error sending management notification email for new reservation {reservation.id}: {e}")

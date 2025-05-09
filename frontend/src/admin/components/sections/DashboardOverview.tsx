@@ -67,7 +67,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           '#4CAF50',
           '#8BC34A',
           '#FFC107',
-          '#FF9800',
+          '#d38236',
           '#F44336'
         ],
         hoverOffset: 4

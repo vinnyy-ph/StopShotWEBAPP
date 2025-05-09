@@ -162,30 +162,49 @@ const ReservationsPage: React.FC = () => {
         return date;
       });
       
-      // For each day, get its availability summary
       const mockAvailability: {[key: number]: DayAvailability} = {};
       
-      // Using Promise.all would be more efficient but might cause rate limiting
-      // This is a sequential approach to avoid overloading the API
+      // Define business hours (all possible time slots)
+      const businessHours = [
+        '4:00 PM', '5:00 PM', '6:00 PM', '7:00 PM', '8:00 PM', 
+        '9:00 PM', '10:00 PM', '11:00 PM', '12:00 AM', '1:00 AM'
+      ];
+      
+      // For each day, check time slot availability
       for (const [index, date] of daysToCheck.entries()) {
         try {
-          // Call the documented endpoint from README
-          const response = await axios.get(`${API_BASE_URL}/availability/summary/`, { 
+          // Get booked slots for this specific date and room type
+          const response = await axios.get(`${API_BASE_URL}/reservations/`, { 
             params: { 
-              date: date 
+              reservation_date: date,
+              status: 'CONFIRMED',
+              room__room_type: reservationType === 'table' ? 'TABLE' : 'KARAOKE_ROOM'
             }
           });
           
-          const day = index + 1;
-          const data = response.data;
+          // Convert booked slots to our time format
+          const bookedSlots = response.data.map((slot: any) => {
+            const time = new Date(`1970-01-01T${slot.reservation_time}`);
+            const hours = time.getHours();
+            const minutes = time.getMinutes();
+            
+            let formattedHour = hours % 12;
+            if (formattedHour === 0) formattedHour = 12;
+            
+            return `${formattedHour}:${String(minutes).padStart(2, '0')} ${hours >= 12 ? 'PM' : 'AM'}`;
+          });
           
-          // Map the API response to our interface
+          // Calculate available slots
+          const availableSlots = businessHours.filter(slot => !bookedSlots.includes(slot));
+          const availableSlotCount = availableSlots.length;
+          
+          const day = index + 1;
+          
+          // Set availability based on number of available slots
           mockAvailability[day] = {
-            isAvailable: data.availability[reservationType === 'table' ? 'TABLE' : 'KARAOKE_ROOM'],
-            // Consider it "busy" if percentage_booked is high but not unavailable
-            isBusy: data.availability_by_type?.[reservationType === 'table' ? 'TABLE' : 'KARAOKE_ROOM']?.availability_status === 'LIMITED_AVAILABILITY',
-            // Special events aren't explicitly specified in the API, using percentage_booked as indicator
-            isSpecialEvent: false
+            isAvailable: availableSlotCount > 0,
+            isBusy: availableSlotCount > 0 && availableSlotCount <= 3, // Limited availability if 3 or fewer slots
+            isSpecialEvent: false // Keep any existing special event logic
           };
         } catch (err) {
           console.error(`Error fetching availability for date ${date}:`, err);
@@ -196,7 +215,7 @@ const ReservationsPage: React.FC = () => {
     } catch (error) {
       console.error('Error fetching availability:', error);
       
-      // Using same fallback mock data as before
+      // Same fallback mock data as before
       const mockAvailability: {[key: number]: DayAvailability} = {};
       const busyDays = [5, 12, 19, 25];
       const specialEventDays = [8, 15, 22];

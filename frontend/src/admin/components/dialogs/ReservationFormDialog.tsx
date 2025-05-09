@@ -16,7 +16,8 @@ import {
   FormHelperText,
   IconButton,
   CircularProgress,
-  SelectChangeEvent
+  SelectChangeEvent,
+  Alert
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
@@ -24,7 +25,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import CloseIcon from '@mui/icons-material/Close';
 import { Reservation } from '../dashboard';
-import { format, parse, isBefore, startOfDay } from 'date-fns';
+import { format, parse, isBefore, startOfDay, set } from 'date-fns';
 
 // Update to match backend model
 interface Room {
@@ -55,6 +56,12 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
   isLoading = false,
   mode
 }) => {
+  // Add a new state to detect if this dialog is being used for confirmation
+  const isConfirmationFlow = reservation?.status !== 'CONFIRMED' && mode === 'edit';
+  
+  // Check if the reservation is in a final state (confirmed or cancelled)
+  const isInFinalState = reservation?.status === 'CONFIRMED' || reservation?.status === 'CANCELLED';
+  
   // Updated form data structure to match API
   const [formData, setFormData] = useState({
     guest_name: '',
@@ -70,6 +77,28 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
   });
   
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Convert frontend room type to backend format
+  const normalizeRoomType = (roomType: string): string => {
+    if (roomType === "Table" || roomType === "TABLE") {
+      return "TABLE";
+    }
+    if (roomType === "Karaoke Room" || roomType === "KARAOKE_ROOM") {
+      return "KARAOKE_ROOM";
+    }
+    return roomType;
+  };
+
+  // Convert backend room type to display format
+  const displayRoomType = (roomType: string): string => {
+    if (roomType === "TABLE") {
+      return "Table";
+    }
+    if (roomType === "KARAOKE_ROOM") {
+      return "Karaoke Room";
+    }
+    return roomType;
+  };
 
   // Initialize form data when reservation changes
   useEffect(() => {
@@ -92,6 +121,9 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
         timeDate = new Date();
       }
 
+      // Normalize the room_type to ensure it matches backend format
+      const normalizedRoomType = normalizeRoomType(reservation.room_type || 'TABLE');
+
       setFormData({
         guest_name: reservation.guest_name || '',
         guest_email: reservation.guest_email || '',
@@ -102,7 +134,7 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
         special_requests: reservation.special_requests || '',
         status: reservation.status || 'PENDING',
         room_id: reservation.room?.id?.toString() || '',
-        room_type: reservation.room_type || 'TABLE'
+        room_type: normalizedRoomType
       });
     } else {
       // Default values for new reservation
@@ -125,6 +157,32 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
     }
   }, [reservation, open, mode]);
 
+  // Determine if the form should be read-only based on status
+  const isReadOnly = mode === 'edit' && isInFinalState;
+
+  // Update the title logic
+  const getDialogTitle = () => {
+    if (isReadOnly) {
+      return 'View Reservation';
+    }
+    if (isConfirmationFlow) {
+      return 'Assign Room to Confirm Reservation';
+    }
+    return mode === 'add' ? 'Add New Reservation' : 'Edit Reservation';
+  }
+  
+  // Update the button text logic
+  const getSaveButtonText = () => {
+    if (isReadOnly) {
+      return 'Close';
+    }
+    if (isConfirmationFlow) {
+      return 'Assign Room & Confirm';
+    }
+    return mode === 'add' ? 'Create Reservation' : 'Save Changes';
+  }
+
+  // Validate that a room is selected if in confirmation flow
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     
@@ -143,16 +201,20 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
       newErrors.reservation_date = 'Date cannot be in the past';
     }
     
-    // Time range validation (4pm-1am) - skip for edit mode
-    if (mode === 'add') {
-      const hours = formData.reservation_time.getHours();
-      if (!(hours >= 16 || hours < 1)) {
-        newErrors.reservation_time = 'Time must be between 4:00 PM and 1:00 AM';
-      }
-    }
+    // Remove time validation check
+    // const hours = formData.reservation_time.getHours();
+    // if (!(hours >= 16 || hours < 1)) {
+    //   newErrors.reservation_time = 'Time must be between 4:00 PM and 1:00 AM';
+    // }
     
     if (formData.number_of_guests < 1) {
       newErrors.number_of_guests = 'Must have at least 1 guest';
+    }
+    
+    // Add validation for room assignment if status is being set to CONFIRMED
+    if (formData.status === 'CONFIRMED' && !formData.room_id) {
+      newErrors.room_id = 'Room must be assigned before confirming';
+      newErrors.status = 'Cannot confirm without assigning a room';
     }
     
     setErrors(newErrors);
@@ -160,6 +222,8 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    if (isReadOnly) return;
+    
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     
@@ -170,27 +234,37 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
   };
 
   const handleSelectChange = (e: SelectChangeEvent) => {
+    if (isReadOnly) return;
+    
     const name = e.target.name as string;
     const value = e.target.value;
     
-    // If selecting a room, also update room_type
-    if (name === 'room_id' && value) {
-      const selectedRoom = rooms.find(room => room.id.toString() === value);
-      if (selectedRoom) {
-        setFormData(prev => ({ 
-          ...prev, 
-          [name]: value,
-          room_type: selectedRoom.room_type
-        }));
-      } else {
-        setFormData(prev => ({ ...prev, [name]: value }));
-      }
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
+    if (name === 'status' && value === 'CONFIRMED' && !formData.room_id) {
+      // If trying to set status to CONFIRMED without a room assigned
+      setErrors(prev => ({ 
+        ...prev, 
+        status: 'Cannot confirm without assigning a room',
+        room_id: 'Room assignment required for confirmation'
+      }));
+      return; // Don't update the status
+    }
+    
+    // Update the form data
+    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Clear error when field is updated
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
   
   const handleSubmit = async () => {
+    // If in read-only mode, just close the dialog
+    if (isReadOnly) {
+      onClose();
+      return;
+    }
+    
     if (validateForm()) {
       // Format the date and time
       const formattedDate = format(formData.reservation_date, 'yyyy-MM-dd');
@@ -206,7 +280,8 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
         special_requests: formData.special_requests,
         status: formData.status,
         room_id: formData.room_id || null,
-        room_type: formData.room_type,
+        // Keep the original room_type, don't modify it
+        room_type: reservation?.room_type || formData.room_type,
         id: mode === 'edit' && reservation ? reservation.id : undefined
       };
       
@@ -217,8 +292,19 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
     }
   };
 
-  const title = mode === 'add' ? 'Add New Reservation' : 'Edit Reservation';
-  const saveButtonText = mode === 'add' ? 'Create Reservation' : 'Save Changes';
+  // Get available room options based on the room type
+  const getAvailableRooms = () => {
+    const normalizedRoomType = normalizeRoomType(formData.room_type);
+    return rooms.filter(room => room.room_type === normalizedRoomType);
+  };
+
+  // Helper function to restrict time picker to 4pm-1am
+  const shouldDisableTime = (date: Date) => {
+    const hours = date.getHours();
+    // Explicitly specify which hours are valid (4pm-1am)
+    const validHours = [16, 17, 18, 19, 20, 21, 22, 23, 0, 1]; // 4pm-11pm, 12am, 1am
+    return !validHours.includes(hours);
+  };
 
   return (
     <Dialog 
@@ -244,13 +330,25 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
           padding: 2
         }}
       >
-        <Typography variant="h6">{title}</Typography>
+        <Typography variant="h6">{getDialogTitle()}</Typography>
         <IconButton onClick={onClose} size="small" sx={{ color: 'white' }}>
           <CloseIcon />
         </IconButton>
       </DialogTitle>
 
       <DialogContent sx={{ p: 3 }}>
+        {isReadOnly && (
+          <Alert severity="info" sx={{ mb: 3 }}>
+            This reservation is {reservation?.status.toLowerCase()} and cannot be edited.
+          </Alert>
+        )}
+        
+        {isConfirmationFlow && (
+          <Alert severity="info" sx={{ mb: 3 }}>
+            This reservation requires a room assignment before it can be confirmed.
+          </Alert>
+        )}
+        
         <LocalizationProvider dateAdapter={AdapterDateFns}>
           <Grid container spacing={3} sx={{ mt: 0 }}>
             {/* Guest Information */}
@@ -268,9 +366,13 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
                 value={formData.guest_name}
                 onChange={handleInputChange}
                 error={!!errors.guest_name}
-                helperText={errors.guest_name}
+                helperText={errors.guest_name || (mode === 'edit' ? 'Guest name cannot be changed' : '')}
                 required
                 variant="outlined"
+                InputProps={{
+                  readOnly: mode === 'edit', // Read-only in edit mode
+                }}
+                disabled={mode === 'edit'}
               />
             </Grid>
             
@@ -283,9 +385,13 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
                 value={formData.guest_email}
                 onChange={handleInputChange}
                 error={!!errors.guest_email}
-                helperText={errors.guest_email}
+                helperText={errors.guest_email || (mode === 'edit' ? 'Email cannot be changed' : '')}
                 required
                 variant="outlined"
+                InputProps={{
+                  readOnly: mode === 'edit', // Read-only in edit mode
+                }}
+                disabled={mode === 'edit'}
               />
             </Grid>
             
@@ -302,6 +408,10 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
                 inputProps={{ min: 1 }}
                 required
                 variant="outlined"
+                InputProps={{
+                  readOnly: isReadOnly,
+                }}
+                disabled={isReadOnly}
               />
             </Grid>
             
@@ -317,6 +427,7 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
                 label="Reservation Date"
                 value={formData.reservation_date}
                 onChange={(date) => {
+                  if (isReadOnly) return;
                   if (date) {
                     setFormData(prev => ({ ...prev, reservation_date: date }));
                     if (errors.reservation_date) {
@@ -331,9 +442,14 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
                     required: true,
                     variant: "outlined",
                     error: !!errors.reservation_date,
-                    helperText: errors.reservation_date
+                    helperText: errors.reservation_date,
+                    InputProps: {
+                      readOnly: isReadOnly,
+                    },
+                    disabled: isReadOnly
                   }
                 }}
+                disabled={isReadOnly}
               />
             </Grid>
             
@@ -342,34 +458,46 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
                 label="Reservation Time"
                 value={formData.reservation_time}
                 onChange={(time) => {
+                  if (isReadOnly) return;
                   if (time) {
+                    // Accept any time without validation
                     setFormData(prev => ({ ...prev, reservation_time: time }));
                     if (errors.reservation_time) {
                       setErrors(prev => ({ ...prev, reservation_time: '' }));
                     }
                   }
                 }}
+                // Remove the time constraint 
+                // shouldDisableTime={shouldDisableTime}
+                ampm={true}
+                views={['hours', 'minutes']}
+                minutesStep={15}
                 slotProps={{
                   textField: {
                     fullWidth: true,
                     required: true,
                     variant: "outlined",
                     error: !!errors.reservation_time,
-                    helperText: errors.reservation_time
+                    helperText: "Select any time for now", // Changed helper text
+                    InputProps: {
+                      readOnly: isReadOnly,
+                    },
+                    disabled: isReadOnly
                   }
                 }}
+                disabled={isReadOnly}
               />
-              <FormHelperText>Business hours: 4:00 PM - 1:00 AM</FormHelperText>
             </Grid>
             
             <Grid item xs={12} sm={6}>
-              <FormControl fullWidth required>
+              <FormControl fullWidth required disabled={isReadOnly}>
                 <InputLabel>Duration</InputLabel>
                 <Select
                   name="duration"
                   value={formData.duration}
                   onChange={handleSelectChange}
                   label="Duration"
+                  readOnly={isReadOnly}
                 >
                   <MenuItem value="01:00:00">1 hour</MenuItem>
                   <MenuItem value="01:30:00">1.5 hours</MenuItem>
@@ -380,56 +508,61 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
             </Grid>
             
             <Grid item xs={12} sm={6}>
-              <FormControl fullWidth required>
-                <InputLabel>Room Type</InputLabel>
-                <Select
-                  name="room_type"
-                  value={formData.room_type}
-                  onChange={handleSelectChange}
-                  label="Room Type"
-                >
-                  <MenuItem value="TABLE">Table</MenuItem>
-                  <MenuItem value="KARAOKE_ROOM">Karaoke Room</MenuItem>
-                </Select>
-              </FormControl>
+              {/* Display room type as read-only field */}
+              <TextField
+                fullWidth
+                label="Room Type"
+                value={displayRoomType(formData.room_type)}
+                variant="outlined"
+                InputProps={{
+                  readOnly: true,
+                }}
+                disabled
+                helperText="Room type cannot be changed"
+              />
             </Grid>
             
             <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>Room</InputLabel>
+              <FormControl fullWidth required={isConfirmationFlow || formData.status === 'CONFIRMED'} error={!!errors.room_id} disabled={isReadOnly}>
+                <InputLabel>Room Assignment</InputLabel>
                 <Select
                   name="room_id"
                   value={formData.room_id}
                   onChange={handleSelectChange}
-                  label="Room"
+                  label="Room Assignment"
+                  readOnly={isReadOnly}
                 >
                   <MenuItem value="">
                     <em>Unassigned</em>
                   </MenuItem>
-                  {rooms
-                    .filter(room => room.room_type === formData.room_type)
-                    .map((room) => (
-                      <MenuItem key={room.id} value={room.id.toString()}>
-                        {room.room_name} (Max: {room.max_number_of_people})
-                      </MenuItem>
-                    ))}
+                  {getAvailableRooms().map((room) => (
+                    <MenuItem key={room.id} value={room.id.toString()}>
+                      {room.room_name}
+                    </MenuItem>
+                  ))}
                 </Select>
+                {errors.room_id && <FormHelperText>{errors.room_id}</FormHelperText>}
+                {!errors.room_id && formData.status === 'CONFIRMED' && 
+                  <FormHelperText>Room assignment is required for confirmed reservations</FormHelperText>
+                }
               </FormControl>
             </Grid>
             
             <Grid item xs={12} sm={6}>
-              <FormControl fullWidth required>
+              <FormControl fullWidth required error={!!errors.status} disabled={isReadOnly}>
                 <InputLabel>Status</InputLabel>
                 <Select
                   name="status"
                   value={formData.status}
                   onChange={handleSelectChange}
                   label="Status"
+                  readOnly={isReadOnly}
                 >
                   <MenuItem value="PENDING">Pending</MenuItem>
                   <MenuItem value="CONFIRMED">Confirmed</MenuItem>
                   <MenuItem value="CANCELLED">Cancelled</MenuItem>
                 </Select>
+                {errors.status && <FormHelperText>{errors.status}</FormHelperText>}
               </FormControl>
             </Grid>
             
@@ -443,6 +576,11 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
                 multiline
                 rows={4}
                 variant="outlined"
+                InputProps={{
+                  readOnly: mode === 'edit', // Read-only in edit mode
+                }}
+                disabled={mode === 'edit'}
+                helperText={mode === 'edit' ? 'Special requests cannot be changed' : ''}
               />
             </Grid>
           </Grid>
@@ -459,7 +597,7 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
         <Button 
           onClick={handleSubmit}
           variant="contained"
-          disabled={isLoading}
+          disabled={isLoading || (formData.status === 'CONFIRMED' && !formData.room_id)}
           sx={{
             bgcolor: '#d38236',
             '&:hover': {
@@ -467,7 +605,7 @@ const ReservationFormDialog: React.FC<ReservationFormDialogProps> = ({
             }
           }}
         >
-          {isLoading ? <CircularProgress size={24} color="inherit" /> : saveButtonText}
+          {isLoading ? <CircularProgress size={24} color="inherit" /> : getSaveButtonText()}
         </Button>
       </DialogActions>
     </Dialog>

@@ -34,6 +34,25 @@ import ReservationDialog from '../dialogs/ReservationDialog';
 import ReservationFormDialog from '../dialogs/ReservationFormDialog';
 import AddReservationDialog from '../dialogs/AddReservationDialog';
 
+// Helper function to format time in 12-hour format
+const formatTime12Hour = (timeString: string) => {
+  if (!timeString) return '';
+  
+  try {
+    // Handle HH:MM:SS format
+    if (timeString.includes(':')) {
+      const [hours, minutes] = timeString.split(':');
+      const hourNum = parseInt(hours, 10);
+      const ampm = hourNum >= 12 ? 'PM' : 'AM';
+      const hour12 = hourNum % 12 || 12;
+      return `${hour12}:${minutes.substring(0, 2)} ${ampm}`;
+    }
+    return timeString;
+  } catch (e) {
+    return timeString;
+  }
+};
+
 // Define the Room interface based on the backend model
 interface Room {
   id: number;
@@ -92,6 +111,7 @@ const Reservations: React.FC<ReservationsProps> = ({
   const [rooms, setRooms] = useState<Room[]>([]);
   const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmingReservation, setConfirmingReservation] = useState<Reservation | null>(null);
 
   useEffect(() => {
     const fetchRooms = async () => {
@@ -139,11 +159,22 @@ const Reservations: React.FC<ReservationsProps> = ({
     setFormDialogOpen(true);
   };
 
-  const handleOpenEditDialog = () => {
-    setDialogMode('edit');
+  // Update the handleOpenEditDialog function
+
+const handleOpenEditDialog = () => {
+  // Prevent editing if reservation is in a final state
+  if (selectedReservation && (selectedReservation.status === 'CONFIRMED' || selectedReservation.status === 'CANCELLED')) {
+    // Just show a view-only version
+    setDialogMode('edit'); // Will still be read-only because of status
     setViewDialogOpen(false);
     setFormDialogOpen(true);
-  };
+    return;
+  }
+  
+  setDialogMode('edit');
+  setViewDialogOpen(false);
+  setFormDialogOpen(true);
+};
 
   const handleCloseFormDialog = () => {
     setFormDialogOpen(false);
@@ -159,6 +190,13 @@ const Reservations: React.FC<ReservationsProps> = ({
         success = await handleAddReservation(reservationData);
       } else {
         success = await handleUpdateReservation(reservationData);
+        
+        // If this was part of a confirmation flow and update was successful
+        if (success && confirmingReservation && reservationData.room_id) {
+          // Now we can proceed with the status change to CONFIRMED
+          await onStatusChange(confirmingReservation.id, 'CONFIRMED');
+          setConfirmingReservation(null);
+        }
       }
       
       console.log(`Reservation ${dialogMode} ${success ? 'successful' : 'failed'}`);
@@ -198,12 +236,18 @@ const Reservations: React.FC<ReservationsProps> = ({
 
   const handleUpdateReservation = async (reservationData: any) => {
     try {
-      // Process room_id into proper format for API
+      // Ensure proper format for API
       const dataToSubmit = { ...reservationData };
       
+      // If room_id is provided, make sure it's properly formatted for the API
       if (dataToSubmit.room_id) {
-        dataToSubmit.room = dataToSubmit.room_id;
-        delete dataToSubmit.room_id;
+        // The backend expects room_id for updating rooms
+        dataToSubmit.room_id = parseInt(dataToSubmit.room_id);
+      }
+      
+      // Normalize room_type if needed
+      if (dataToSubmit.room_type && dataToSubmit.room_type.includes(' ')) {
+        dataToSubmit.room_type = dataToSubmit.room_type.toUpperCase().replace(/\s/g, '_');
       }
       
       const response = await onUpdateReservation(dataToSubmit);
@@ -214,14 +258,50 @@ const Reservations: React.FC<ReservationsProps> = ({
     }
   };
 
-  // Filter reservations based on search query
-  const filteredReservations = reservations.filter(res => 
-    (res.guest_name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
-    (res.guest_email?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
-    (res.reservation_date || '').includes(searchQuery) ||
-    (res.room_type?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
-    (res.room?.room_name?.toLowerCase() || '').includes(searchQuery.toLowerCase())
-  );
+  const handleStatusChange = async (id: number, newStatus: string) => {
+    // If confirming a reservation, check if a room is assigned first
+    if (newStatus === 'CONFIRMED') {
+      const reservation = reservations.find(res => res.id === id);
+      
+      if (reservation && !reservation.room) {
+        // No room assigned, open dialog for room assignment first
+        setSelectedReservation(reservation);
+        setConfirmingReservation(reservation);
+        setDialogMode('edit');
+        setFormDialogOpen(true);
+        return; // Stop here until they assign a room
+      }
+    }
+    
+    // Proceed with status change if not confirming or if room is already assigned
+    await onStatusChange(id, newStatus);
+  };
+
+  // Update the filtering logic to handle both tab selection and search query
+
+// First apply status filtering based on the selected tab
+const getFilteredReservationsByStatus = () => {
+  switch (tabValue) {
+    case 1: // Confirmed tab
+      return reservations.filter(res => res.status === 'CONFIRMED');
+    case 2: // Pending tab
+      return reservations.filter(res => res.status === 'PENDING');
+    case 3: // Cancelled tab
+      return reservations.filter(res => res.status === 'CANCELLED');
+    case 0: // All reservations tab
+    default:
+      return reservations;
+  }
+};
+
+// Then apply search query filtering
+const filteredReservations = getFilteredReservationsByStatus().filter(res => 
+  (res.guest_name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+  (res.guest_email?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+  (res.reservation_date || '').includes(searchQuery) ||
+  (res.room_type?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+  (res.room?.room_name?.toLowerCase() || '').includes(searchQuery.toLowerCase())
+);
 
   return (
     <motion.div
@@ -291,7 +371,7 @@ const Reservations: React.FC<ReservationsProps> = ({
                   <TableCell>Date</TableCell>
                   <TableCell>Time</TableCell>
                   <TableCell>Guests</TableCell>
-                  <TableCell>Table Type</TableCell>
+                  <TableCell>Reservation Type</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell align="right">Actions</TableCell>
                 </TableRow>
@@ -302,7 +382,7 @@ const Reservations: React.FC<ReservationsProps> = ({
                     <TableCell>{row.guest_name}</TableCell>
                     <TableCell>{row.guest_email}</TableCell>
                     <TableCell>{row.reservation_date}</TableCell>
-                    <TableCell>{row.reservation_time}</TableCell>
+                    <TableCell>{formatTime12Hour(row.reservation_time)}</TableCell>
                     <TableCell>{row.number_of_guests}</TableCell>
                     <TableCell>{row.room?.room_name || row.room_type || 'Unassigned'}</TableCell>
                     <TableCell>
@@ -315,25 +395,41 @@ const Reservations: React.FC<ReservationsProps> = ({
                       <IconButton size="small" onClick={() => handleViewReservation(row)}>
                         <VisibilityIcon fontSize="small" />
                       </IconButton>
-                      <IconButton 
-                        size="small" 
-                        onClick={() => onStatusChange(row.id, 'CONFIRMED')}
-                        disabled={row.status === 'CONFIRMED'}
-                        className="confirm-button"
-                      >
-                        <CheckCircleIcon fontSize="small" style={{ color: row.status === 'CONFIRMED' ? '#4caf50' : '#aaa' }} />
-                      </IconButton>
-                      <IconButton 
-                        size="small" 
-                        onClick={() => onStatusChange(row.id, 'CANCELLED')}
-                        disabled={row.status === 'CANCELLED'}
-                        className="cancel-button"
-                      >
-                        <CancelIcon fontSize="small" style={{ color: row.status === 'CANCELLED' ? '#f44336' : '#aaa' }} />
-                      </IconButton>
-                      <IconButton size="small" onClick={() => onDeleteReservation(row.id)}>
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
+                      
+                      {/* Only show confirm button if not already confirmed or cancelled */}
+                      {row.status !== 'CONFIRMED' && row.status !== 'CANCELLED' && (
+                        <IconButton 
+                          size="small" 
+                          onClick={() => handleStatusChange(row.id, 'CONFIRMED')}
+                          className="confirm-button"
+                          title={!row.room ? "Room assignment required before confirmation" : "Confirm reservation"}
+                        >
+                          <CheckCircleIcon 
+                            fontSize="small" 
+                            style={{ 
+                              color: !row.room ? '#ffaa00' : '#aaa' 
+                            }} 
+                          />
+                        </IconButton>
+                      )}
+                      
+                      {/* Only show cancel button if not already cancelled or confirmed */}
+                      {row.status !== 'CANCELLED' && row.status !== 'CONFIRMED' && (
+                        <IconButton 
+                          size="small" 
+                          onClick={() => handleStatusChange(row.id, 'CANCELLED')}
+                          className="cancel-button"
+                        >
+                          <CancelIcon fontSize="small" />
+                        </IconButton>
+                      )}
+                      
+                      {/* Only show delete button for pending reservations */}
+                      {row.status === 'PENDING' && (
+                        <IconButton size="small" onClick={() => onDeleteReservation(row.id)}>
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
