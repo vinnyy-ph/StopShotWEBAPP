@@ -61,7 +61,7 @@ const AdminLogin: React.FC = () => {
   const [otpSent, setOtpSent] = useState(false);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     
     if (isLocked && lockTimer > 0) {
       interval = setInterval(() => {

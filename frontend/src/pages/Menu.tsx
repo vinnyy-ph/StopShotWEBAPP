@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ReactNode } from 'react';
 import { 
   Box, 
   Typography, 
@@ -60,9 +60,14 @@ interface MenuItem {
 // Category with its items
 interface MenuCategory {
   category: string;
-  icon: JSX.Element;
+  icon: ReactNode;
   description: string;
   items: MenuItem[];
+}
+
+interface CategoryWithIcon {
+  name: string;
+  icon: ReactNode;
 }
 
 const MenuPage: React.FC = () => {
@@ -126,7 +131,7 @@ const MenuPage: React.FC = () => {
   };
 
   // Function to get icon based on category
-  const getCategoryIcon = (category: string): JSX.Element => {
+  const getCategoryIcon = (category: string): ReactNode => {
     switch (category) {
       case 'APPETIZERS':
         return <TapasIcon />;
@@ -632,12 +637,11 @@ const MenuPage: React.FC = () => {
                         transition: 'all 0.3s ease'
                       }}
                     >
-                      {React.cloneElement(category.icon, { 
-                        style: { 
-                          color: currentTab === index ? '#d38236' : '#999',
-                          fontSize: '18px'
-                        } 
-                      })}
+                      {typeof category.icon === 'object' && category.icon !== null ? 
+                        React.isValidElement(category.icon) ?
+                          React.cloneElement(category.icon, {}) : 
+                          category.icon 
+                        : null}
                     </Box>
                     <span style={{ fontWeight: currentTab === index ? 600 : 400 }}>
                       {category.category}
@@ -699,7 +703,11 @@ const MenuPage: React.FC = () => {
                       border: '1px solid rgba(211, 130, 54, 0.3)'
                     }}
                   >
-                    {React.cloneElement(category.icon, { style: { color: '#d38236', fontSize: 36 } })}
+                    {typeof category.icon === 'object' && category.icon !== null ? 
+                      React.isValidElement(category.icon) ?
+                        React.cloneElement(category.icon, { style: { color: '#d38236', fontSize: 36 } }) : 
+                        category.icon 
+                      : null}
                   </Box>
                   
                   <Box>

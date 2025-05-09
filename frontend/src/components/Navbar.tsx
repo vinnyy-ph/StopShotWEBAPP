@@ -96,7 +96,6 @@ const Navbar: React.FC = () => {
       <List>
         {navLinks.map((link) => (
           <ListItem 
-            button 
             key={link.title} 
             component={Link} 
             to={link.path}

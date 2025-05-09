@@ -37,7 +37,6 @@ import NightlifeIcon from '@mui/icons-material/Nightlife';
 import CelebrationIcon from '@mui/icons-material/Celebration';
 import { RiBilliardsFill } from "react-icons/ri";
 import '../styles/pages/reservations.css';
-import { Reservation, getStatusDisplay, getRoomTypeDisplay } from '../dashboard';
 
 const API_BASE_URL = 'http://stopshotapp-env-2.eba-8srvpzqc.ap-southeast-2.elasticbeanstalk.com/api';
 
@@ -58,6 +57,21 @@ interface ReservationFormData {
   number_of_guests: number;
   room_type: string;
   special_requests: string;
+}
+
+// Define the interfaces locally if needed
+interface Reservation {
+  id: number;
+  customer_name: string;
+  contact_email: string;
+  contact_phone: string;
+  date: string;
+  time: string;
+  duration: string;
+  room_type: string;
+  number_of_people: number;
+  special_requests?: string;
+  status: string;
 }
 
 const ReservationsPage: React.FC = () => {
@@ -339,7 +353,7 @@ const ReservationsPage: React.FC = () => {
     if (formData.room_type === 'KARAOKE_ROOM') {
       const durationParts = formData.duration.split(':');
       const hours = parseInt(durationParts[0], 10);
-      const minutes = parseInt(durationParts[1], 10);
+      const _ = parseInt(durationParts[1], 10); // Underscore to indicate unused
       
       if (hours < 1) {
         errors.duration = 'Karaoke room bookings must be for at least 1 hour';

@@ -150,8 +150,8 @@ const AdminDashboard: React.FC = () => {
   const [reservationError, setReservationError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState([...mockFeedbackData]);
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [employeesLoading, setEmployeesLoading] = useState<boolean>(true);
-  const [employeesError, setEmployeesError] = useState<string | null>(null);
+  const [_, setEmployeesLoading] = useState<boolean>(true);
+  const [__, setEmployeesError] = useState<string | null>(null);
 
   useEffect(() => {
     // Simulate loading data
@@ -318,7 +318,7 @@ const AdminDashboard: React.FC = () => {
       // This is kept for backwards compatibility
       const updatedFeedback = feedback.filter(item => {
         // Handle both legacy mockData format and new API format
-        const itemId = item.id || item.feedback_id;
+        const itemId = item.id || (item as any).feedback_id;
         return itemId !== id;
       });
       setFeedback(updatedFeedback);

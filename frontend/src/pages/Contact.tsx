@@ -118,10 +118,12 @@ const ContactPage: React.FC = () => {
       setOpen(true);
       setIsError(false);
     } catch (error) {
-      console.error('Error submitting form:', error);
-      setErrorMessage(error.message || 'Failed to send message. Please try again.');
+      console.error('Error sending message:', error);
+      setErrorMessage((error as any).message || 'Failed to send message. Please try again.');
       setIsError(true);
       setOpen(true);
+    } finally {
+      setSubmitted(false);
     }
   };
 
@@ -370,7 +372,7 @@ const ContactPage: React.FC = () => {
                         boxShadow: '0 0 15px rgba(211, 130, 54, 0.2)'
                       }}
                     >
-                      <LocationOnIcon sx={{ color: '#d38236' }} />
+                      <LocationOnIcon style={{ fontSize: 16, color: '#e0e0e0' }} />
                     </Box>
                   </ListItemIcon>
                   <ListItemText 

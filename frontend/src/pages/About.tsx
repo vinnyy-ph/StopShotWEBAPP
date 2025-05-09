@@ -11,7 +11,10 @@ import {
   Divider, 
   Paper,
   IconButton,
-  Chip
+  Chip,
+  Avatar,
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
 import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
 import SportsBasketballIcon from '@mui/icons-material/SportsBasketball';
@@ -358,30 +361,20 @@ const AboutPage: React.FC = () => {
               </Box>
             </Grid>
             <Grid item xs={12} md={7}>
-              <MotionTypography 
-                variant="h3" 
+              <Typography
+                variant="h2"
+                sx={{ textAlign: 'center', mb: 4, fontWeight: 'bold', color: '#D38236' }}
                 className="section-title"
-                initial={{ opacity: 0, y: 20 }}
-                animate={controls}
-                variants={{
-                  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
-                }}
-                sx={{
-                  position: 'relative',
-                  '&::after': {
-                    content: '""',
-                    position: 'absolute',
-                    width: '120px',
-                    height: '3px',
-                    backgroundColor: '#d38236',
-                    bottom: '-16px',
-                    left: '0',
-                    boxShadow: '0 0 10px rgba(211, 130, 54, 0.5)'
-                  }
-                }}
               >
-                Our Story
-              </MotionTypography>
+                <motion.span
+                  initial={{ x: -100 }}
+                  animate={{ x: 0 }}
+                  transition={{ duration: 0.5 }}
+                  style={{ display: 'block' }}
+                >
+                  About Stop Shot
+                </motion.span>
+              </Typography>
 
               <MotionBox 
                 initial={{ opacity: 0 }}

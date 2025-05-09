@@ -1285,32 +1285,14 @@ const FeedbackPage: React.FC = () => {
         </Snackbar>
       </Container>
       
-      {/* Add dynamic "glow" animation for all neon elements */}
-      <style jsx global>{`
-        @keyframes neonPulse {
-          0% {
-            filter: drop-shadow(0 0 5px rgba(211, 130, 54, 0.7)) 
-                   drop-shadow(0 0 8px rgba(211, 130, 54, 0.4));
-          }
-          100% {
-            filter: drop-shadow(0 0 8px rgba(211, 130, 54, 0.8)) 
-                   drop-shadow(0 0 12px rgba(211, 130, 54, 0.6));
-          }
+      {/* Replace the problematic style tag */}
+      <style>{`
+        /* Custom styles for rating */
+        .MuiRating-iconFilled {
+          color: #f57c00 !important;
         }
-
-        @keyframes pulse {
-          0% {
-            transform: scale(1);
-            opacity: 1;
-          }
-          50% {
-            transform: scale(1.1);
-            opacity: 0.8;
-          }
-          100% {
-            transform: scale(1);
-            opacity: 1;
-          }
+        .MuiRating-iconHover {
+          color: #ffb74d !important;
         }
       `}</style>
     </Box>

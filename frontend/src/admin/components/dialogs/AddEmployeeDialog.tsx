@@ -10,7 +10,6 @@ import {
   TextField,
   MenuItem,
   CircularProgress,
-  FormHelperText,
   Box,
   Typography,
   Divider,
@@ -19,7 +18,10 @@ import {
   Zoom,
   alpha,
   Fade,
-  InputAdornment
+  InputAdornment,
+  FormControl,
+  FormLabel,
+  InputLabel
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
@@ -42,7 +44,6 @@ const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = ({
   onClose,
   onAdd
 }) => {
-  const theme = useTheme();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [phoneError, setPhoneError] = useState('');

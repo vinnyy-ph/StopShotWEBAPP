@@ -37,6 +37,7 @@ import HourglassBottomIcon from '@mui/icons-material/HourglassBottom';
 import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
 import NoteIcon from '@mui/icons-material/Note';
 import { format, isBefore, startOfDay } from 'date-fns';
+import { SelectChangeEvent } from '@mui/material';
 
 // Orange accent color
 const ACCENT_COLOR = '#d38236';
@@ -300,6 +301,11 @@ const AddReservationDialog: React.FC<AddReservationDialogProps> = ({
     return hasValue ? styles.focusedInputAdornmentIcon.color : styles.inputAdornmentIcon.color;
   }
 
+  // Create a separate handler for select changes  
+  const handleSelectChange = (event: SelectChangeEvent<string>) => {
+    const { name, value } = event.target;
+    setNewReservation(prev => ({ ...prev, [name]: value }));
+  };
 
   return (
     <Dialog
@@ -582,7 +588,7 @@ const AddReservationDialog: React.FC<AddReservationDialogProps> = ({
                     name="duration"
                     value={newReservation.duration}
                     label="Duration"
-                    onChange={handleInputChange}
+                    onChange={handleSelectChange}
                     startAdornment={
                       <InputAdornment position="start">
                         <HourglassBottomIcon sx={{ color: ACCENT_COLOR }} />
@@ -628,7 +634,7 @@ const AddReservationDialog: React.FC<AddReservationDialogProps> = ({
                     name="room_type"
                     value={newReservation.room_type}
                     label="Reservation Type"
-                    onChange={handleInputChange}
+                    onChange={handleSelectChange}
                     startAdornment={
                       <InputAdornment position="start">
                         <MeetingRoomIcon sx={{ color: ACCENT_COLOR }} />
