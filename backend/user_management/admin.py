@@ -3,8 +3,8 @@ from .models import PasswordResetOTP, User
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ['email', 'username', 'role', 'is_active', 'is_staff']
-    search_fields = ['email', 'username']
+    list_display = ['email', 'role', 'is_active', 'is_staff']
+    search_fields = ['email']
     list_editable = ['role', 'is_active', 'is_staff']
     list_filter = ['role', 'is_active', 'is_staff']
     

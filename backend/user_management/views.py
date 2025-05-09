@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from rest_framework.authtoken.models import Token
-from .serializers import CreateEmployeeSerializer, RequestResetSerializer, VerifyOTPSerializer, ResetPasswordSerializer
+from .serializers import CreateEmployeeSerializer, UpdateEmployeeStatusSerializer,  RequestResetSerializer, VerifyOTPSerializer, ResetPasswordSerializer
 from .models import User
 from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
@@ -17,6 +17,10 @@ class TestAuthenticatedView(APIView):
             return Response({'error': 'Only admin can create employees.'}, status=403)
         
         return Response({'message': 'Employee, authenticated!'}, status=status.HTTP_200_OK)
+
+
+# ------------- USER AUTHENTICATION -------------
+
 
 class LoginView(APIView):
     def post(self, request):
@@ -114,6 +118,8 @@ class ResetPasswordView(APIView):
 
 # ------------ EMPLOYEE MANAGEMENT -----------
 
+
+# Employee Creation
 class CreateEmployeeView(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
@@ -137,3 +143,24 @@ class UserProfileView(APIView):
             'email': user.email,
             'role': user.role
         })
+
+
+
+class UpdateEmployeeStatusView(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        if request.user.role != 'ADMIN':
+            return Response({'error': 'Only admin can create employees.'}, status=403)
+
+
+    def patch(self, request, user_id):
+        try:
+            user = User.objects.get(id=user_id, role='EMPLOYEE')
+        except User.DoesNotExist:
+            return Response({'error': 'Employee not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = UpdateEmployeeStatusSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'Employee status updated'}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
