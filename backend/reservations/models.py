@@ -1,8 +1,9 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
-from django.core.exceptions import ValidationError
-import datetime 
+from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
+import datetime
+from .utils import send_reservation_status_email
 
 STATUS_CHOICES = [
     ('PENDING', 'Pending'),
@@ -68,6 +69,32 @@ class Reservation(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    _original_status = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._original_status = self.status
+
+    def get_room_type_display_value(self):
+        """Helper to get display value for room_type."""
+        return dict(ROOM_TYPE_CHOICES).get(self.room_type, self.room_type)
+
+    def save(self, *args, **kwargs):
+        is_new = self._state.adding
+        status_changed = not is_new and self.status != self._original_status
+        email_worthy_new_creation = is_new and self.status in ['CONFIRMED', 'CANCELLED'] 
+
+        super().save(*args, **kwargs) 
+
+        if (status_changed or email_worthy_new_creation) and self.user:
+            try:
+                send_reservation_status_email(self)
+            except Exception as e:
+                print(f"Error triggering reservation status email for reservation {self.pk}: {e}")
+        
+        # Update original status after saving
+        self._original_status = self.status
 
     def get_start_datetime(self):
         if self.reservation_date and self.reservation_time:
