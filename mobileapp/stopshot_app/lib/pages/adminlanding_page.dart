@@ -1,8 +1,32 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
-import 'package:flutter/material.dart';
+class AdminLandingPage extends StatefulWidget {
+  @override
+  _AdminLandingPageState createState() => _AdminLandingPageState();
+}
 
-class AdminLandingPage extends StatelessWidget {
+class _AdminLandingPageState extends State<AdminLandingPage> {
+  late Future<List<Map<String, String>>> _data;
+
+  @override
+  void initState() {
+    super.initState();
+    _data = fetchData(); // Call fetchData method here
+  }
+
+  Future<List<Map<String, String>>> fetchData() async {
+    final response = await http.get(Uri.parse('https://yourapi.com/data'));
+
+    if (response.statusCode == 200) {
+      List<dynamic> data = jsonDecode(response.body);
+      return data.map((e) => Map<String, String>.from(e)).toList();
+    } else {
+      throw Exception('Failed to load data');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -14,7 +38,6 @@ class AdminLandingPage extends StatelessWidget {
           IconButton(
             icon: Icon(Icons.exit_to_app),
             onPressed: () {
-              // This will pop the current screen (Admin Landing Page) off the navigation stack
               Navigator.pop(context);
             },
           ),
@@ -74,166 +97,140 @@ class AdminLandingPage extends StatelessWidget {
                       ),
                     ],
                   ),
-                  SizedBox(
-                    height: 30,
-                  ), // Added space between title/search bar and table
-                  // Table inside the container
-                  Table(
-                    children: [
-                      TableRow(
+                  SizedBox(height: 30),
+                  // Table with FutureBuilder to load data
+                  FutureBuilder<List<Map<String, String>>>(
+                    future: _data,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(child: CircularProgressIndicator());
+                      }
+                      if (snapshot.hasError) {
+                        return Center(child: Text('Error: ${snapshot.error}'));
+                      }
+                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                        return Center(child: Text('No data available'));
+                      }
+
+                      List<Map<String, String>> tableData = snapshot.data!;
+
+                      return Table(
+                        border: TableBorder.all(color: Colors.white, width: 1),
                         children: [
-                          TableCell(
-                            child: Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: Text(
-                                'Column 1',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
+                          TableRow(
+                            children: [
+                              TableCell(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12.0),
+                                  child: Text(
+                                    'Column 1',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ),
-                          TableCell(
-                            child: Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: Text(
-                                'Column 2',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
+                              TableCell(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12.0),
+                                  child: Text(
+                                    'Column 2',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ),
-                          TableCell(
-                            child: Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: Text(
-                                'Column 3',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
+                              TableCell(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12.0),
+                                  child: Text(
+                                    'Column 3',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
+                          // Dynamically generate rows
+                          ...tableData.map((data) {
+                            return TableRow(
+                              children: [
+                                TableCell(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12.0),
+                                    child: Text(
+                                      data['column1'] ?? '',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                ),
+                                TableCell(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12.0),
+                                    child: Text(
+                                      data['column2'] ?? '',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                ),
+                                TableCell(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12.0),
+                                    child: Text(
+                                      data['column3'] ?? '',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }).toList(),
                         ],
-                      ),
-                      TableRow(
-                        children: [
-                          TableCell(
-                            child: Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: Text(
-                                'Row 1 Data 1',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                            ),
-                          ),
-                          TableCell(
-                            child: Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: Text(
-                                'Row 1 Data 2',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                            ),
-                          ),
-                          TableCell(
-                            child: Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: Text(
-                                'Row 1 Data 3',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      TableRow(
-                        children: [
-                          TableCell(
-                            child: Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: Text(
-                                'Row 2 Data 1',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                            ),
-                          ),
-                          TableCell(
-                            child: Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: Text(
-                                'Row 2 Data 2',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                            ),
-                          ),
-                          TableCell(
-                            child: Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: Text(
-                                'Row 2 Data 3',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                      );
+                    },
                   ),
-                  SizedBox(height: 30), // Added space between table and buttons
+                  SizedBox(height: 30),
                   // Buttons at the bottom-right
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       ElevatedButton(
                         onPressed: () {
-                          // Add your confirm reservation functionality here
+                          // Confirm reservation functionality
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Color.fromARGB(
-                            255,
-                            208,
-                            131,
-                            53,
-                          ), // Confirm reservation button color
+                          backgroundColor: Color.fromARGB(255, 208, 131, 53),
                           foregroundColor: Color.fromARGB(255, 255, 255, 255),
                           padding: EdgeInsets.symmetric(
                             horizontal: 20,
                             vertical: 15,
                           ),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              10,
-                            ), // Set border radius here
+                            borderRadius: BorderRadius.circular(10),
                           ),
                         ),
                         child: Text('Confirm Reservation'),
                       ),
-                      SizedBox(width: 10), // Space between the buttons
+                      SizedBox(width: 10),
                       ElevatedButton(
                         onPressed: () {
-                          // Add your cancel reservation functionality here
+                          // Cancel reservation functionality
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Color.fromARGB(
-                            255,
-                            180,
-                            80,
-                            40,
-                          ), // Cancel reservation button color
+                          backgroundColor: Color.fromARGB(255, 180, 80, 40),
                           foregroundColor: Color.fromARGB(255, 255, 255, 255),
                           padding: EdgeInsets.symmetric(
                             horizontal: 20,
                             vertical: 15,
                           ),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              10,
-                            ), // Set border radius here
+                            borderRadius: BorderRadius.circular(10),
                           ),
                         ),
                         child: Text('Cancel Reservation'),
