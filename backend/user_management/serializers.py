@@ -55,6 +55,17 @@ class UpdateEmployeeStatusSerializer(serializers.ModelSerializer):
         model = User
         fields = ['is_active']
 
+class UpdateEmployeeSerializer(serializers.ModelSerializer):
+    phone_num = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'phone_num', 'hire_date', 'role', 'is_active']
+        
+    def validate_phone_num(self, value):
+        if value == '':
+            return None
+        return value
 
 class RequestResetSerializer(serializers.Serializer):
     email = serializers.EmailField()

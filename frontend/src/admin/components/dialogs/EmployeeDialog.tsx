@@ -1,4 +1,3 @@
-// admin/components/dialogs/EmployeeDialog.tsx
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -53,7 +52,21 @@ const EmployeeDialog: React.FC<EmployeeDialogProps> = ({
     setLoading(true);
     setError('');
     try {
-      const success = await onUpdate(editedEmployee);
+      // Call the update function with only necessary fields to match backend expectations
+      const updateData = {
+        user_id: editedEmployee.user_id,
+        first_name: editedEmployee.first_name,
+        last_name: editedEmployee.last_name,
+        phone_number: editedEmployee.phone_number,
+        hire_date: editedEmployee.hire_date,
+        role: editedEmployee.role,
+        // Make sure is_active is boolean
+        is_active: typeof editedEmployee.is_active === 'string' 
+          ? editedEmployee.is_active === 'true' 
+          : Boolean(editedEmployee.is_active)
+      };
+      
+      const success = await onUpdate(updateData);
       if (success) {
         setEditMode(false);
         onClose();
@@ -180,11 +193,14 @@ const EmployeeDialog: React.FC<EmployeeDialogProps> = ({
                 label="Status"
                 select
                 fullWidth
-                value={editedEmployee.is_active}
-                onChange={(e) => setEditedEmployee({...editedEmployee, is_active: e.target.value})}
+                value={String(editedEmployee.is_active)} // Convert boolean to string for comparison
+                onChange={(e) => setEditedEmployee({
+                  ...editedEmployee, 
+                  is_active: e.target.value === 'true' // Convert string back to boolean
+                })}
               >
-                <MenuItem value={true}>Active</MenuItem>
-                <MenuItem value={false}>Inactive</MenuItem>
+                <MenuItem value="true">Active</MenuItem> {/* Use string values in MenuItem */}
+                <MenuItem value="false">Inactive</MenuItem>
               </TextField>
             </Grid>
           </Grid>

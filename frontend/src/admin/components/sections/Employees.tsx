@@ -223,7 +223,6 @@ const Employees: React.FC<EmployeesProps> = ({
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>ID</TableCell>
                 <TableCell>Name</TableCell>
                 <TableCell>Position</TableCell>
                 <TableCell>Phone</TableCell>
@@ -235,7 +234,6 @@ const Employees: React.FC<EmployeesProps> = ({
             <TableBody>
               {filteredEmployees.map((employee) => (
                 <TableRow key={employee.user_id} className="table-row">
-                  <TableCell>{employee.user_id}</TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       <Avatar sx={{ mr: 2, bgcolor: '#d38236' }}>
@@ -261,13 +259,6 @@ const Employees: React.FC<EmployeesProps> = ({
                       onClick={() => handleOpenEmployeeDialog(employee)}
                     >
                       <VisibilityIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton 
-                      size="small" 
-                      className="action-btn delete-btn"
-                      onClick={() => onDeleteEmployee(employee.user_id)}
-                    >
-                      <DeleteIcon fontSize="small" />
                     </IconButton>
                   </TableCell>
                 </TableRow>

@@ -63,5 +63,30 @@ export const employeeService = {
   updateEmployeeStatus: async (userId: number, isActive: boolean): Promise<any> => {
     const response = await axiosInstance.patch(`/employees/${userId}/status/`, { is_active: isActive });
     return response.data;
+  },
+
+  updateEmployee: async (userId: number, employeeData: Partial<Employee>): Promise<any> => {
+    // Handle phone number formatting - backend expects phone_num but UI uses phone_number
+    const formattedData = {
+      ...employeeData,
+      phone_num: employeeData.phone_number ? formatPhoneNumber(employeeData.phone_number) : null
+    };
+    
+    // Delete phone_number to avoid sending duplicate fields  
+    delete formattedData.phone_number;
+    
+    const response = await axiosInstance.patch(`/employees/${userId}/update/`, formattedData);
+    return response.data;
+  },
+  
+  // Add the delete employee method
+  deleteEmployee: async (userId: number): Promise<boolean> => {
+    try {
+      await axiosInstance.delete(`/employees/${userId}/delete/`);
+      return true;
+    } catch (error) {
+      console.error('Error deleting employee:', error);
+      return false;
+    }
   }
 };

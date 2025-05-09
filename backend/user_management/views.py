@@ -3,7 +3,15 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from rest_framework.authtoken.models import Token
-from .serializers import CreateEmployeeSerializer, UpdateEmployeeStatusSerializer, RequestResetSerializer, VerifyOTPSerializer, ResetPasswordSerializer, EmployeeSerializer
+from .serializers import (
+    CreateEmployeeSerializer, 
+    UpdateEmployeeStatusSerializer, 
+    RequestResetSerializer, 
+    VerifyOTPSerializer, 
+    ResetPasswordSerializer, 
+    EmployeeSerializer, 
+    UpdateEmployeeSerializer  
+)
 from .models import User
 from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
@@ -188,10 +196,15 @@ class UpdateEmployeeStatusView(APIView):
         if request.user.role != 'ADMIN':
             return Response({'error': 'Only admin can create employees.'}, status=403)
 
-
     def patch(self, request, user_id):
         try:
-            user = User.objects.get(user_id=user_id, role='EMPLOYEE')
+            # Remove the role='EMPLOYEE' filter - get any user with that ID
+            user = User.objects.get(user_id=user_id)
+            
+            # Optional: Check if user has any employee role (not CUSTOMER)
+            if user.role == 'CUSTOMER':
+                return Response({'error': 'User is not an employee'}, status=status.HTTP_400_BAD_REQUEST)
+                
         except User.DoesNotExist:
             return Response({'error': 'Employee not found'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -200,3 +213,56 @@ class UpdateEmployeeStatusView(APIView):
             serializer.save()
             return Response({'message': 'Employee status updated'}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class UpdateEmployeeView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def patch(self, request, user_id):
+        try:
+            if request.user.role != 'ADMIN':
+                return Response({'error': 'Only admin can update employees.'}, 
+                              status=status.HTTP_403_FORBIDDEN)
+                              
+            user = User.objects.get(user_id=user_id)
+            
+            if user.role == 'CUSTOMER':
+                return Response({'error': 'User is not an employee'}, status=status.HTTP_400_BAD_REQUEST)
+                
+            serializer = UpdateEmployeeSerializer(user, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(EmployeeSerializer(user).data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+        except User.DoesNotExist:
+            return Response({'error': 'Employee not found'}, status=status.HTTP_404_NOT_FOUND)
+
+class DeleteEmployeeView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def delete(self, request, user_id):
+        try:
+            if request.user.role != 'ADMIN':
+                return Response({'error': 'Only admin can delete employees.'}, 
+                              status=status.HTTP_403_FORBIDDEN)
+                              
+            user = User.objects.get(user_id=user_id)
+            
+            if user.role == 'CUSTOMER':
+                return Response({'error': 'User is not an employee'}, status=status.HTTP_400_BAD_REQUEST)
+                
+            if user.role in ['ADMIN', 'OWNER'] and user != request.user:
+                return Response({'error': 'Cannot delete admin/owner accounts'}, 
+                              status=status.HTTP_403_FORBIDDEN)
+            
+            # Instead of hard delete, consider setting is_active to False
+            user.is_active = False
+            user.save()
+            
+            # For a hard delete, uncomment this line:
+            # user.delete()
+            
+            return Response({'message': 'Employee deactivated successfully'}, status=status.HTTP_200_OK)
+            
+        except User.DoesNotExist:
+            return Response({'error': 'Employee not found'}, status=status.HTTP_404_NOT_FOUND)

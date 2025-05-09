@@ -332,29 +332,38 @@ const AdminDashboard: React.FC = () => {
 
   const handleUpdateEmployee = async (employeeData: any) => {
     try {
-      // Currently only updating status is supported in the backend
-      if (employeeData.user_id) {
-        await employeeService.updateEmployeeStatus(employeeData.user_id, employeeData.is_active);
-        // Refresh employee list
-        fetchEmployees();
-        return true;
-      }
-      return false;
+      // For complete employee updates, use the new method instead
+      await employeeService.updateEmployee(employeeData.user_id, employeeData);
+      
+      // Refresh the employee list to show updated data
+      await fetchEmployees();
+      return true;
     } catch (error) {
-      console.error('Error updating employee:', error);
+      console.error('Failed to update employee:', error);
       return false;
     }
   };
 
   const handleDeleteEmployee = async (id: number) => {
-    try {
-      // This endpoint isn't implemented yet, so show an error message
-      console.error('Delete employee endpoint not implemented');
-      return false;
-    } catch (error) {
-      console.error('Error deleting employee:', error);
-      return false;
+    // Ask for confirmation before deleting
+    if (window.confirm('Are you sure you want to delete this employee?')) {
+      try {
+        const success = await employeeService.deleteEmployee(id);
+        if (success) {
+          // Update local state after successful deletion
+          const updatedEmployees = employees.filter(emp => emp.user_id !== id);
+          setEmployees(updatedEmployees);
+          return true;
+        } else {
+          alert('Failed to delete employee. Please try again.');
+          return false;
+        }
+      } catch (error) {
+        console.error('Error deleting employee:', error);
+        return false;
+      }
     }
+    return false;
   };
 
   // In the AdminDashboard component, add these handlers
